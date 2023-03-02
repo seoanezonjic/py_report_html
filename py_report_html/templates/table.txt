@@ -1,0 +1,27 @@
+<table id="${table_id}" border="${options['border']}" ${table_attr}>
+% if options['header']:
+    <thead>
+% endif
+% for i,row in enumerate(array_data):
+    % if options['header'] and i == 1:
+        <tbody>
+    % endif
+   <tr>
+        % for j, cell in enumerate(row):
+            % if cell != 'colspan' and cell != 'rowspan':
+              % if i == 0 and options['header']:
+                    <th ${plotter.get_span(colspan, rowspan, i, j)} >${cell} </th>
+              % else:
+                    <td ${plotter.get_cell_align(options['cell_align'], j)} ${ plotter.get_span(colspan, rowspan, i, j) }>${ cell } </td>
+              % endif
+            % endif
+        % endfor
+    </tr>
+    % if i == 0 and options['header']:
+        </thead>
+    % endif
+% endfor
+% if options['header']:
+    </tbody>
+% endif
+</table>

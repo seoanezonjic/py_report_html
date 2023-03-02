@@ -39,6 +39,6 @@ setup(
     packages=["py_report_html"],
     include_package_data=True,
     scripts=['bin/py_report_html.py'],
-    install_requires=["mako"]
+    install_requires=["mako", "numpy"]
 
 )
