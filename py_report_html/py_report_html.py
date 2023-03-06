@@ -3,10 +3,11 @@ import os
 import json
 import base64
 import numpy as np
+import math
+import base64
 from mako.template import Template
 
-
-JS_FOLDER = os.path.abspath(os.path.join(__file__, '..', '..', '..', 'js'))
+JS_FOLDER = os.path.join(os.path.dirname(__file__), '..', 'js')
 TEMPLATES = os.path.join(os.path.dirname(__file__), 'templates')
 
 class Py_report_html:
@@ -126,6 +127,7 @@ class Py_report_html:
     # REPORT SYNTAX METHODS
     ###################################################################################
 
+    #-------------------------------------------------------------------------------------
     # DATA MANIPULATION METHODS
     #-------------------------------------------------------------------------------------  
     def get_data(self, options):
@@ -177,7 +179,7 @@ class Py_report_html:
         else:
             if 'smp_attr' in options and len(options['smp_attr']) > 0: smp_attr = self.process_attributes(self.extract_fields(ids, options['smp_attr']), options['var_attr'], aggregated = True) 
             if 'var_attr' in options and len(options['var_attr']) > 0: var_attr = self.process_attributes(self.extract_rows(ids, options['var_attr']), options['smp_attr'], aggregated = False) 
-            data = self.extract_fields(ids, options['fields'], del_fields = options['smp_attr'], del_rows = options['var_attr'])
+            data = self.extract_fields(ids, options.get('fields'), del_fields = options.get('smp_attr'), del_rows = options.get('var_attr'))
         return data, smp_attr, var_attr
 
     def extract_fields(self, id, fields, del_fields = [], del_rows = []):
@@ -193,8 +195,7 @@ class Py_report_html:
         return data
 
     def delete_items(self, list2del, indexes):
-        indexes.sort()
-        indexes.reverse()
+        indexes.sort(reverse=True)
         for j in indexes: list2del.pop(j)        
 
     def extract_rows(self, id, rows):
@@ -213,14 +214,15 @@ class Py_report_html:
         else:
             for attrib in attribs:
                 if delete_items != None and len(delete_items) > 0:
-                    indexes = range(len(delete_items))
-                    self.delete_items(attrib, indexes)
+                    indexes = range(1, len(delete_items) +1)
+                    self.delete_items(attrib, list(indexes))
                 parsed_attr.append(attrib)
         return parsed_attr
 
+    #---------------------------------------------------------------------------------------------
     # TABLE METHODS
     #-------------------------------------------------------------------------------------
-    def table(self, **user_options): # , &block # https://treyhunner.com/2018/04/keyword-arguments-in-python/#Capturing_arbitrary_keyword_arguments
+    def table(self, **user_options): # https://treyhunner.com/2018/04/keyword-arguments-in-python/#Capturing_arbitrary_keyword_arguments
         options = {
             'id': None,
             'header': False,
@@ -239,7 +241,6 @@ class Py_report_html:
         table_attr = self.prepare_table_attribs(options['attrib'])
         array_data, _, _ = self.get_data(options)
         if options.get('func') != None: options['func'](array_data)
-        #block.call(array_data) if !block.nil? # TODO: hacer q reciba funciones para modificar datos de la tabla
         rowspan, colspan = self.get_col_n_row_span(array_data)
         table_id = 'table_' + str(self.count_objects)
         if options.get('styled') == 'dt': self.dt_tables.append(table_id) 
@@ -289,5 +290,358 @@ class Py_report_html:
         if rowspan_value > 1: span.append(f"rowspan=\"{rowspan_value}\"")
         return ' '.join(span)
 
+    #-------------------------------------------------------------------------------------
     # CANVASXPRESS METHODS
     #-------------------------------------------------------------------------------------
+
+    # Support methods
+    #-------------------------------------------------------------------------------------
+    def canvasXpress_main(self, user_options):
+        # Handle arguments
+        #------------------------------------------
+        options = {
+            'id': None,
+            'func': None,
+            'config_chart': None,
+            'fields': [],
+            'smp_attr': [],
+            'var_attr': [],
+            'segregate': [],
+            'data_format': 'one_axis',
+            'responsive': True,
+            'height': '600px',
+            'width': '600px',
+            'header': False,
+            'row_names': False,
+            'add_header_row_names': True,
+            'transpose': True,
+            'x_label': 'x_axis',
+            'title': 'Title',
+            'sample_attributes': {},
+            'config': {},
+            'after_render': [],
+            'treeBy': 's'
+        }
+        options.update(user_options)
+        config = {
+            'toolbarType' : 'under',
+            'xAxisTitle' : options['x_label'],
+            'title' : options['title']
+        }
+        if  options.get('tree') != None : self.set_tree(options, config)
+
+        config.update(options['config'])
+        # Data manipulation
+        #------------------------------------------
+        no_data_string = f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO DATA<p></div>"
+        data_array, smp_attr, var_attr = self.get_data(options)
+
+        if len(data_array) == 0: return no_data_string 
+        if options.get('func') != None: options['func'](data_array)
+        if data_array == None: raise Exception(f"ID {options['id']} has not data") 
+        samples = data_array.pop(0)
+        samples.pop(0) # We obtain sample names with first pop, the second remove vars title
+        if len(data_array) == 0: return no_data_string 
+        vars = [ row.pop(0) for row in data_array ]
+        values = data_array
+        object_id = f"obj_{self.count_objects}_"
+
+        x = {}
+        z = {}
+        if var_attr != None and len(var_attr) > 0: self.add_canvas_attr(x, var_attr) 
+        if smp_attr != None and len(smp_attr) > 0: self.add_canvas_attr(z, smp_attr) 
+        options['config_chart'](options, config, samples, vars, values, object_id, x, z) # apply custom chart method to configure plot
+        # Build JSON objects and Javascript code
+        #-----------------------------------------------
+        self.count_objects += 1
+        data_structure = {
+            'y' : {
+                'vars' : vars,
+                'smps' : samples,
+                'data' : values
+            },
+            'x' : x,
+            'z' : z
+        }
+        events = False
+        info = False
+        afterRender = options['after_render']
+        if options.get('mod_data_structure') == 'boxplot':
+            data_structure['y']['smps'] = None
+            data_structure.update({ 'x' : {'Factor' : samples}})
+        elif options.get('mod_data_structure') == 'circular':
+            data_structure.update({ 'z' : {'Ring' : options['ring_assignation']}})
+
+        if len(options['sample_attributes']) > 0: self.add_sample_attributes(data_structure, options) 
+        extracode = self.initialize_extracode(options)
+        if len(options['segregate']) > 0: extracode += self.segregate_data(f"C{object_id}", options['segregate']) + "\n"
+        if options.get('group_samples') != None: extracode += f"C{object_id}.groupSamples({options['group_samples']})\n"
+        plot_data = (
+            f"var data = {json.dumps(data_structure)};"
+            f"var conf = {json.dumps(config)};"
+            f"var events = {json.dumps(events)};"
+            f"var info = {json.dumps(info)};"
+            f"var afterRender = {json.dumps(afterRender)};"
+            f"var C{object_id} = new CanvasXpress(\"{object_id}\", data, conf, events, info, afterRender);\n{extracode}")
+        self.plots_data.append(plot_data)
+        
+        responsive = ''
+        if options['responsive']: responsive = "responsive='true'" 
+        html = f"<canvas  id=\"{object_id}\" width=\"{options['width']}\" height=\"{options['height']}\" aspectRatio='1:1' {responsive}></canvas>"
+        return html
+
+    def initialize_extracode(self, options):
+        extcode = options.get('extracode')
+        if extcode == None:
+            extracode =""
+        else:
+            extracode = f"{extcode}"
+        return extracode +"\n"
+
+    def add_canvas_attr(self, hash_attr, attr2add):
+        for attrs in attr2add:
+            attr_name = attrs.pop(0)
+            hash_attr[attr_name] = attrs
+
+    def segregate_data(self, obj_id, segregate):
+        string =""
+        for data_type, names in  segregate.items():
+            names_string = ",".join([f"'{name}'" for name in names])
+            if data_type == 'var':
+                string += f"{obj_id}.segregateVariables([{names_string}]);\n"
+            elif data_type == 'smp':
+                string += f"{obj_id}.segregateSamples([{names_string}]);\n"
+        return string
+
+    def reshape(self, samples, vars, x, values):
+        item_names = samples.copy()
+        for n in range(len(vars) -1 ):
+            samples.extend([ f"{i}_{n}" for i in item_names ])
+        for factor, annotations in x.items():
+            current_annotations = annotations.copy()
+            for i in range(len(vars) -1): 
+                annotations.extend(current_annotations)
+        series_annot = []
+        for var in vars:
+            for i in item_names:
+                series_annot.append(var)
+        x['factor'] = series_annot
+        vars.clear()
+        vars.append('vals')
+        vals = [item for sublist in values for item in sublist]
+        values.clear()
+        values.append(vals)
+
+    def assign_rgb(self, link_data):
+        colors = {
+            'red' : [255, 0, 0],
+            'green' : [0, 255, 0],
+            'black' : [0, 0, 0],
+            'yellow' : [255, 255, 0],
+            'blue' : [0, 0, 255],
+            'gray' : [128, 128, 128],
+            'orange' : [255, 165, 0],
+            'cyan' : [0, 255, 255],
+            'magenta' : [255, 0, 255]
+        }
+        for link in link_data:
+            code = colors.get(link[0])
+            if code != None:
+                link[0] = f"rgb({(',').join([str(c) for c in code])})"
+            else:
+                raise Exception(f"Color link {link[0]} is not allowed. The allowed color names are: #{' '.join(colors.keys())}")
+    
+    # Chart methods
+    #-------------------------------------------------------------------------------------
+    def barplot(self, **user_options):
+        def config_chart(options, config, samples, vars, values, object_id, x, z):
+            config['graphType'] = 'Bar'
+        default_options = { 'row_names': True, 'config_chart' : config_chart }
+        default_options.update(user_options)
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
+
+    def line(self, **user_options):
+        def config_chart(options, config, samples, vars, values, object_id, x, z):
+            config['graphType'] = 'Line'
+        default_options = { 'row_names': True, 'config_chart' : config_chart }
+        default_options.update(user_options)
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
+
+    def stacked(self, **user_options):
+        def config_chart(options, config, samples, vars, values, object_id, x, z):
+            config['graphType'] = 'Stacked'
+        default_options = { 'row_names': True, 'config_chart' : config_chart }
+        default_options.update(user_options)
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
+
+    def corplot(self, **user_options):
+        default_options = { 'transpose': False, 'correlationAxis': 'samples' }
+        default_options.update(user_options)
+        def config_chart(options, config, samples, vars, values, object_id, x, z):
+            config['graphType'] = 'Correlation'
+            config['correlationAxis'] = default_options['correlationAxis']
+        default_options['config_chart'] = config_chart
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
+
+    def pie(self, **user_options): 
+        def config_chart(options, config, samples, vars, values, object_id, x, z):
+            config['graphType'] = 'Pie'
+            if len(samples) > 1:
+                config['showPieGrid'] = True
+                config['xAxis'] = samples 
+                if config.get('layout') == None: config['layout'] = f"{math.ceil(len(samples)/2)}X2"
+                if config.get('showPieSampleLabel') == None: config['showPieSampleLabel'] = True 
+        default_options = { 'transpose' : False, 'config_chart' : config_chart }
+        default_options.update(user_options)
+        html_string = self.canvasXpress_main(default_options) 
+        return html_string
+
+    def scatter2D(self, **user_options):
+        default_options = { 'row_names': False, 'transpose': False}
+        default_options.update(user_options)
+        def config_chart(options, config, samples, vars, values, object_id, x, z):
+            config['graphType'] = 'Scatter2D'
+            if config.get('xAxis') == None: config['xAxis'] = [samples[0]]    
+            if config.get('yAxis') == None: config['yAxis'] = [samples[n] for n in range(1, len(samples))] 
+            if default_options.get('y_label') == None :
+                config['yAxisTitle'] = 'y_axis'
+            else:
+                config['yAxisTitle'] = default_options['y_label']
+            if options.get('regressionLine') == True:
+                options['extracode'] = f"C{object_id}.addRegressionLine();"
+        default_options['config_chart'] = config_chart
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
+
+    def scatterbubble2D(self, **user_options):
+        default_options = { 'row_names': True, 'transpose': False}
+        default_options.update(user_options)
+        def config_chart(options, config, samples, vars, values, object_id, x, z):
+            config['graphType'] = 'ScatterBubble2D'
+            if options.get('xAxis') == None: 
+                config['xAxis'] = [samples[0]]
+            else:
+                config['xAxis'] = options['xAxis']
+            if options.get('yAxis') == None:
+                config['yAxis'] = [samples[1]]
+            else:
+                config['yAxis'] = options['yAxis']
+            if options.get('zAxis') == None:
+                config['zAxis'] = [samples[2]]
+            else:
+                config['zAxis'] = options['zAxis']
+            if default_options.get('y_label') == None:
+                config['yAxisTitle'] = 'y_axis'
+            else:
+                config['yAxisTitle'] = default_options['y_label']
+            if default_options.get('z_label') == None:
+                config['zAxisTitle'] = 'z_axis'
+            else:
+                config['zAxisTitle'] = default_options['z_label']
+            if options.get('upper_limit') != None and options.get('lower_limit') != None and options.get('ranges') != None:
+                diff = (options['upper_limit'] - options['lower_limit'])/options['ranges']
+                sizes = [ options['lower_limit'] + n * diff for n in range(options['ranges'])]
+                config['sizes'] = sizes
+        default_options['config_chart'] = config_chart
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
+
+    def dotplot(self, **user_options):
+        default_options = { 'row_names': True, 'connect': False}
+        default_options.update(user_options)
+        def config_chart(options, config, samples, vars, values, object_id, x, z):
+            config['graphType'] = 'Dotplot'
+            if default_options.get('connect'):
+                config['dotplotType'] = "stacked"
+                config['connectBy'] = "Connect"
+                z['Connect'] = [1] * len(vars)
+        default_options['config_chart'] = config_chart
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
+
+    def heatmap(self, **user_options):
+        def config_chart(options, config, samples, vars, values, object_id, x, z):
+            config['graphType'] = 'Heatmap' 
+        default_options = { 'row_names' : True, 'config_chart' : config_chart }
+        default_options.update(user_options)
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
+
+    def boxplot(self, **user_options):
+        default_options = { 'row_names' : True, 'header' : True }
+        default_options.update(user_options)
+        def config_chart(options, config, samples, vars, values, object_id, x, z):
+            config['graphType'] = 'Boxplot'
+            if default_options.get('group') == None:
+                options['mod_data_structure'] = 'boxplot'
+            else:
+                if type(default_options.get('group')) is str:
+                    self.reshape(samples, vars, x, values)
+                    group = default_options.get('group')
+                    series = 'factor'
+                else:
+                    series, group = default_options['group']
+                if config.get("groupingFactors") == None: # if config is defined, we assume that the user set this property to the value that he/she desires
+                    if group == None:
+                        config["groupingFactors"] = [series]
+                    else:
+                        config["groupingFactors"] = [series, group]
+                if config.get("colorBy") == None: config["colorBy"] = series 
+                if group != None and config.get("segregateSamplesBy") == None: config["segregateSamplesBy"] = [group] 
+            if options.get('extracode') == None and default_options.get('group') == None:
+                options['extracode'] = f"C{object_id}.groupSamples([\"Factor\"]);"
+        default_options['config_chart'] = config_chart
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
+
+    def circular(self, **user_options):
+        default_options = { 'ring_assignation': [], 'ringsType': [], 'ringsWeight': [] }
+        default_options.update(user_options)
+        def config_chart(options, config, samples, vars, values, object_id, x, z):
+            options['mod_data_structure'] = 'circular'
+            config['graphType'] = 'Circular'
+            config['segregateVariablesBy'] = ['Ring']
+            if len(default_options['ringsType']) == 0:
+                config['ringGraphType'] = ['heatmap'] * len(vars)
+            else:
+                config['ringGraphType'] = default_options['ringsType']
+            if len(default_options['ringsWeight']) == 0:
+                size = math.trunc(100/len(vars))
+                config['ringGraphWeight'] = [size] * len(vars)
+            else:
+                config['ringGraphWeight'] = default_options['ringsWeight']
+            if len(default_options['ring_assignation']) == 0:
+                options['ring_assignation'] = [ str(i+1) for i in range(len(vars)) ]
+            else:
+                options['ring_assignation'] = [ str(i) for i in default_options['ring_assignation'] ]
+            links_id = default_options.get('links')
+            if links_id != None:
+                link_data = self.hash_vars.get(links_id)
+                if link_data != None and len(link_data) > 0:
+                    link_data, _, _ = self.get_data({'id' : links_id, 'fields' : [], 'add_header_row_names' : False, 'text' : True, 'transpose': False}) 
+                    self.assign_rgb(link_data)
+                    config['connections'] = link_data
+        default_options['config_chart'] = config_chart
+        html_string = self.canvasXpress_main(default_options) 
+        return html_string
+
+    ##################################################################################
+    # EMBED FILES
+    ###################################################################################
+
+    def embed_img(self, img_file, img_attribs = None):
+        with open(img_file, 'rb') as f:
+                img_base64 = base64.b64encode(f.read()).decode('UTF-8')
+        format = os.path.basename(img_file).split('.')[-1]
+        img_string = f"<img {img_attribs} src=\"data:image/{format};base64,{img_base64}\">"
+        return img_string
+
+    def embed_pdf(self, pdf_file, pdf_attribs = None):
+        with open(img_file, 'rb') as f:
+                pdf_base64 = base64.b64encode(f.read()).decode('UTF-8')
+        pdf_string = f"<embed {pdf_attribs} src=\"data:application/pdf;base64,{pdf_base64}\" type=\"application/pdf\"></embed>"
+        return pdf_string
