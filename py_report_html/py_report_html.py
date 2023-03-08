@@ -5,12 +5,14 @@ import numpy as np
 import math
 import base64
 import zlib
+from collections import defaultdict
 from mako.template import Template
-
-JS_FOLDER = os.path.join(os.path.dirname(__file__), '..', 'js')
-TEMPLATES = os.path.join(os.path.dirname(__file__), 'templates')
+import networkx as nx
 
 class Py_report_html:
+    
+    JS_FOLDER = os.path.join(os.path.dirname(__file__), '..', 'js')
+    TEMPLATES = os.path.join(os.path.dirname(__file__), 'templates')
 
     def __init__(self, hash_vars, title = "report", data_from_files = False, compress = True):
         self.all_report = ""
@@ -22,6 +24,7 @@ class Py_report_html:
         self.dt_tables = [] #Tables to be styled with the DataTables js lib"
         self.bs_tables = [] #Tables to be styled with the bootstrap js lib"
         self.compress = compress
+        self.networks = []
 
     ###################################################################################
     # RENDER TEMPLATE METHODS
@@ -38,14 +41,14 @@ class Py_report_html:
     def load_js_libraries(self, js_libraries):
         loaded_libraries = []
         for js_lib in js_libraries:
-            with open(os.path.join(JS_FOLDER, js_lib), 'rb') as f:
+            with open(os.path.join(Py_report_html.JS_FOLDER, js_lib), 'rb') as f:
                 loaded_libraries.append(base64.b64encode(f.read()).decode('UTF-8'))
         return loaded_libraries
 
     def load_css(self, css_files):
         loaded_css = []
         for css_lib in css_files:
-            with open(os.path.join(JS_FOLDER, css_lib), 'r') as f:
+            with open(os.path.join(Py_report_html.JS_FOLDER, css_lib), 'r') as f:
                 loaded_css.append(f.read())
         return loaded_css
 
@@ -76,6 +79,8 @@ class Py_report_html:
         js_libraries = []
         css_files = []
         if self.compress: js_libraries.append('pako.min.js')
+        if 'cytoscape' in self.networks: js_libraries.append('cytoscape.min.js')
+        if 'el_grapho' in self.networks: js_libraries.append('ElGrapho.min.js')
 
         if len(self.plots_data) > 0:
             js_libraries.append('canvasXpress.min.js')
@@ -268,7 +273,7 @@ class Py_report_html:
         if options.get('styled') == 'dt': self.dt_tables.append(table_id) 
         if options.get('styled') == 'bs': self.bs_tables.append(table_id) 
         self.count_objects += 1
-        templ = Template(filename=os.path.join(TEMPLATES, 'table.txt'))
+        templ = Template(filename=os.path.join(Py_report_html.TEMPLATES, 'table.txt'))
         return templ.render(plotter=self, options=options, array_data=array_data, table_id= table_id, table_attr=table_attr, rowspan = rowspan, colspan=colspan)
 
     def prepare_table_attribs(self, attribs):
@@ -318,6 +323,26 @@ class Py_report_html:
 
     # Support methods
     #-------------------------------------------------------------------------------------
+    def get_data_for_plot(self, options):
+        values = None
+        smp_attr = None
+        var_attr = None
+        samples = None
+        variables = None
+
+        data_array, smp_attr, var_attr = self.get_data(options)
+        if len(data_array) > 0:  
+            if options.get('func') != None: options['func'](data_array)
+            if data_array == None: raise Exception(f"ID {options['id']} has not data") 
+            samples = data_array.pop(0)
+            samples.pop(0) # We obtain sample names with first pop, the second remove vars title
+            if len(data_array) > 0:
+                variables = [ row.pop(0) for row in data_array ]
+                values = data_array
+
+        return values, smp_attr, var_attr, samples, variables
+
+
     def canvasXpress_main(self, user_options):
         # Handle arguments
         #------------------------------------------
@@ -355,30 +380,22 @@ class Py_report_html:
         config.update(options['config'])
         # Data manipulation
         #------------------------------------------
-        no_data_string = f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO DATA<p></div>"
-        data_array, smp_attr, var_attr = self.get_data(options)
 
-        if len(data_array) == 0: return no_data_string 
-        if options.get('func') != None: options['func'](data_array)
-        if data_array == None: raise Exception(f"ID {options['id']} has not data") 
-        samples = data_array.pop(0)
-        samples.pop(0) # We obtain sample names with first pop, the second remove vars title
-        if len(data_array) == 0: return no_data_string 
-        vars = [ row.pop(0) for row in data_array ]
-        values = data_array
+        values, smp_attr, var_attr, samples, variables = self.get_data_for_plot(options)
+        if values == None: return f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO DATA<p></div>"
         object_id = f"obj_{self.count_objects}_"
 
         x = {}
         z = {}
         if var_attr != None and len(var_attr) > 0: self.add_canvas_attr(x, var_attr) 
         if smp_attr != None and len(smp_attr) > 0: self.add_canvas_attr(z, smp_attr) 
-        options['config_chart'](options, config, samples, vars, values, object_id, x, z) # apply custom chart method to configure plot
+        options['config_chart'](options, config, samples, variables, values, object_id, x, z) # apply custom chart method to configure plot
         # Build JSON objects and Javascript code
         #-----------------------------------------------
         self.count_objects += 1
         data_structure = {
             'y' : {
-                'vars' : vars,
+                'vars' : variables,
                 'smps' : samples,
                 'data' : values
             },
@@ -435,21 +452,21 @@ class Py_report_html:
                 string += f"{obj_id}.segregateSamples([{names_string}]);\n"
         return string
 
-    def reshape(self, samples, vars, x, values):
+    def reshape(self, samples, variables, x, values):
         item_names = samples.copy()
-        for n in range(len(vars) -1 ):
+        for n in range(len(variables) -1 ):
             samples.extend([ f"{i}_{n}" for i in item_names ])
         for factor, annotations in x.items():
             current_annotations = annotations.copy()
-            for i in range(len(vars) -1): 
+            for i in range(len(variables) -1): 
                 annotations.extend(current_annotations)
         series_annot = []
-        for var in vars:
+        for var in variables:
             for i in item_names:
                 series_annot.append(var)
         x['factor'] = series_annot
-        vars.clear()
-        vars.append('vals')
+        variables.clear()
+        variables.append('vals')
         vals = [item for sublist in values for item in sublist]
         values.clear()
         values.append(vals)
@@ -476,7 +493,7 @@ class Py_report_html:
     # Chart methods
     #-------------------------------------------------------------------------------------
     def barplot(self, **user_options):
-        def config_chart(options, config, samples, vars, values, object_id, x, z):
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
             config['graphType'] = 'Bar'
         default_options = { 'row_names': True, 'config_chart' : config_chart }
         default_options.update(user_options)
@@ -484,7 +501,7 @@ class Py_report_html:
         return html_string
 
     def line(self, **user_options):
-        def config_chart(options, config, samples, vars, values, object_id, x, z):
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
             config['graphType'] = 'Line'
         default_options = { 'row_names': True, 'config_chart' : config_chart }
         default_options.update(user_options)
@@ -492,7 +509,7 @@ class Py_report_html:
         return html_string
 
     def stacked(self, **user_options):
-        def config_chart(options, config, samples, vars, values, object_id, x, z):
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
             config['graphType'] = 'Stacked'
         default_options = { 'row_names': True, 'config_chart' : config_chart }
         default_options.update(user_options)
@@ -502,7 +519,7 @@ class Py_report_html:
     def corplot(self, **user_options):
         default_options = { 'transpose': False, 'correlationAxis': 'samples' }
         default_options.update(user_options)
-        def config_chart(options, config, samples, vars, values, object_id, x, z):
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
             config['graphType'] = 'Correlation'
             config['correlationAxis'] = default_options['correlationAxis']
         default_options['config_chart'] = config_chart
@@ -510,7 +527,7 @@ class Py_report_html:
         return html_string
 
     def pie(self, **user_options): 
-        def config_chart(options, config, samples, vars, values, object_id, x, z):
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
             config['graphType'] = 'Pie'
             if len(samples) > 1:
                 config['showPieGrid'] = True
@@ -525,7 +542,7 @@ class Py_report_html:
     def scatter2D(self, **user_options):
         default_options = { 'row_names': False, 'transpose': False}
         default_options.update(user_options)
-        def config_chart(options, config, samples, vars, values, object_id, x, z):
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
             config['graphType'] = 'Scatter2D'
             if config.get('xAxis') == None: config['xAxis'] = [samples[0]]    
             if config.get('yAxis') == None: config['yAxis'] = [samples[n] for n in range(1, len(samples))] 
@@ -542,7 +559,7 @@ class Py_report_html:
     def scatterbubble2D(self, **user_options):
         default_options = { 'row_names': True, 'transpose': False}
         default_options.update(user_options)
-        def config_chart(options, config, samples, vars, values, object_id, x, z):
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
             config['graphType'] = 'ScatterBubble2D'
             if options.get('xAxis') == None: 
                 config['xAxis'] = [samples[0]]
@@ -575,18 +592,18 @@ class Py_report_html:
     def dotplot(self, **user_options):
         default_options = { 'row_names': True, 'connect': False}
         default_options.update(user_options)
-        def config_chart(options, config, samples, vars, values, object_id, x, z):
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
             config['graphType'] = 'Dotplot'
             if default_options.get('connect'):
                 config['dotplotType'] = "stacked"
                 config['connectBy'] = "Connect"
-                z['Connect'] = [1] * len(vars)
+                z['Connect'] = [1] * len(variables)
         default_options['config_chart'] = config_chart
         html_string = self.canvasXpress_main(default_options)
         return html_string
 
     def heatmap(self, **user_options):
-        def config_chart(options, config, samples, vars, values, object_id, x, z):
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
             config['graphType'] = 'Heatmap' 
         default_options = { 'row_names' : True, 'config_chart' : config_chart }
         default_options.update(user_options)
@@ -596,13 +613,13 @@ class Py_report_html:
     def boxplot(self, **user_options):
         default_options = { 'row_names' : True, 'header' : True }
         default_options.update(user_options)
-        def config_chart(options, config, samples, vars, values, object_id, x, z):
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
             config['graphType'] = 'Boxplot'
             if default_options.get('group') == None:
                 options['mod_data_structure'] = 'boxplot'
             else:
                 if type(default_options.get('group')) is str:
-                    self.reshape(samples, vars, x, values)
+                    self.reshape(samples, variables, x, values)
                     group = default_options.get('group')
                     series = 'factor'
                 else:
@@ -623,21 +640,21 @@ class Py_report_html:
     def circular(self, **user_options):
         default_options = { 'ring_assignation': [], 'ringsType': [], 'ringsWeight': [] }
         default_options.update(user_options)
-        def config_chart(options, config, samples, vars, values, object_id, x, z):
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
             options['mod_data_structure'] = 'circular'
             config['graphType'] = 'Circular'
             config['segregateVariablesBy'] = ['Ring']
             if len(default_options['ringsType']) == 0:
-                config['ringGraphType'] = ['heatmap'] * len(vars)
+                config['ringGraphType'] = ['heatmap'] * len(variables)
             else:
                 config['ringGraphType'] = default_options['ringsType']
             if len(default_options['ringsWeight']) == 0:
-                size = math.trunc(100/len(vars))
-                config['ringGraphWeight'] = [size] * len(vars)
+                size = math.trunc(100/len(variables))
+                config['ringGraphWeight'] = [size] * len(variables)
             else:
                 config['ringGraphWeight'] = default_options['ringsWeight']
             if len(default_options['ring_assignation']) == 0:
-                options['ring_assignation'] = [ str(i+1) for i in range(len(vars)) ]
+                options['ring_assignation'] = [ str(i+1) for i in range(len(variables)) ]
             else:
                 options['ring_assignation'] = [ str(i) for i in default_options['ring_assignation'] ]
             links_id = default_options.get('links')
@@ -650,6 +667,77 @@ class Py_report_html:
         default_options['config_chart'] = config_chart
         html_string = self.canvasXpress_main(default_options) 
         return html_string
+
+    #-------------------------------------------------------------------------------------
+    # CANVASXPRESS METHODS
+    #-------------------------------------------------------------------------------------
+    def network(self, **user_options):
+        options = {
+            'id': None,
+            'func': None,
+            'fields': [],
+            'height': '600px',
+            'width': '600px',
+            'header': False,
+            'row_names': False,
+            'text' : True,
+            'add_header_row_names' : True,
+            'transpose': False
+        }
+        options.update(user_options)
+        values, _, _, _, _ = self.get_data_for_plot(options)
+        if values == None: return f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO DATA<p></div>"
+        graph = nx.Graph()
+        graph.add_edges_from([tuple(pair) for pair in values])
+        for n in graph.nodes: graph.nodes[n]['layer'] = 'single'
+        layers = ['single']
+        reference_nodes = []
+        group_nodes = []
+
+        if options['method'] == 'cytoscape':
+            self.networks.append('cytoscape')
+            temp_file = 'cytoscape.txt'
+            model = {'nodes': [], 'edges': []}
+            for n in graph.nodes: model['nodes'].append({'data': {'id' : n}})
+            for e in graph.edges: model['edges'].append({'data': {'source': e[0], 'target': e[1]}})
+        elif options['method'] == 'el_grapho':
+            self.networks.append('el_grapho')
+            temp_file = 'el_grapho.txt'
+            groups_index = defaultdict(lambda: 0)
+            if len(reference_nodes) == 0: # If there are ref nodes, reserve group index 1 for them
+                add = 1  
+            else: 
+                add = 2 
+            if options.get('group') == 'layer':
+                for nodeID, attr in graph.nodes(data=True):
+                    groups_index[nodeID] = layers.index(attr['layer']) + add
+            else:
+                for i, gr in enumerate(group_nodes.values()):
+                    for gr_node in gr: groups_index[gr_node] = i + add
+
+            model = {'nodes': [], 'edges': []} 
+            if options.get('layout') == 'forcedir':
+                if options.get('steps') == None:
+                    model['steps'] = 30
+                else:
+                    model['steps'] = options['steps']
+            nodesIndex = {}
+            for i, nodeID in enumerate(graph.nodes):
+                nodesIndex[nodeID] = i
+                if nodeID in reference_nodes:
+                    group = 1
+                else:
+                    group = groups_index[nodeID]
+                model['nodes'].append({'group': group})
+            for e in graph.edges: model['edges'].append({'from': nodesIndex[e[0]], 'to': nodesIndex[e[1]]})
+
+        templ = Template(filename=os.path.join(Py_report_html.TEMPLATES, temp_file)) 
+        network = base64.b64encode(zlib.compress(json.dumps(model).encode('UTF-8'))).decode('UTF-8')
+        string = templ.render(plotter=self, options=options, network=network, count_objects=self.count_objects)
+        self.count_objects += 1
+        return string
+
+
 
     ##################################################################################
     # EMBED FILES

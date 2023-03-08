@@ -1,0 +1,26 @@
+<div id="container_${count_objects}" style="width: ${options['width']}; height: ${options['height']}; margin: 10px; border:2px solid black; overflow: hidden">
+</div>
+
+<script>
+	let model_${count_objects} = ${plotter.decompress_code(network)};
+	cytoscape({
+	  container: document.getElementById('container_${count_objects}'),
+	  elements: model_${count_objects},
+	  layout: {
+	    name: 'cose',
+	    animate: false,
+	  },
+
+	  // so we can see the ids
+	  style: [
+	    {
+	      selector: 'node',
+		  style: { 
+		  	'label': 'data(id)',
+		  	'background-color': '#666'
+		  }
+	    }
+	  ]
+	});		
+
+</script>

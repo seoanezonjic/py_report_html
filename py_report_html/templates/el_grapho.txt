@@ -1,0 +1,31 @@
+<%!
+import re
+%>
+<div id="container_${count_objects}" style="width: ${options['width']}; height: ${options['height']}; margin: 10px; border:2px solid black; overflow: hidden">
+</div>
+<script>
+	let model_${count_objects} = ${plotter.decompress_code(network)};
+
+	graph = new ElGrapho({
+	  container: document.getElementById('container_${count_objects}'),
+	  % if options['layout'] == 'hairball':
+	     model: ElGrapho.layouts.Hairball(model_${count_objects}),
+	  % elif options['layout'] == 'forcedir':
+	     model: ElGrapho.layouts.ForceDirected(model_${count_objects}),
+	  % elif options['layout'] == 'chord':
+	  	 model: ElGrapho.layouts.Chord(model_${count_objects}),
+	  % elif options['layout'] == 'radial':
+	  	 model: ElGrapho.layouts.RadialTree(model_${count_objects}),			  	 
+	  % elif options['layout'] == 'cl':
+	  	 model: ElGrapho.layouts.Cluster(model_${count_objects}),
+	  % endif
+	  darkMode: true,
+	  debug: false,
+	  nodeOutline: false,
+	  glowBlend: 0.1,
+	  width: ${re.sub('px', '', options['width'])},
+	  height: ${re.sub('px', '', options['height'])},
+	  nodeSize: 0.2,
+	  edgeSize: 0.2
+	});
+</script>		
