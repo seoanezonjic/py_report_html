@@ -1,10 +1,10 @@
 import sys
 import os
 import json
-import base64
 import numpy as np
 import math
 import base64
+import zlib
 from mako.template import Template
 
 JS_FOLDER = os.path.join(os.path.dirname(__file__), '..', 'js')
@@ -12,7 +12,7 @@ TEMPLATES = os.path.join(os.path.dirname(__file__), 'templates')
 
 class Py_report_html:
 
-    def __init__(self, hash_vars, title = "report", data_from_files = False):
+    def __init__(self, hash_vars, title = "report", data_from_files = False, compress = True):
         self.all_report = ""
         self.title = title
         self.hash_vars = hash_vars
@@ -21,6 +21,7 @@ class Py_report_html:
         self.count_objects = 0
         self.dt_tables = [] #Tables to be styled with the DataTables js lib"
         self.bs_tables = [] #Tables to be styled with the bootstrap js lib"
+        self.compress = compress
 
     ###################################################################################
     # RENDER TEMPLATE METHODS
@@ -59,12 +60,9 @@ class Py_report_html:
             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\">\n\n"
         )
         # ADD JS LIBRARIES AND CSS
-        js_libraries = []
-        css_files = []
-        if len(self.plots_data) > 0:
-            js_libraries.append('canvasXpress.min.js')
-            css_files.append('canvasXpress.css')
+        # -----------------------------------------------
 
+        # CDN LOAD
         if len(self.dt_tables) > 0 or len(self.bs_tables) > 0: #Bootstrap for datatables or only for static tables. Use bootstrap version needed by datatables to avoid incompatibility issues
             self.all_report += '<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>'+"\n"
 
@@ -74,7 +72,15 @@ class Py_report_html:
             self.all_report += '<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>' + "\n"
             self.all_report += '<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap.min.js"></script>' + "\n"
 
-        # TODO add Pako library to handle compressed data
+        # FILE LOAD
+        js_libraries = []
+        css_files = []
+        if self.compress: js_libraries.append('pako.min.js')
+
+        if len(self.plots_data) > 0:
+            js_libraries.append('canvasXpress.min.js')
+            css_files.append('canvasXpress.css')
+
         loaded_js_libraries = self.load_js_libraries(js_libraries)
         loaded_css = self.load_css(css_files)
         for css in loaded_css:
@@ -96,6 +102,7 @@ class Py_report_html:
                 f"        % endfor\n"
                 f"    }}\n"
                 f"</script>\n")
+                #f"            ${{plot_data}}\n"
 
         #DT tables
         if len(self.dt_tables) > 0:
@@ -122,6 +129,21 @@ class Py_report_html:
 
     def write(self, file):
         with open(file, 'w') as f: f.write(self.get_report())
+
+    def compress_data(self, data):
+        json_data = json.dumps(data)
+        if self.compress:
+            compressed_data = base64.b64encode(zlib.compress(json_data.encode('UTF-8'))).decode('UTF-8')
+        else:
+            compressed_data = json_data
+        return compressed_data
+
+    def decompress_code(self, data):
+        if self.compress:
+            string = "JSON.parse(pako.inflate(atob(\"" + data + "\"), { to: 'string' }))"
+        else:
+            string =  data
+        return string
 
     ###################################################################################
     # REPORT SYNTAX METHODS
@@ -377,7 +399,7 @@ class Py_report_html:
         if len(options['segregate']) > 0: extracode += self.segregate_data(f"C{object_id}", options['segregate']) + "\n"
         if options.get('group_samples') != None: extracode += f"C{object_id}.groupSamples({options['group_samples']})\n"
         plot_data = (
-            f"var data = {json.dumps(data_structure)};"
+            f"var data = {self.decompress_code(self.compress_data(data_structure))};"
             f"var conf = {json.dumps(config)};"
             f"var events = {json.dumps(events)};"
             f"var info = {json.dumps(info)};"

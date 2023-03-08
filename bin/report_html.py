@@ -7,7 +7,7 @@ import re
 
 
 ROOT_PATH=os.path.dirname(__file__)
-sys.path.append(os.path.join(ROOT_PATH, '..'))
+sys.path.insert(0, os.path.join(ROOT_PATH, '..', 'py_report_html'))
 from py_report_html import Py_report_html
 
 #################################################################################################
@@ -42,7 +42,8 @@ parser.add_argument("-o", "--report", dest="output", default= 'Report',
 					help="Path to generated html file (without extension)")
 parser.add_argument("-d", "--data_files", dest="data_files", default= [], type=parse_paths,
 					help="Text files with data to use on graphs or tables within report")
-
+parser.add_argument("-u", "--uncompressed_data", dest="uncompressed_data", default=True, action='store_false',
+					help="Delete redundant items")
 options = parser.parse_args()
 
 ####################################################################################################
@@ -55,6 +56,6 @@ template = open(options.template).read()
 if len(options.data_files) == 0: sys.exit('Data files has not been specified')
 container = load_files(options.data_files)
 
-report = Py_report_html(container, os.path.basename(options.output), True)
+report = Py_report_html(container, os.path.basename(options.output), True, options.uncompressed_data)
 report.build(template)
 report.write(options.output + '.html')
