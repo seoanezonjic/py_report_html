@@ -8,10 +8,13 @@ import zlib
 from collections import defaultdict
 from mako.template import Template
 import networkx as nx
+import matplotlib
+import matplotlib.pyplot as plt
+import random
 
 class Py_report_html:
     
-    JS_FOLDER = os.path.join(os.path.dirname(__file__), '..', 'js')
+    JS_FOLDER = os.path.join(os.path.dirname(__file__), 'js')
     TEMPLATES = os.path.join(os.path.dirname(__file__), 'templates')
 
     def __init__(self, hash_vars, title = "report", data_from_files = False, compress = True):
@@ -30,9 +33,9 @@ class Py_report_html:
     # RENDER TEMPLATE METHODS
     ###################################################################################
 
-    def build(self, template):
+    def build(self, template, build_options = {}):
         templ = Template(template)
-        renderered_template = templ.render(plotter=self)
+        renderered_template = templ.render(plotter=self, build_options=build_options)
         self.all_report += "<HTML>\n"
         self.make_head()
         self.build_body(renderered_template)
@@ -74,6 +77,10 @@ class Py_report_html:
             self.all_report += '<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>' + "\n"
             self.all_report += '<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>' + "\n"
             self.all_report += '<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap.min.js"></script>' + "\n"
+
+        if 'sigma' in self.networks: # sigma CDN load is HUGE so we read it from file
+            with open(os.path.join(Py_report_html.TEMPLATES, 'sigma_cdn.txt'), 'r') as f:
+                self.all_report += f.read() + "\n"
 
         # FILE LOAD
         js_libraries = []
@@ -685,51 +692,35 @@ class Py_report_html:
             'transpose': False
         }
         options.update(user_options)
-        values, _, _, _, _ = self.get_data_for_plot(options)
-        if values == None: return f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO DATA<p></div>"
-        graph = nx.Graph()
-        graph.add_edges_from([tuple(pair) for pair in values])
-        for n in graph.nodes: graph.nodes[n]['layer'] = 'single'
-        layers = ['single']
-        reference_nodes = []
-        group_nodes = []
+        net_data = self.hash_vars[options['id']]
+        if type(net_data) is list:
+            values, _, _, _, _ = self.get_data_for_plot(options)
+            if values == None: return f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO DATA<p></div>"
+            graph = nx.Graph()
+            graph.add_edges_from([tuple(pair) for pair in values])
+            for n in graph.nodes: graph.nodes[n]['layer'] = 'single'
+            layers = ['single']
+            reference_nodes = []
+            group_nodes = {}
+        elif type(net_data) is dict:
+            graph = net_data['graph']
+            layers = net_data['layers']
+            reference_nodes = net_data['reference_nodes']
+            group_nodes = net_data['group_nodes']
+
 
         if options['method'] == 'cytoscape':
             self.networks.append('cytoscape')
             temp_file = 'cytoscape.txt'
-            model = {'nodes': [], 'edges': []}
-            for n in graph.nodes: model['nodes'].append({'data': {'id' : n}})
-            for e in graph.edges: model['edges'].append({'data': {'source': e[0], 'target': e[1]}})
+            model = self.cytoscape_network(options, graph, layers, reference_nodes, group_nodes)
         elif options['method'] == 'el_grapho':
             self.networks.append('el_grapho')
             temp_file = 'el_grapho.txt'
-            groups_index = defaultdict(lambda: 0)
-            if len(reference_nodes) == 0: # If there are ref nodes, reserve group index 1 for them
-                add = 1  
-            else: 
-                add = 2 
-            if options.get('group') == 'layer':
-                for nodeID, attr in graph.nodes(data=True):
-                    groups_index[nodeID] = layers.index(attr['layer']) + add
-            else:
-                for i, gr in enumerate(group_nodes.values()):
-                    for gr_node in gr: groups_index[gr_node] = i + add
-
-            model = {'nodes': [], 'edges': []} 
-            if options.get('layout') == 'forcedir':
-                if options.get('steps') == None:
-                    model['steps'] = 30
-                else:
-                    model['steps'] = options['steps']
-            nodesIndex = {}
-            for i, nodeID in enumerate(graph.nodes):
-                nodesIndex[nodeID] = i
-                if nodeID in reference_nodes:
-                    group = 1
-                else:
-                    group = groups_index[nodeID]
-                model['nodes'].append({'group': group})
-            for e in graph.edges: model['edges'].append({'from': nodesIndex[e[0]], 'to': nodesIndex[e[1]]})
+            model = self.elgrapho_network(options, graph, layers, reference_nodes, group_nodes)
+        elif options['method'] == 'sigma':
+            self.networks.append('sigma')
+            temp_file = 'sigma.txt'
+            model = self.sigma_network(options, graph, layers, reference_nodes, group_nodes)
 
         templ = Template(filename=os.path.join(Py_report_html.TEMPLATES, temp_file)) 
         network = base64.b64encode(zlib.compress(json.dumps(model).encode('UTF-8'))).decode('UTF-8')
@@ -737,8 +728,69 @@ class Py_report_html:
         self.count_objects += 1
         return string
 
+    def cytoscape_network(self, options, graph, layers, reference_nodes, group_nodes):
+        model = {'nodes': [], 'edges': []}
+        for n in graph.nodes: model['nodes'].append({'data': {'id' : n}})
+        for e in graph.edges: model['edges'].append({'data': {'source': e[0], 'target': e[1]}})
+        return model 
 
+    def elgrapho_network(self, options, graph, layers, reference_nodes, group_nodes):
+        groups_index = defaultdict(lambda: 0)
+        if len(reference_nodes) == 0: # If there are ref nodes, reserve group index 1 for them
+            add = 1  
+        else: 
+            add = 2 
+        if options.get('group') == 'layer':
+            for nodeID, attr in graph.nodes(data=True):
+                groups_index[nodeID] = layers.index(attr['layer']) + add
+        else:
+            for i, gr in enumerate(group_nodes.values()):
+                for gr_node in gr: groups_index[gr_node] = i + add
 
+        model = {'nodes': [], 'edges': []} 
+        if options.get('layout') == 'forcedir':
+            if options.get('steps') == None:
+                model['steps'] = 30
+            else:
+                model['steps'] = options['steps']
+        nodesIndex = {}
+        for i, nodeID in enumerate(graph.nodes):
+            nodesIndex[nodeID] = i
+            if nodeID in reference_nodes:
+                group = 1
+            else:
+                group = groups_index[nodeID]
+            model['nodes'].append({'group': group})
+        for e in graph.edges: model['edges'].append({'from': nodesIndex[e[0]], 'to': nodesIndex[e[1]]})
+        return model
+
+    def sigma_network(self, options, graph, layers, reference_nodes, group_nodes):
+        colors = plt.get_cmap("tab10")
+        model = {'nodes': [], 'edges': []} 
+        groups_index = defaultdict(lambda: matplotlib.colors.rgb2hex(colors(0)))
+        if len(reference_nodes) == 0: # If there are ref nodes, reserve group index 1 for them
+            add = 1  
+        else: 
+            add = 2 
+        if options.get('group') == 'layer':
+            for nodeID, attr in graph.nodes(data=True):
+                groups_index[nodeID] = layers.index(attr['layer']) + add
+        else:
+            for i, gr in enumerate(group_nodes.values()):
+                for gr_node in gr: groups_index[gr_node] = i + add
+
+        for nodeID in graph.nodes:
+            if nodeID in reference_nodes:
+                color = matplotlib.colors.rgb2hex(colors(0))
+            else:
+                color = groups_index[nodeID]
+            model['nodes'].append({'id': nodeID, 'color': color, 'x': random.randrange(1000),  'y': random.randrange(1000), 'size': 1})
+
+        for i, e in enumerate(graph.edges): 
+            model['edges'].append({'id': i, 'source': e[0], 'target': e[1], 'color': '#202020', 'size': 0.1})
+        
+        return model
+        
     ##################################################################################
     # EMBED FILES
     ###################################################################################

@@ -1,0 +1,2 @@
+include py_report_html/templates/*
+include py_report_html/js/*

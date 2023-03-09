@@ -36,9 +36,9 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Operating System :: OS Independent"
     ],
-    packages=["py_report_html"],
+    packages=find_packages(),
     include_package_data=True,
     scripts=['bin/report_html.py'],
-    install_requires=["mako", "numpy"]
+    install_requires=["mako", "numpy", "networkx", "matplotlib"]
 
 )
