@@ -1,0 +1,31 @@
+
+
+<div id="container_${count_objects}" style="width: ${options['width']}; height: ${options['height']}; margin: 10px; border:2px solid black; background-color:#E1E1E1">
+<script>
+	let model_${count_objects} = ${plotter.decompress_code(network)};
+
+	 // Initialise sigma:
+	var s = new sigma(
+	  {
+	    renderer: {
+	      container: document.getElementById('container_${count_objects}'),
+	      type: 'webgl'
+	    },
+	    settings: {
+	      minArrowSize: 10,
+		  maxNodeSize: 2,
+		  minEdgeSize: 0.1,
+		  maxEdgeSize: 0.15,
+		  autoRescale: ['nodePosition', 'nodeSize']
+	    }
+	  }
+	);
+
+	// load the graph
+	s.graph.read(model_${count_objects});
+	// draw the graph
+	s.refresh();
+	// launch force-atlas for 5sec
+	s.startForceAtlas2({worker: true, barnesHutOptimize: false});
+	window.setTimeout(function() {s.killForceAtlas2()}, 3000);
+</script>
