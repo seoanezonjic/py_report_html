@@ -181,7 +181,7 @@ class Py_report_html:
 
             self.add_header_row_names(data, options)
             if options['transpose']:
-                data = np.array(data).T.tolist()
+                data = list(map(list, zip(*data)))
                 smp_attr_bkp = smp_attr
                 smp_attr = var_attr
                 var_attr = smp_attr_bkp
@@ -194,6 +194,21 @@ class Py_report_html:
             if not options['row_names']:
                 for i, row in enumerate(data): row.insert(0, i) 
 
+    def merge_tables(self, options):
+        data = []
+        fields = options['fields']
+        ids = options['id']
+        ids = ids.split(',')
+        if type(fields) is str: fields = [ [int(n) for n in data_fields.split(',') ] for data_fields in fields.split(';') ] # String syntax
+        for n,id in enumerate(ids):
+            data_file = self.extract_fields(id, fields[n])
+            if len(data) == 0:
+                data.extend(data_file)
+            else:
+                for n, row in enumerate(data):
+                    data[n] = row + data_file[n]
+        return data
+
     def extract_data(self, options):
         data = []
         smp_attr = None
@@ -202,14 +217,7 @@ class Py_report_html:
         if type(ids) is str and ',' in ids: ids = ids.split(',')  # String syntax
         fields = options['fields']
         if type(ids) is list:
-            if type(fields) is str: fields = [ [int(n) for n in data_fields.split(',') ] for data_fields in fields.split(';') ] # String syntax
-            for n,id in enumerate(ids):
-                data_file = self.extract_fields(id, fields[n])
-                if len(data) == 0:
-                    data.extend(data_file)
-                else:
-                    for n, row in enumerate(data):
-                        data[n] = row + data_file[n]
+            data = self.merge_tables(options)
         else:
             if 'smp_attr' in options and len(options['smp_attr']) > 0: smp_attr = self.process_attributes(self.extract_fields(ids, options['smp_attr']), options['var_attr'], aggregated = True) 
             if 'var_attr' in options and len(options['var_attr']) > 0: var_attr = self.process_attributes(self.extract_rows(ids, options['var_attr']), options['smp_attr'], aggregated = False) 
