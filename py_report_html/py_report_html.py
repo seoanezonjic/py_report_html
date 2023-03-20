@@ -762,10 +762,7 @@ class Py_report_html:
         nodesIndex = {}
         for i, nodeID in enumerate(graph.nodes):
             nodesIndex[nodeID] = i
-            if nodeID in reference_nodes:
-                group = 1
-            else:
-                group = groups_index[nodeID]
+            group = 1 if nodeID in reference_nodes else groups_index[nodeID]
             model['nodes'].append({'group': group})
         for e in graph.edges: model['edges'].append({'from': nodesIndex[e[0]], 'to': nodesIndex[e[1]]})
         return model

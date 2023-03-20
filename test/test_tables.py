@@ -24,6 +24,7 @@ DATA_TEST_PATH = os.path.join(ROOT_PATH, 'data')
 #########################################################
 class ReportHtmlTables(unittest.TestCase):
     def setUp(self):
+        ### TABLE RELATED DATA FOR TESTING ###
         self.simple_table_id = "simple_table"
         self.complex_table_id = "complex_table"
         self.simple_table = list(map(lambda x: re.split(r"\s+", x),[
@@ -68,14 +69,20 @@ class ReportHtmlTables(unittest.TestCase):
             "styled": "bs", #Testing table boostrap style
             "cell_align": ["left"]*len(self.complex_table[0]), #Testing table cells style options
             "attrib": {"span": 2, "bgcolor": "red"}, #Table atributes
-            "add_header_row_names": False, "header": True, "row_names": True, "transpose": False
+            "add_header_row_names": False, "header": True, "row_names": True, "transpose": False,
+            "layout": "forcedir" #Testing graph layout
             }
         
+        ### GRAPH RELATED DATA FOR TESTING ###
         self.graph = nx.Graph()
         self.graph.add_edges_from([("A", "B"), ("B", "C"), ("C", "D"), ("D", "B"),
                                     ("A", "X"), ("X", "Y"), ("Y", "Z"), ("Z", "X"),
                                     ("A", "W")])
         for node in self.graph.nodes(): self.graph.nodes[node]["layer"] = "Phenotypes" if node in "WBY" else "Patients"
+
+        self.reference_nodes = ["A"] #Reference nodes will have color index 1
+        self.group_nodes = {"com1": ["B", "C", "D"], "com2": ["X", "Y", "Z"]} #Nodes in group_nodes will have color index 2,3,4,etc
+        self.layers = ["Phenotypes", "Patients"] # The following colors index will be given: Phenotypes == 2, Patients == 3 
                 
     #-------------------------------------------------------------------------------------
     # DATA MANIPULATION METHODS
@@ -279,8 +286,37 @@ class ReportHtmlTables(unittest.TestCase):
         self.assertEqual(expected_samples, samples)
         self.assertEqual(expected_variables, variables)
 
+    def test_initialize_extracode(self):
+        #without options defined
+        self.assertEqual("\n", self.html.initialize_extracode(self.options))
+        #with user-defined option
+        user_options = copy.deepcopy(self.options)
+        user_options["extracode"] = "adding extra code"
+        self.assertEqual("adding extra code\n", self.html.initialize_extracode(user_options))
 
+    def test_add_canvas_attr(self):
+        expected = {"nerv":  ["no", "yes", "no", "yes"], "pcr": ["true", "true", "false", "false"]}
+        returned = {}
+        self.html.add_canvas_attr(returned, self.expected_var) #Modifies returned in place
+        self.assertEqual(expected, returned)
 
+    def test_segregate_data(self):
+        variables_to_segregate = {"var": ["nerv", "pcr"], "smp": ["type", "type2"]} 
+        expected = "table1.segregateVariables(['nerv','pcr']);\n" + "table1.segregateSamples(['type','type2']);\n"
+        returned = self.html.segregate_data("table1", variables_to_segregate)
+        self.assertEqual(expected, returned)
+
+    def test_assign_rgb(self):
+        test_data = [["red", "A", "B"], ["yellow", "C", "D"], ["blue", "E", "F"]]
+        expected = [["rgb(255,0,0)", "A", "B"], ["rgb(255,255,0)", "C", "D"], ["rgb(0,0,255)", "E", "F"]]
+        self.html.assign_rgb(test_data) #Modifies test_data in place
+        self.assertEqual(expected, test_data)
+
+        #Testing if it raises an error when the color is not defined
+        self.assertRaises(Exception, self.html.assign_rgb, link_data=[["pink", "A", "B"],["yellow", "C", "D"]] )
+
+    def test_reshape(self):
+        pass
 
     #-------------------------------------------------------------------------------------
     # CANVASXPRESS GRAPHS METHODS
@@ -292,17 +328,11 @@ class ReportHtmlTables(unittest.TestCase):
         returned = self.html.cytoscape_network(self.options, self.graph, [], [], [])
         self.assertEqual(expected, returned)
     
-
     def test_sigma_network(self):
         color_func = plt.get_cmap("tab10")
-        reference_nodes = ["A"] #Reference nodes will have color index 1
-        group_nodes = {"com1": ["B", "C", "D"], "com2": ["X", "Y", "Z"]} #Nodes in group_nodes will have color index 2,3,4,etc
-        
-        layers = ["Phenotypes", "Patients"] # The following colors index will be given: Phenotypes == 2, Patients == 3 
         custom_options = self.options.copy()
         custom_options["group"] = "layer" #The layer of each node is defined in the setup graph.
         # Just to remind groups. Phen_layer = [W,B,Y], Pat_layer = [A,C,D,X,Z], but A is the reference node, so color_idx=1
-
         expected_model = {"nodes": [], "edges": []} #This model will use the group_nodes funcion
         expected_model2 = {"nodes": [], "edges": []} #This model will use the layers funcion
 
@@ -323,17 +353,27 @@ class ReportHtmlTables(unittest.TestCase):
             data = {"id": i, "source": e[0], "target": e[1], 'color': '#202020', 'size': 0.1}
             expected_model["edges"].append(data)
             expected_model2["edges"].append(data)
-        
-        
+           
         ##### Testing graph plotting preparation with group_nodes option
         random.seed(1) #Reseting seed to get the same random numbers inside function call
-        returned_model = self.html.sigma_network(self.options, self.graph, [], reference_nodes, group_nodes)
+        returned_model = self.html.sigma_network(self.options, self.graph, [], self.reference_nodes, self.group_nodes)
         self.assertEqual(expected_model, returned_model)
         
         ##### Testing graph plotting preparation with layers option
-        random.seed(1) #Reseting seed to get the same random numbers inside function call
-        returned_model2 = self.html.sigma_network(custom_options, self.graph, layers, reference_nodes, {})
+        random.seed(1)
+        returned_model2 = self.html.sigma_network(custom_options, self.graph, self.layers, self.reference_nodes, {})
         self.assertEqual(expected_model2, returned_model2)
 
-    def test_elgrapho_network(self):
-        pass
+    def test_elgrapho_network(self): 
+        expected = {"nodes": [], "edges": [], "steps": 30} #This model will use the group_nodes funcion
+        group_index = defaultdict(lambda: 0) 
+        group_index.update({"A": 1, "B": 2, "C": 2, "D": 2, "X": 3, "Y":3, "Z":3})
+        nodes_index = {'A':0, 'B':1, 'C':2, 'D':3, 'X':4, 'Y':5, 'Z':6, 'W':7} #It is basically converting nodes labels to an index format
+        
+        for node in self.graph.nodes(): expected["nodes"].append({"group": group_index[node]})
+        for e in self.graph.edges: expected["edges"].append({"from": nodes_index[e[0]], "to": nodes_index[e[1]]})
+
+        ##### Testing graph plotting preparation with group_nodes option (skipping layers options as it was already tested in the previous test)
+        returned = self.html.elgrapho_network(self.options, self.graph, [], self.reference_nodes, self.group_nodes)
+        self.assertEqual(expected, returned)
+        
