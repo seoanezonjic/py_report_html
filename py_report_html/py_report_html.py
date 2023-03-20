@@ -744,10 +744,8 @@ class Py_report_html:
 
     def elgrapho_network(self, options, graph, layers, reference_nodes, group_nodes):
         groups_index = defaultdict(lambda: 0)
-        if len(reference_nodes) == 0: # If there are ref nodes, reserve group index 1 for them
-            add = 1  
-        else: 
-            add = 2 
+        add = 1 if len(reference_nodes) == 0 else 2 # If there are ref nodes, reserve group index 1 for them
+        
         if options.get('group') == 'layer':
             for nodeID, attr in graph.nodes(data=True):
                 groups_index[nodeID] = layers.index(attr['layer']) + add
@@ -775,11 +773,10 @@ class Py_report_html:
     def sigma_network(self, options, graph, layers, reference_nodes, group_nodes):
         colors = plt.get_cmap("tab10")
         model = {'nodes': [], 'edges': []} 
-        groups_index = defaultdict(lambda: matplotlib.colors.rgb2hex(colors(0)))
-        if len(reference_nodes) == 0: # If there are ref nodes, reserve group index 1 for them
-            add = 1  
-        else: 
-            add = 2 
+        groups_index = defaultdict(lambda: 0)
+        
+        add = 1 if len(reference_nodes) == 0 else 2 # If there are ref nodes, reserve group index 1 for them
+        
         if options.get('group') == 'layer':
             for nodeID, attr in graph.nodes(data=True):
                 groups_index[nodeID] = layers.index(attr['layer']) + add
@@ -788,16 +785,13 @@ class Py_report_html:
                 for gr_node in gr: groups_index[gr_node] = i + add
 
         for nodeID in graph.nodes:
-            if nodeID in reference_nodes:
-                color = matplotlib.colors.rgb2hex(colors(0))
-            else:
-                color = groups_index[nodeID]
-            model['nodes'].append({'id': nodeID, 'color': color, 'x': random.randrange(1000),  'y': random.randrange(1000), 'size': 1})
+            color = 1 if nodeID in reference_nodes else groups_index[nodeID]
+            model['nodes'].append({'id': nodeID, 'color': matplotlib.colors.rgb2hex(colors(color)), 'x': random.randrange(1000),  'y': random.randrange(1000), 'size': 1})
 
         for i, e in enumerate(graph.edges): 
             model['edges'].append({'id': i, 'source': e[0], 'target': e[1], 'color': '#202020', 'size': 0.1})
         
-        return model
+        return model 
         
     ##################################################################################
     # EMBED FILES
@@ -811,7 +805,7 @@ class Py_report_html:
         return img_string
 
     def embed_pdf(self, pdf_file, pdf_attribs = None):
-        with open(img_file, 'rb') as f:
+        with open(pdf_file, 'rb') as f:
                 pdf_base64 = base64.b64encode(f.read()).decode('UTF-8')
         pdf_string = f"<embed {pdf_attribs} src=\"data:application/pdf;base64,{pdf_base64}\" type=\"application/pdf\"></embed>"
         return pdf_string

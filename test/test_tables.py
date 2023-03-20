@@ -5,10 +5,15 @@
 #########################################################
 
 #import json
+from collections import defaultdict
+import random
 import unittest
 import os
 import re
 import copy
+import networkx as nx
+import matplotlib
+import matplotlib.pyplot as plt
 from py_report_html import Py_report_html
 
 ROOT_PATH= os.path.dirname(__file__)
@@ -65,6 +70,12 @@ class ReportHtmlTables(unittest.TestCase):
             "attrib": {"span": 2, "bgcolor": "red"}, #Table atributes
             "add_header_row_names": False, "header": True, "row_names": True, "transpose": False
             }
+        
+        self.graph = nx.Graph()
+        self.graph.add_edges_from([("A", "B"), ("B", "C"), ("C", "D"), ("D", "B"),
+                                    ("A", "X"), ("X", "Y"), ("Y", "Z"), ("Z", "X"),
+                                    ("A", "W")])
+        for node in self.graph.nodes(): self.graph.nodes[node]["layer"] = "Phenotypes" if node in "WBY" else "Patients"
                 
     #-------------------------------------------------------------------------------------
     # DATA MANIPULATION METHODS
@@ -267,3 +278,62 @@ class ReportHtmlTables(unittest.TestCase):
         self.assertEqual(self.expected_var, var_attr)
         self.assertEqual(expected_samples, samples)
         self.assertEqual(expected_variables, variables)
+
+
+
+
+    #-------------------------------------------------------------------------------------
+    # CANVASXPRESS GRAPHS METHODS
+    #-------------------------------------------------------------------------------------
+
+    def test_cytoscape_network(self): 
+        expected = {'nodes': [{'data': {'id': 'A'}}, {'data': {'id': 'B'}}, {'data': {'id': 'C'}}, {'data': {'id': 'D'}}, {'data': {'id': 'X'}}, {'data': {'id': 'Y'}}, {'data': {'id': 'Z'}}, {'data': {'id': 'W'}}], 
+                    'edges': [{'data': {'source': 'A', 'target': 'B'}}, {'data': {'source': 'A', 'target': 'X'}}, {'data': {'source': 'A', 'target': 'W'}}, {'data': {'source': 'B', 'target': 'C'}}, {'data': {'source': 'B', 'target': 'D'}}, {'data': {'source': 'C', 'target': 'D'}}, {'data': {'source': 'X', 'target': 'Y'}}, {'data': {'source': 'X', 'target': 'Z'}}, {'data': {'source': 'Y', 'target': 'Z'}}]}
+        returned = self.html.cytoscape_network(self.options, self.graph, [], [], [])
+        self.assertEqual(expected, returned)
+    
+
+    def test_sigma_network(self):
+        color_func = plt.get_cmap("tab10")
+        reference_nodes = ["A"] #Reference nodes will have color index 1
+        group_nodes = {"com1": ["B", "C", "D"], "com2": ["X", "Y", "Z"]} #Nodes in group_nodes will have color index 2,3,4,etc
+        
+        layers = ["Phenotypes", "Patients"] # The following colors index will be given: Phenotypes == 2, Patients == 3 
+        custom_options = self.options.copy()
+        custom_options["group"] = "layer" #The layer of each node is defined in the setup graph.
+        # Just to remind groups. Phen_layer = [W,B,Y], Pat_layer = [A,C,D,X,Z], but A is the reference node, so color_idx=1
+
+        expected_model = {"nodes": [], "edges": []} #This model will use the group_nodes funcion
+        expected_model2 = {"nodes": [], "edges": []} #This model will use the layers funcion
+
+        colors_pos, colors_pos2 = defaultdict(lambda: 0), defaultdict(lambda: 0) #Nodes not in group_nodes/layers or reference nodes will have color index 0
+        colors_pos.update({"A": 1, "B": 2, "C": 2, "D": 2, "X": 3, "Y":3, "Z":3})
+        colors_pos2.update({"A": 1, "W": 2, "B": 2, "Y":2, "C": 3, "D": 3, "X": 3, "Z":3}) 
+
+        random.seed(1)
+        for node in self.graph.nodes():
+            x, y = random.randrange(1000), random.randrange(1000)
+            data, data2 = {"id": node, "color": None, 'x': x, 'y': y, 'size': 1}, {"id": node, "color": None, 'x': x, 'y': y, 'size': 1}
+            data["color"] = matplotlib.colors.rgb2hex(color_func(colors_pos[node]))
+            data2["color"] = matplotlib.colors.rgb2hex(color_func(colors_pos2[node]))
+            expected_model["nodes"].append(data)
+            expected_model2["nodes"].append(data2)
+
+        for i, e in enumerate(self.graph.edges): 
+            data = {"id": i, "source": e[0], "target": e[1], 'color': '#202020', 'size': 0.1}
+            expected_model["edges"].append(data)
+            expected_model2["edges"].append(data)
+        
+        
+        ##### Testing graph plotting preparation with group_nodes option
+        random.seed(1) #Reseting seed to get the same random numbers inside function call
+        returned_model = self.html.sigma_network(self.options, self.graph, [], reference_nodes, group_nodes)
+        self.assertEqual(expected_model, returned_model)
+        
+        ##### Testing graph plotting preparation with layers option
+        random.seed(1) #Reseting seed to get the same random numbers inside function call
+        returned_model2 = self.html.sigma_network(custom_options, self.graph, layers, reference_nodes, {})
+        self.assertEqual(expected_model2, returned_model2)
+
+    def test_elgrapho_network(self):
+        pass
