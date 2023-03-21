@@ -181,7 +181,7 @@ class Py_report_html:
 
             self.add_header_row_names(data, options)
             if options['transpose']:
-                data = list(map(list, zip(*data)))
+                data = list(map(list, zip(*data))) # Transposing data (rows become columns and viceversa)
                 smp_attr_bkp = smp_attr
                 smp_attr = var_attr
                 var_attr = smp_attr_bkp
@@ -194,6 +194,7 @@ class Py_report_html:
             if not options['row_names']:
                 for i, row in enumerate(data): row.insert(0, i) 
 
+    #TODO: we have to check about this functionallity
     def merge_tables(self, options):
         data = []
         fields = options['fields']
@@ -217,7 +218,7 @@ class Py_report_html:
         if type(ids) is str and ',' in ids: ids = ids.split(',')  # String syntax
         fields = options['fields']
         if type(ids) is list:
-            data = self.merge_tables(options)
+            data = self.merge_tables(options) #TODO: we have to check about this functionallity
         else:
             if 'smp_attr' in options and len(options['smp_attr']) > 0: smp_attr = self.process_attributes(self.extract_fields(ids, options['smp_attr']), options['var_attr'], aggregated = True) 
             if 'var_attr' in options and len(options['var_attr']) > 0: var_attr = self.process_attributes(self.extract_rows(ids, options['var_attr']), options['smp_attr'], aggregated = False) 
@@ -417,8 +418,8 @@ class Py_report_html:
             'x' : x,
             'z' : z
         }
-        events = False
-        info = False
+        events = False  #TODO: there is no option for this attribute to change before being embedded in the template
+        info = False   #TODO: there is no option for this attribute to change before being embedded in the template
         afterRender = options['after_render']
         if options.get('mod_data_structure') == 'boxplot':
             data_structure['y']['smps'] = None
@@ -426,7 +427,7 @@ class Py_report_html:
         elif options.get('mod_data_structure') == 'circular':
             data_structure.update({ 'z' : {'Ring' : options['ring_assignation']}})
 
-        if len(options['sample_attributes']) > 0: self.add_sample_attributes(data_structure, options) 
+        if len(options['sample_attributes']) > 0: self.add_sample_attributes(data_structure, options) #TODO: add_sample_attributes method is not defined 
         extracode = self.initialize_extracode(options)
         if len(options['segregate']) > 0: extracode += self.segregate_data(f"C{object_id}", options['segregate']) + "\n"
         if options.get('group_samples') != None: extracode += f"C{object_id}.groupSamples({options['group_samples']})\n"
@@ -468,16 +469,16 @@ class Py_report_html:
         return string
 
     def reshape(self, samples, variables, x, values):
-        item_names = samples.copy()
+        sample_names_copy = samples.copy()
         for n in range(len(variables) -1 ):
-            samples.extend([ f"{i}_{n}" for i in item_names ])
+            samples.extend([ f"{sample_name}_{n}" for sample_name in sample_names_copy ])
         for factor, annotations in x.items():
             current_annotations = annotations.copy()
-            for i in range(len(variables) -1): 
+            for times in range(len(variables) -1): 
                 annotations.extend(current_annotations)
         series_annot = []
         for var in variables:
-            for i in item_names:
+            for times in sample_names_copy:
                 series_annot.append(var)
         x['factor'] = series_annot
         variables.clear()

@@ -6,7 +6,9 @@
 
 #import json
 from collections import defaultdict
+import math
 import random
+import json
 import unittest
 import os
 import re
@@ -45,22 +47,37 @@ class ReportHtmlTables(unittest.TestCase):
             "gen3    mRNA    ncRNA   100     85      10      12",
             "gen4    mRNA    ncRNA   85      10      20      41"
         ]))
-        self.expected_var = [            
+        self.expected_var = [    #These are variable attributes, not the variables themselves        
             ["nerv", "no", "yes", "no", "yes"],
             ["pcr", "true", "true", "false", "false"]]
-        self.expected_smp = [
+        self.expected_smp = [    #These are sample attributes, not the samples themselves
             ["type" , "miRNA", "miRNA", "mRNA", "mRNA"],
             ["type2", "tRNA" , "tRNA" , "ncRNA", "ncRNA"]]
+        self.x_reshaped_vars = {"nerv":  ["no", "yes", "no", "yes"], "pcr": ["true", "true", "false", "false"]}
+        self.z_reshaped_samples = {"type": ["miRNA", "miRNA", "mRNA", "mRNA"], "type2": ["tRNA" , "tRNA" , "ncRNA", "ncRNA"]}
+        
         self.expected_data = [
             ["tissue", "liver", "brain", "lung", "cerebellum"],
             ["gen1",    20,      13,        60,     15],
             ["gen2",    40 ,     60,        90,     30],
             ["gen3",    100,     85,        10,     12],
             ["gen4",    85,     10,         20,     41]]
+        self.expected_samples = ["liver", "brain", "lung", "cerebellum"] #These are the actual samples
+        self.expected_variables = ["gen1", "gen2", "gen3", "gen4"] #These are the actual variables
+        self.expected_values = [
+            [20,      13,        60,     15],
+            [40 ,     60,        90,     30],
+            [100,     85,        10,     12],
+            [85,     10,         20,     41]]
+        self.expected_data_json = {"y": {"vars": self.expected_variables, 
+                                    "smps": self.expected_samples,
+                                    "data": self.expected_values},
+                                "x": self.x_reshaped_vars,
+                                "z": self.z_reshaped_samples,
+                              } 
 
         self.container = {"simple_table": self.simple_table, "complex_table": self.complex_table}
-        self.html = Py_report_html(self.container, title="Sample", 
-                                           data_from_files = True, compress= False)
+        self.html = Py_report_html(self.container, title="Sample", data_from_files = True, compress= False)
         
         self.options = {"id": self.complex_table_id,
             "fields": [], #Default fields value if user does not specify
@@ -70,8 +87,15 @@ class ReportHtmlTables(unittest.TestCase):
             "cell_align": ["left"]*len(self.complex_table[0]), #Testing table cells style options
             "attrib": {"span": 2, "bgcolor": "red"}, #Table atributes
             "add_header_row_names": False, "header": True, "row_names": True, "transpose": False,
-            "layout": "forcedir" #Testing graph layout
+            "layout": "forcedir", #Testing graph layout
+            "x_label": "x_axis", #Testing plots layout
+            'title': 'Title',
             }
+        self.config = {
+            'toolbarType' : 'under',
+            'xAxisTitle' : self.options['x_label'],
+            'title' : self.options['title']
+        }
         
         ### GRAPH RELATED DATA FOR TESTING ###
         self.graph = nx.Graph()
@@ -127,7 +151,7 @@ class ReportHtmlTables(unittest.TestCase):
         self.assertEqual(self.expected_smp, returned_fields_smp)
 
     def test_extract_data(self):
-        expected_data = [
+        expected_data_string = [
             ["tissue", "liver", "brain", "lung", "cerebellum"],
             ["gen1",    "20",   "13",   "60",       "15"],
             ["gen2",    "40" ,  "60",   "90",       "30"],
@@ -135,7 +159,7 @@ class ReportHtmlTables(unittest.TestCase):
             ["gen4",    "85" ,  "10",   "20",       "41"]]
 
         return_data, return_smp, return_var = self.html.extract_data(self.options)
-        self.assertEqual(expected_data, return_data)
+        self.assertEqual(expected_data_string, return_data)
         self.assertEqual(self.expected_smp, return_smp)
         self.assertEqual(self.expected_var, return_var)
 
@@ -272,19 +296,13 @@ class ReportHtmlTables(unittest.TestCase):
     #-------------------------------------------------------------------------------------
 
     def test_get_data_for_plot(self):
-        expected_samples = ["liver", "brain", "lung", "cerebellum"]
-        expected_variables = ["gen1", "gen2", "gen3", "gen4"]
-        expected_values = [[20,      13,        60,     15],
-                            [40 ,     60,        90,     30],
-                            [100,     85,        10,     12],
-                            [85,     10,         20,     41]]
         values, smp_attr, var_attr, samples, variables = self.html.get_data_for_plot(self.options)
 
-        self.assertEqual(expected_values, values)
+        self.assertEqual(self.expected_values, values)
         self.assertEqual(self.expected_smp, smp_attr)
         self.assertEqual(self.expected_var, var_attr)
-        self.assertEqual(expected_samples, samples)
-        self.assertEqual(expected_variables, variables)
+        self.assertEqual(self.expected_samples, samples)
+        self.assertEqual(self.expected_variables, variables)
 
     def test_initialize_extracode(self):
         #without options defined
@@ -295,10 +313,12 @@ class ReportHtmlTables(unittest.TestCase):
         self.assertEqual("adding extra code\n", self.html.initialize_extracode(user_options))
 
     def test_add_canvas_attr(self):
-        expected = {"nerv":  ["no", "yes", "no", "yes"], "pcr": ["true", "true", "false", "false"]}
-        returned = {}
-        self.html.add_canvas_attr(returned, self.expected_var) #Modifies returned in place
-        self.assertEqual(expected, returned)
+        returned_var = {}
+        returned_smp = {}
+        self.html.add_canvas_attr(returned_var, self.expected_var) #Modifies returned_var in place
+        self.html.add_canvas_attr(returned_smp, self.expected_smp) #Modifies returned_smp in place
+        self.assertEqual(self.x_reshaped_vars, returned_var)
+        self.assertEqual(self.z_reshaped_samples, returned_smp)
 
     def test_segregate_data(self):
         variables_to_segregate = {"var": ["nerv", "pcr"], "smp": ["type", "type2"]} 
@@ -316,7 +336,103 @@ class ReportHtmlTables(unittest.TestCase):
         self.assertRaises(Exception, self.html.assign_rgb, link_data=[["pink", "A", "B"],["yellow", "C", "D"]] )
 
     def test_reshape(self):
-        pass
+        returned_x = copy.deepcopy(self.x_reshaped_vars)
+        expected_x = {key: value*len(self.expected_variables) for key, value in self.x_reshaped_vars.items()}
+        expected_x["factor"] =  [item for pack in [[var] * len(self.expected_samples) for var in self.expected_variables] for item in pack]
+        expected_samples = self.expected_samples + [item for pack in #Unpacking results of nested list compreh...
+                                                    [[f"{sample}_{times}" for sample in self.expected_samples] for times in range(0,len(self.expected_variables)-1)] 
+                                                    for item in pack] #Unpacking
+        expected_variables = ['vals']
+        expected_values = [[20, 13, 60, 15, 40 , 60, 90, 30, 100, 85, 10, 12, 85, 10, 20, 41]]
+
+        returned_samples, returned_variables, returned_values = copy.deepcopy(self.expected_samples), copy.deepcopy(self.expected_variables), copy.deepcopy(self.expected_values)
+        self.html.reshape(returned_samples, returned_variables, returned_x, returned_values) #Modifies samples, variables, x and values in place
+                
+        self.assertEqual(expected_variables, returned_variables)
+        self.assertEqual(expected_x, returned_x)
+        self.assertEqual(expected_values, returned_values)
+        self.assertEqual(expected_samples, returned_samples)
+
+
+    def test_barplot(self):
+        custom_options = copy.deepcopy(self.options)
+        custom_options["title"] = "My_barplot"
+        custom_options["extracode"] = "adding extra code"
+
+        custom_config = copy.deepcopy(self.config)
+        custom_config.update({"title": "My_barplot", "graphType": "Bar"})
+        obj_id = "obj_0"
+        
+        self.html.barplot(**custom_options) #This add the plot data and config as a string to self.html.plots_data and self.html.plots_data
+        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
+        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
+        obj_0 = re.search(r"Cobj_0.+", self.html.plots_data[0], re.DOTALL).group(0)
+        
+        self.assertEqual(len(self.html.plots_data), 1) #Checking if there is only one plot data and config saved
+        self.assertEqual(self.expected_data_json, data)
+        self.assertEqual(custom_config, conf)
+        self.assertFalse(events)    #Checking if events is False
+        self.assertFalse(info)  #Checking if info is False
+        self.assertEqual(len(afterRender), 0)   #Checking if afterRender is empty
+        self.assertTrue(obj_id in obj_0 and "adding extra code" in obj_0) #Checking if the object id is in the string and if the extra code is there
+        
+    def test_line(self):
+        custom_config = copy.deepcopy(self.config)
+        custom_config["graphType"]= "Line"
+        self.html.line(**self.options)
+        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
+        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
+        
+        self.assertEqual([self.expected_data_json, custom_config, False, False, []],
+                         [data, conf, events, info, afterRender])
+
+    def test_stacked(self):
+        custom_config = copy.deepcopy(self.config)
+        custom_config["graphType"]= "Stacked"
+        self.html.stacked(**self.options)
+        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
+        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
+
+        self.assertEqual([self.expected_data_json, custom_config, False, False, []],
+                         [data, conf, events, info, afterRender])
+        
+    def test_corplot(self):
+        custom_config = copy.deepcopy(self.config)
+        custom_config.update({"graphType": "Correlation", "correlationAxis": "samples"})
+
+
+        self.html.corplot(**self.options)
+        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
+        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
+
+        self.assertEqual([self.expected_data_json, custom_config, False, False, []],
+                         [data, conf, events, info, afterRender])
+        
+    def test_pie(self):
+        custom_config = copy.deepcopy(self.config)
+        custom_config.update({"graphType": "Pie", "showPieGrid": True, "xAxis": self.expected_samples})
+        
+        self.html.pie(**self.options)
+        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
+        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
+
+        custom_config.update({"layout": f"{math.ceil(len(self.expected_samples)/2)}X2",
+                              "showPieSampleLabel": True})
+        self.assertEqual([self.expected_data_json, custom_config, False, False, []],
+                            [data, conf, events, info, afterRender])
+        
+    def test_scatter2D(self):
+        custom_config = copy.deepcopy(self.config)
+        custom_config.update({ 'row_names': False, 'transpose': False})
+        self.html.scatter2D(**self.options)
+        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
+        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
+
+        print(self.html.plots_data[0])
+
+
+
+
 
     #-------------------------------------------------------------------------------------
     # CANVASXPRESS GRAPHS METHODS
@@ -376,4 +492,3 @@ class ReportHtmlTables(unittest.TestCase):
         ##### Testing graph plotting preparation with group_nodes option (skipping layers options as it was already tested in the previous test)
         returned = self.html.elgrapho_network(self.options, self.graph, [], self.reference_nodes, self.group_nodes)
         self.assertEqual(expected, returned)
-        
