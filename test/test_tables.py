@@ -400,7 +400,6 @@ class ReportHtmlTables(unittest.TestCase):
         custom_config = copy.deepcopy(self.config)
         custom_config.update({"graphType": "Correlation", "correlationAxis": "samples"})
 
-
         self.html.corplot(**self.options)
         results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
         data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
@@ -420,17 +419,98 @@ class ReportHtmlTables(unittest.TestCase):
                               "showPieSampleLabel": True})
         self.assertEqual([self.expected_data_json, custom_config, False, False, []],
                             [data, conf, events, info, afterRender])
-        
-    def test_scatter2D(self):
+
+    def test_dotplot(self):
+        custom_options = copy.deepcopy(self.options)
+        custom_options["connect"] = True
+
         custom_config = copy.deepcopy(self.config)
-        custom_config.update({ 'row_names': False, 'transpose': False})
-        self.html.scatter2D(**self.options)
+        custom_config.update({"graphType": "Dotplot", "dotplotType": "stacked", "connectBy": "Connect"})
+
+        custom_data_json = self.expected_data_json
+        custom_data_json["z"]["Connect"] = [1] * len(self.expected_variables)
+
+        self.html.dotplot(**custom_options)
         results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
         data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
+        self.assertEqual([custom_data_json, custom_config, False, False, []],
+                        [data, conf, events, info, afterRender])
 
-        print(self.html.plots_data[0])
+    def test_heatmap(self):
+        custom_config = copy.deepcopy(self.config)
+        custom_config.update({"graphType": "Heatmap"})
+
+        self.html.heatmap(**self.options)
+        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
+        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
+        self.assertEqual([self.expected_data_json, custom_config, False, False, []],
+                        [data, conf, events, info, afterRender])
+
+    def test_boxplot(self):
+        custom_config = copy.deepcopy(self.config)
+        custom_config.update({"graphType": "Boxplot"})
+
+        ##### First test With default options, no groups defined
+
+        #Although no change is done in boxplot method, the data is being modified in 
+        #canvasXpress_main method, at line 424, with 'if options.get('mod_data_structure') == 'boxplot':'
+        custom_data_json = copy.deepcopy(self.expected_data_json)
+        custom_data_json["y"]["smps"] = None
+        custom_data_json.update({ 'x' : {'Factor' : self.expected_samples}})
+
+        self.html.boxplot(**self.options)
+        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
+        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
+        self.assertEqual([custom_data_json, custom_config, False, False, []],
+                        [data, conf, events, info, afterRender])
+        
+        ###### TODO: Pending to do the test with groups defined. Ask Pedro about the possible options for groups, groupingFactors and extracode 
+    
+
+    #TODO: Pending to fix this test
+    def test_circular(self):
+        custom_options = copy.deepcopy(self.options)
+        #TODO: Ask Pedro about how to customize these options
+        custom_options.update({ 'ring_assignation': [], 'ringsType': [], 'ringsWeight': [], "links": None})
+
+        custom_config = copy.deepcopy(self.config)
+        n_variables = len(self.expected_variables)
+        custom_config.update({"graphType": "Circular", "segregateVariablesBy": ["Ring"],
+                              "ringGraphType": ['heatmap'] * n_variables,
+                              "ringGraphWeight": [math.trunc(100/n_variables)] * n_variables,
+                              "ring_assignation": [ str(i+1) for i in range(n_variables) ]})
+
+        custom_data_json = copy.deepcopy(self.expected_data_json)
+        custom_data_json.update({ 'z' : {'Ring' : custom_options['ring_assignation']}})
+
+        self.html.circular(**custom_options)
+        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
+        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
+        self.assertEqual([self.expected_data_json, custom_config, False, False, []],
+                        [data, conf, events, info, afterRender])
 
 
+    #TODO: Ask pedro about the xAxis and yAxis configuration     
+    def test_scatter2D(self):
+        custom_options = copy.deepcopy(self.options)
+        custom_options.update({"regressionLine": True, "y_label": "custom_y_axis"})
+
+        custom_config = copy.deepcopy(self.config)
+        custom_config.update({ "graphType": "Scatter2D", 
+                              'xAxis': [self.expected_samples[0]], 
+                              'yAxis': self.expected_samples[1:], "yAxisTitle": "custom_y_axis"})
+        
+        self.html.scatter2D(**custom_options)
+        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
+        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
+        canvas_function_call = re.search(r"Cobj_0.+", self.html.plots_data[0], re.DOTALL).group(0)
+
+        self.assertEqual([self.expected_data_json, custom_config, False, False, []],
+                        [data, conf, events, info, afterRender])
+        self.assertTrue("addRegressionLine()" in canvas_function_call)
+
+    def test_scatterbubble2D(self):
+        pass
 
 
 
@@ -442,6 +522,19 @@ class ReportHtmlTables(unittest.TestCase):
         expected = {'nodes': [{'data': {'id': 'A'}}, {'data': {'id': 'B'}}, {'data': {'id': 'C'}}, {'data': {'id': 'D'}}, {'data': {'id': 'X'}}, {'data': {'id': 'Y'}}, {'data': {'id': 'Z'}}, {'data': {'id': 'W'}}], 
                     'edges': [{'data': {'source': 'A', 'target': 'B'}}, {'data': {'source': 'A', 'target': 'X'}}, {'data': {'source': 'A', 'target': 'W'}}, {'data': {'source': 'B', 'target': 'C'}}, {'data': {'source': 'B', 'target': 'D'}}, {'data': {'source': 'C', 'target': 'D'}}, {'data': {'source': 'X', 'target': 'Y'}}, {'data': {'source': 'X', 'target': 'Z'}}, {'data': {'source': 'Y', 'target': 'Z'}}]}
         returned = self.html.cytoscape_network(self.options, self.graph, [], [], [])
+        self.assertEqual(expected, returned)
+
+    def test_elgrapho_network(self): 
+        expected = {"nodes": [], "edges": [], "steps": 30} #This model will use the group_nodes funcion
+        group_index = defaultdict(lambda: 0) 
+        group_index.update({"A": 1, "B": 2, "C": 2, "D": 2, "X": 3, "Y":3, "Z":3})
+        nodes_index = {'A':0, 'B':1, 'C':2, 'D':3, 'X':4, 'Y':5, 'Z':6, 'W':7} #It is basically converting nodes labels to an index format
+        
+        for node in self.graph.nodes(): expected["nodes"].append({"group": group_index[node]})
+        for e in self.graph.edges: expected["edges"].append({"from": nodes_index[e[0]], "to": nodes_index[e[1]]})
+
+        ##### Testing graph plotting preparation with group_nodes option (skipping layers options as it was already tested in the previous test)
+        returned = self.html.elgrapho_network(self.options, self.graph, [], self.reference_nodes, self.group_nodes)
         self.assertEqual(expected, returned)
     
     def test_sigma_network(self):
@@ -479,16 +572,3 @@ class ReportHtmlTables(unittest.TestCase):
         random.seed(1)
         returned_model2 = self.html.sigma_network(custom_options, self.graph, self.layers, self.reference_nodes, {})
         self.assertEqual(expected_model2, returned_model2)
-
-    def test_elgrapho_network(self): 
-        expected = {"nodes": [], "edges": [], "steps": 30} #This model will use the group_nodes funcion
-        group_index = defaultdict(lambda: 0) 
-        group_index.update({"A": 1, "B": 2, "C": 2, "D": 2, "X": 3, "Y":3, "Z":3})
-        nodes_index = {'A':0, 'B':1, 'C':2, 'D':3, 'X':4, 'Y':5, 'Z':6, 'W':7} #It is basically converting nodes labels to an index format
-        
-        for node in self.graph.nodes(): expected["nodes"].append({"group": group_index[node]})
-        for e in self.graph.edges: expected["edges"].append({"from": nodes_index[e[0]], "to": nodes_index[e[1]]})
-
-        ##### Testing graph plotting preparation with group_nodes option (skipping layers options as it was already tested in the previous test)
-        returned = self.html.elgrapho_network(self.options, self.graph, [], self.reference_nodes, self.group_nodes)
-        self.assertEqual(expected, returned)
