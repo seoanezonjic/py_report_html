@@ -722,9 +722,9 @@ class Py_report_html:
             self.networks.append('cytoscape')
             temp_file = 'cytoscape.txt'
             model = self.cytoscape_network(options, graph, layers, reference_nodes, group_nodes)
-        elif options['method'] == 'el_grapho':
-            self.networks.append('el_grapho')
-            temp_file = 'el_grapho.txt'
+        elif options['method'] == 'elgrapho':
+            self.networks.append('elgrapho')
+            temp_file = 'elgrapho.txt'
             model = self.elgrapho_network(options, graph, layers, reference_nodes, group_nodes)
         elif options['method'] == 'sigma':
             self.networks.append('sigma')
