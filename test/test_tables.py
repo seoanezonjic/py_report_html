@@ -21,12 +21,20 @@ from py_report_html import Py_report_html
 ROOT_PATH= os.path.dirname(__file__)
 DATA_TEST_PATH = os.path.join(ROOT_PATH, 'data')
 
+### Defining auxiliary methods for testing purposes ###
+def get_plot_data(reportObject, ObjectMethod, **cust_options):
+    ObjectMethod(**cust_options) #This add the plot data and config as a string to self.html.plots_data and self.html.plots_data
+    results = re.findall(r"=.+?;", reportObject.plots_data[0])[:-1]
+    data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
+    canvas_call = re.search(r"Cobj_0.+", reportObject.plots_data[0], re.DOTALL).group(0)
+    return data, conf, events, info, afterRender, canvas_call
+
 #########################################################
 # Define TESTS
 #########################################################
-class ReportHtmlTables(unittest.TestCase):
+class ReportHtml(unittest.TestCase):
     def setUp(self):
-        ### TABLE RELATED DATA FOR TESTING ###
+        ### TABLE AND PLOT RELATED DATA FOR TESTING ###
         self.simple_table_id = "simple_table"
         self.complex_table_id = "complex_table"
         self.simple_table = list(map(lambda x: re.split(r"\s+", x),[
@@ -108,6 +116,7 @@ class ReportHtmlTables(unittest.TestCase):
         self.group_nodes = {"com1": ["B", "C", "D"], "com2": ["X", "Y", "Z"]} #Nodes in group_nodes will have color index 2,3,4,etc
         self.layers = ["Phenotypes", "Patients"] # The following colors index will be given: Phenotypes == 2, Patients == 3 
                 
+        
     #-------------------------------------------------------------------------------------
     # DATA MANIPULATION METHODS
     #-------------------------------------------------------------------------------------  
@@ -353,169 +362,153 @@ class ReportHtmlTables(unittest.TestCase):
         self.assertEqual(expected_values, returned_values)
         self.assertEqual(expected_samples, returned_samples)
 
+    ### TESTS FOR CANVASXPRESS PLOTS ###
 
     def test_barplot(self):
         custom_options = copy.deepcopy(self.options)
         custom_options["title"] = "My_barplot"
         custom_options["extracode"] = "adding extra code"
-
-        custom_config = copy.deepcopy(self.config)
-        custom_config.update({"title": "My_barplot", "graphType": "Bar"})
+        
+        expected_config = copy.deepcopy(self.config)
+        expected_config.update({"title": "My_barplot", "graphType": "Bar"})
         obj_id = "obj_0"
         
-        self.html.barplot(**custom_options) #This add the plot data and config as a string to self.html.plots_data and self.html.plots_data
-        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
-        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
-        obj_0 = re.search(r"Cobj_0.+", self.html.plots_data[0], re.DOTALL).group(0)
+        data, conf, events, info, afterRender, obj_0 = get_plot_data(self.html, self.html.barplot, **custom_options)
         
         self.assertEqual(len(self.html.plots_data), 1) #Checking if there is only one plot data and config saved
         self.assertEqual(self.expected_data_json, data)
-        self.assertEqual(custom_config, conf)
+        self.assertEqual(expected_config, conf)
         self.assertFalse(events)    #Checking if events is False
         self.assertFalse(info)  #Checking if info is False
         self.assertEqual(len(afterRender), 0)   #Checking if afterRender is empty
         self.assertTrue(obj_id in obj_0 and "adding extra code" in obj_0) #Checking if the object id is in the string and if the extra code is there
         
     def test_line(self):
-        custom_config = copy.deepcopy(self.config)
-        custom_config["graphType"]= "Line"
-        self.html.line(**self.options)
-        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
-        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
-        
-        self.assertEqual([self.expected_data_json, custom_config, False, False, []],
+        expected_config = copy.deepcopy(self.config)
+        expected_config["graphType"]= "Line"
+        data, conf, events, info, afterRender, obj_0 = get_plot_data(self.html, self.html.line, **self.options)
+        self.assertEqual([self.expected_data_json, expected_config, False, False, []],
                          [data, conf, events, info, afterRender])
 
     def test_stacked(self):
-        custom_config = copy.deepcopy(self.config)
-        custom_config["graphType"]= "Stacked"
-        self.html.stacked(**self.options)
-        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
-        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
-
-        self.assertEqual([self.expected_data_json, custom_config, False, False, []],
+        expected_config = copy.deepcopy(self.config)
+        expected_config["graphType"]= "Stacked"
+        data, conf, events, info, afterRender, obj_0 = get_plot_data(self.html, self.html.stacked, **self.options)
+        self.assertEqual([self.expected_data_json, expected_config, False, False, []],
                          [data, conf, events, info, afterRender])
         
     def test_corplot(self):
-        custom_config = copy.deepcopy(self.config)
-        custom_config.update({"graphType": "Correlation", "correlationAxis": "samples"})
-
-        self.html.corplot(**self.options)
-        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
-        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
-
-        self.assertEqual([self.expected_data_json, custom_config, False, False, []],
+        expected_config = copy.deepcopy(self.config)
+        expected_config.update({"graphType": "Correlation", "correlationAxis": "samples"})
+        data, conf, events, info, afterRender, obj_0 = get_plot_data(self.html, self.html.corplot, **self.options)
+        self.assertEqual([self.expected_data_json, expected_config, False, False, []],
                          [data, conf, events, info, afterRender])
         
     def test_pie(self):
-        custom_config = copy.deepcopy(self.config)
-        custom_config.update({"graphType": "Pie", "showPieGrid": True, "xAxis": self.expected_samples})
-        
-        self.html.pie(**self.options)
-        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
-        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
-
-        custom_config.update({"layout": f"{math.ceil(len(self.expected_samples)/2)}X2",
+        expected_config = copy.deepcopy(self.config)
+        expected_config.update({"graphType": "Pie", "showPieGrid": True, "xAxis": self.expected_samples})
+        data, conf, events, info, afterRender, obj_0 = get_plot_data(self.html, self.html.pie, **self.options)
+        expected_config.update({"layout": f"{math.ceil(len(self.expected_samples)/2)}X2",
                               "showPieSampleLabel": True})
-        self.assertEqual([self.expected_data_json, custom_config, False, False, []],
+        self.assertEqual([self.expected_data_json, expected_config, False, False, []],
                             [data, conf, events, info, afterRender])
 
     def test_dotplot(self):
         custom_options = copy.deepcopy(self.options)
         custom_options["connect"] = True
-
-        custom_config = copy.deepcopy(self.config)
-        custom_config.update({"graphType": "Dotplot", "dotplotType": "stacked", "connectBy": "Connect"})
-
+        expected_config = copy.deepcopy(self.config)
+        expected_config.update({"graphType": "Dotplot", "dotplotType": "stacked", "connectBy": "Connect"})
         custom_data_json = self.expected_data_json
         custom_data_json["z"]["Connect"] = [1] * len(self.expected_variables)
 
-        self.html.dotplot(**custom_options)
-        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
-        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
-        self.assertEqual([custom_data_json, custom_config, False, False, []],
+        data, conf, events, info, afterRender, obj_0 = get_plot_data(self.html, self.html.dotplot, **custom_options)
+        self.assertEqual([custom_data_json, expected_config, False, False, []],
                         [data, conf, events, info, afterRender])
 
     def test_heatmap(self):
-        custom_config = copy.deepcopy(self.config)
-        custom_config.update({"graphType": "Heatmap"})
-
-        self.html.heatmap(**self.options)
-        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
-        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
-        self.assertEqual([self.expected_data_json, custom_config, False, False, []],
+        expected_config = copy.deepcopy(self.config)
+        expected_config.update({"graphType": "Heatmap"})
+        data, conf, events, info, afterRender, obj_0 = get_plot_data(self.html, self.html.heatmap, **self.options)
+        self.assertEqual([self.expected_data_json, expected_config, False, False, []],
                         [data, conf, events, info, afterRender])
 
     def test_boxplot(self):
-        custom_config = copy.deepcopy(self.config)
-        custom_config.update({"graphType": "Boxplot"})
+        expected_config = copy.deepcopy(self.config)
+        expected_config.update({"graphType": "Boxplot"})
 
         ##### First test With default options, no groups defined
-
+        
         #Although no change is done in boxplot method, the data is being modified in 
         #canvasXpress_main method, at line 424, with 'if options.get('mod_data_structure') == 'boxplot':'
         custom_data_json = copy.deepcopy(self.expected_data_json)
         custom_data_json["y"]["smps"] = None
         custom_data_json.update({ 'x' : {'Factor' : self.expected_samples}})
 
-        self.html.boxplot(**self.options)
-        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
-        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
-        self.assertEqual([custom_data_json, custom_config, False, False, []],
-                        [data, conf, events, info, afterRender])
-        
+        data, conf, events, info, afterRender, obj_0 = get_plot_data(self.html, self.html.boxplot, **self.options)
+        self.assertEqual([custom_data_json, expected_config, False, False, []],
+                        [data, conf, events, info, afterRender])        
         ###### TODO: Pending to do the test with groups defined. Ask Pedro about the possible options for groups, groupingFactors and extracode 
     
 
-    #TODO: Pending to fix this test
+    #TODO: Fixed, but lacks the testing of links_id = default_options.get('links') and config['connections'] = link_data
     def test_circular(self):
         custom_options = copy.deepcopy(self.options)
         #TODO: Ask Pedro about how to customize these options
-        custom_options.update({ 'ring_assignation': [], 'ringsType': [], 'ringsWeight': [], "links": None})
+        custom_options.update({'ringsType': [], 'ringsWeight': [], 'ring_assignation': [], "links": None})
 
-        custom_config = copy.deepcopy(self.config)
+        expected_config = copy.deepcopy(self.config)
         n_variables = len(self.expected_variables)
-        custom_config.update({"graphType": "Circular", "segregateVariablesBy": ["Ring"],
+        expected_config.update({"graphType": "Circular", "segregateVariablesBy": ["Ring"],
                               "ringGraphType": ['heatmap'] * n_variables,
-                              "ringGraphWeight": [math.trunc(100/n_variables)] * n_variables,
-                              "ring_assignation": [ str(i+1) for i in range(n_variables) ]})
+                              "ringGraphWeight": [math.trunc(100/n_variables)] * n_variables})
 
+        data, conf, events, info, afterRender, obj_0 = get_plot_data(self.html, self.html.circular, **custom_options)
+
+        #We need to modify these variables after applying the function to get the expected default value we want to check
+        custom_options.update({"ring_assignation": [ str(i+1) for i in range(n_variables) ]})
         custom_data_json = copy.deepcopy(self.expected_data_json)
         custom_data_json.update({ 'z' : {'Ring' : custom_options['ring_assignation']}})
-
-        self.html.circular(**custom_options)
-        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
-        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
-        self.assertEqual([self.expected_data_json, custom_config, False, False, []],
+        
+        self.assertEqual([custom_data_json, expected_config, False, False, []],
                         [data, conf, events, info, afterRender])
-
 
     #TODO: Ask pedro about the xAxis and yAxis configuration     
     def test_scatter2D(self):
         custom_options = copy.deepcopy(self.options)
         custom_options.update({"regressionLine": True, "y_label": "custom_y_axis"})
 
-        custom_config = copy.deepcopy(self.config)
-        custom_config.update({ "graphType": "Scatter2D", 
+        expected_config = copy.deepcopy(self.config)
+        expected_config.update({ "graphType": "Scatter2D", 
                               'xAxis': [self.expected_samples[0]], 
                               'yAxis': self.expected_samples[1:], "yAxisTitle": "custom_y_axis"})
         
-        self.html.scatter2D(**custom_options)
-        results = re.findall(r"=.+?;", self.html.plots_data[0])[:-1]
-        data, conf, events, info, afterRender = [json.loads(result[1:-1]) for result in results]
-        canvas_function_call = re.search(r"Cobj_0.+", self.html.plots_data[0], re.DOTALL).group(0)
+        data, conf, events, info, afterRender, canvas_function_call = get_plot_data(self.html, self.html.scatter2D, **custom_options)
 
-        self.assertEqual([self.expected_data_json, custom_config, False, False, []],
+        self.assertEqual([self.expected_data_json, expected_config, False, False, []],
                         [data, conf, events, info, afterRender])
         self.assertTrue("addRegressionLine()" in canvas_function_call)
 
     def test_scatterbubble2D(self):
-        pass
+        custom_options = copy.deepcopy(self.options)
+        custom_options.update({"y_label": "custom_y_axis", "z_label": "custom_z_axis",
+                               "upper_limit": 10, "lower_limit": 0, "ranges": 2})
+        diff = (custom_options['upper_limit'] - custom_options['lower_limit']) / custom_options['ranges']
+
+        expected_config = copy.deepcopy(self.config)
+        expected_config.update({"graphType": "ScatterBubble2D",
+                              'xAxis': [self.expected_samples[0]], 
+                              'yAxis': [self.expected_samples[1]], "yAxisTitle": "custom_y_axis",
+                              'zAxis': [self.expected_samples[2]], "zAxisTitle": "custom_z_axis",
+                              'sizes': [ custom_options['lower_limit'] + n * diff for n in range(custom_options["ranges"])] })
+        
+        data, conf, events, info, afterRender, canvas_function_call = get_plot_data(self.html, self.html.scatterbubble2D, **custom_options)
+        self.assertEqual([self.expected_data_json, expected_config, False, False, []],
+                        [data, conf, events, info, afterRender])
 
 
 
     #-------------------------------------------------------------------------------------
-    # CANVASXPRESS GRAPHS METHODS
+    # CANVASXPRESS NETWORK PLOTTING METHODS
     #-------------------------------------------------------------------------------------
 
     def test_cytoscape_network(self): 
