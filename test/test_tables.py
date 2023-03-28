@@ -85,12 +85,14 @@ class ReportHtml(unittest.TestCase):
                               } 
 
         self.container = {"simple_table": self.simple_table, "complex_table": self.complex_table}
-        self.html = Py_report_html(self.container, title="Sample", data_from_files = True, compress= False)
+
+        self.html_title = "Sample"
+        self.html = Py_report_html(self.container, title=self.html_title, data_from_files = True, compress= False)
         
         self.options = {"id": self.complex_table_id,
             "fields": [], #Default fields value if user does not specify
-            "var_attr": [1,2],
-            "smp_attr": [1,2],
+            "var_attr": [1,2], #Variable attributes
+            "smp_attr": [1,2], #Sample attributes
             "styled": "bs", #Testing table boostrap style
             "cell_align": ["left"]*len(self.complex_table[0]), #Testing table cells style options
             "attrib": {"span": 2, "bgcolor": "red"}, #Table atributes
@@ -115,8 +117,61 @@ class ReportHtml(unittest.TestCase):
         self.reference_nodes = ["A"] #Reference nodes will have color index 1
         self.group_nodes = {"com1": ["B", "C", "D"], "com2": ["X", "Y", "Z"]} #Nodes in group_nodes will have color index 2,3,4,etc
         self.layers = ["Phenotypes", "Patients"] # The following colors index will be given: Phenotypes == 2, Patients == 3 
+
+
+        ### REGEX PATTERNS FOR TESTING ###
+        self.pattern_html = re.compile(r"<html>.*</html>", re.DOTALL | re.IGNORECASE)
+        self.pattern_head = re.compile(r"<title>"+self.html_title+r"</title>.*<head>.*<link.*bootstrap.min.css\"/>*.</head>", re.DOTALL)
+        self.pattern_body_and_table = re.compile(r"<body.*<table .*"+('table_' + str(self.html.count_objects)) + r".*</table>.*</body>", re.DOTALL)
+        self.pattern_ths = re.compile(r"<th.*?>.*?</th>.*"*5, re.DOTALL)
+        self.pattern_trs = re.compile(r"<tr.*?>.*?</tr>.*"*5, re.DOTALL)
                 
+    # -------------------------------------------------------------------------------------
+    # RENDER TEMPLATE METHODS
+    # -------------------------------------------------------------------------------------    
+
+    def test_make_head(self):
+        self.html.table(**self.options)
+        self.html.make_head()
         
+        self.assertRegex(self.html.all_report, self.pattern_head)
+
+    def test_build_body(self):
+        table = self.html.table(**self.options)
+        self.html.build_body(table)
+        self.assertRegex(self.html.all_report, self.pattern_body_and_table)
+        self.assertRegex(self.html.all_report, self.pattern_ths)
+        self.assertRegex(self.html.all_report, self.pattern_trs)
+
+    def test_build(self):
+        table = self.html.table(**self.options)
+        self.html.build(table)
+      
+        self.assertRegex(self.html.all_report, self.pattern_html)
+        self.assertRegex(self.html.all_report, self.pattern_head)
+        self.assertRegex(self.html.all_report, self.pattern_body_and_table)
+        self.assertRegex(self.html.all_report, self.pattern_ths)
+        self.assertRegex(self.html.all_report, self.pattern_trs)
+
+    def test_get_report(self):
+        table = self.html.table(**self.options)
+        self.html.build(table)
+        report = self.html.get_report()
+        self.assertEqual(self.html.all_report, report)
+
+    def test_write(self):
+        table = self.html.table(**self.options)
+        self.html.build(table)
+        self.html.write("./test/data/test.html")
+        file = open("./test/data/test.html", "r")
+        reread_html = "".join(file.readlines())
+        file.close()
+        
+        self.assertTrue(os.path.isfile("./test/data/test.html"))
+        self.assertEqual(self.html.all_report, reread_html)
+        
+        os.remove("./test/data/test.html")
+
     #-------------------------------------------------------------------------------------
     # DATA MANIPULATION METHODS
     #-------------------------------------------------------------------------------------  
@@ -277,10 +332,8 @@ class ReportHtml(unittest.TestCase):
         options["func"] = change_to_zero
         tabla_html = self.html.table(**options)
         
-        number_excepted_headers = 5
-        number_excepted_rows = 5
-        number_expected_td_tags = 20
-        number_excepted_zeros = 16
+        n_excepted_headers, n_excepted_rows = 5, 5
+        n_expected_td_tags, n_excepted_zeros = 20, 16
 
         returned_headers = re.findall(r"<th.*?>.*?</th>", tabla_html)
         returned_rows = re.findall(r"<tr.*?>.*?</tr>", tabla_html, flags=re.DOTALL)
@@ -291,13 +344,13 @@ class ReportHtml(unittest.TestCase):
         self.assertEqual(1, self.html.count_objects)
 
         #Checking if the number of headers, rows and items in the table is correct
-        self.assertEqual(number_excepted_headers, len(returned_headers))
-        self.assertEqual(number_excepted_rows, len(returned_rows))
-        self.assertEqual(number_expected_td_tags, len(returned_td_tags))
+        self.assertEqual(n_excepted_headers, len(returned_headers))
+        self.assertEqual(n_excepted_rows, len(returned_rows))
+        self.assertEqual(n_expected_td_tags, len(returned_td_tags))
 
         #Checkinf if custom function is being applied if defined in user_options dictionary
         returned_zeros = re.findall(r"<td.*?>\s*0\s*</td>", tabla_html, flags=re.DOTALL)
-        self.assertEqual(number_excepted_zeros, len(returned_zeros))
+        self.assertEqual(n_excepted_zeros, len(returned_zeros))
 
 
     #-------------------------------------------------------------------------------------
