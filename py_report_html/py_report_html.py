@@ -87,7 +87,7 @@ class Py_report_html:
         css_files = []
         if self.compress: js_libraries.append('pako.min.js')
         if 'cytoscape' in self.networks: js_libraries.append('cytoscape.min.js')
-        if 'el_grapho' in self.networks: js_libraries.append('ElGrapho.min.js')
+        if 'elgrapho' in self.networks: js_libraries.append('ElGrapho.min.js')
 
         if len(self.plots_data) > 0:
             js_libraries.append('canvasXpress.min.js')
@@ -172,7 +172,7 @@ class Py_report_html:
                 rows = len(data)
                 cols = len(data[0])
                 text = options.get('text')
-                if text == None or not text:
+                if text == None or not text: #TODO: ask Pedro about the text option
                     for r in range(rows):
                         for c in range(cols):
                             if r == 0 and options['header']: continue 
@@ -194,7 +194,7 @@ class Py_report_html:
             if not options['row_names']:
                 for i, row in enumerate(data): row.insert(0, i) 
 
-    #TODO: we have to check about this functionallity
+    #TODO: we have to check about this functionallity. Still needed to test
     def merge_tables(self, options):
         data = []
         fields = options['fields']
@@ -219,9 +219,9 @@ class Py_report_html:
         fields = options['fields']
         if type(ids) is list:
             data = self.merge_tables(options) #TODO: we have to check about this functionallity
-        else:
+        else:   
             if 'smp_attr' in options and len(options['smp_attr']) > 0: smp_attr = self.process_attributes(self.extract_fields(ids, options['smp_attr']), options['var_attr'], aggregated = True) 
-            if 'var_attr' in options and len(options['var_attr']) > 0: var_attr = self.process_attributes(self.extract_rows(ids, options['var_attr']), options['smp_attr'], aggregated = False) 
+            if 'var_attr' in options and len(options['var_attr']) > 0: var_attr = self.process_attributes(self.extract_rows(ids, options['var_attr']), options['smp_attr'], aggregated = False)
             data = self.extract_fields(ids, options.get('fields'), del_fields = options.get('smp_attr'), del_rows = options.get('var_attr'))
         return data, smp_attr, var_attr
 
@@ -359,6 +359,32 @@ class Py_report_html:
         return values, smp_attr, var_attr, samples, variables
 
 
+    def inject_attributes(self, data_structure, options, slot):
+        attributes = {}
+        attributes_options = {"x": "inject_smp_attr", "z": "inject_var_attr"}
+        chosed_option = options.get(attributes_options[slot])
+        if chosed_option != None:
+            for key, col in chosed_option.items():
+                attributes[key] = col 
+            data_structure[slot].update(attributes)
+
+
+    def tree_from_file(self, file):
+            string_tree = []
+            with open(file) as f:
+                string_tree = [line.strip() for line in f.readlines()]
+            return string_tree
+
+
+    def set_tree(self, options, config):
+        tree = self.tree_from_file(options["tree"])
+        if options["treeBy"] == 's':
+            config['smpDendrogramNewick'] = tree
+            config['samplesClustered'] = True
+        elif options["treeBy"] == 'v':
+            config['varDendrogramNewick'] = tree
+            config['variablesClustered'] = True
+
     def canvasXpress_main(self, user_options):
         # Handle arguments
         #------------------------------------------
@@ -370,6 +396,7 @@ class Py_report_html:
             'smp_attr': [],
             'var_attr': [],
             'segregate': [],
+            'show_factors': [],
             'data_format': 'one_axis',
             'responsive': True,
             'height': '600px',
@@ -380,7 +407,6 @@ class Py_report_html:
             'transpose': True,
             'x_label': 'x_axis',
             'title': 'Title',
-            'sample_attributes': {},
             'config': {},
             'after_render': [],
             'treeBy': 's'
@@ -418,19 +444,25 @@ class Py_report_html:
             'x' : x,
             'z' : z
         }
-        events = False  #TODO: there is no option for this attribute to change before being embedded in the template
-        info = False   #TODO: there is no option for this attribute to change before being embedded in the template
+        events = False  #Possible future use for events for CanvasXpress, currently not used
+        info = False   #Possible future use for info for CanvasXpress, currently not used
         afterRender = options['after_render']
         if options.get('mod_data_structure') == 'boxplot':
             data_structure['y']['smps'] = None
             data_structure.update({ 'x' : {'Factor' : samples}})
         elif options.get('mod_data_structure') == 'circular':
             data_structure.update({ 'z' : {'Ring' : options['ring_assignation']}})
+        elif options.get('mod_data_structure') == 'radar':
+            for factor in options['show_factors']:
+                if factor in data_structure['x'].keys() or factor == "-": config["smpOverlays"].append(factor)
 
-        if len(options['sample_attributes']) > 0: self.add_sample_attributes(data_structure, options) #TODO: add_sample_attributes method is not defined 
+        self.inject_attributes(data_structure, options, slot="x")
+        self.inject_attributes(data_structure, options, slot="z") 
+
         extracode = self.initialize_extracode(options)
         if len(options['segregate']) > 0: extracode += self.segregate_data(f"C{object_id}", options['segregate']) + "\n"
         if options.get('group_samples') != None: extracode += f"C{object_id}.groupSamples({options['group_samples']})\n"
+  
         plot_data = (
             f"var data = {self.decompress_code(self.compress_data(data_structure))};"
             f"var conf = {json.dumps(config)};"
@@ -480,7 +512,7 @@ class Py_report_html:
         for var in variables:
             for times in sample_names_copy:
                 series_annot.append(var)
-        x['factor'] = series_annot
+        x['Factor'] = series_annot
         variables.clear()
         variables.append('vals')
         vals = [item for sublist in values for item in sublist]
@@ -560,8 +592,15 @@ class Py_report_html:
         default_options.update(user_options)
         def config_chart(options, config, samples, variables, values, object_id, x, z):
             config['graphType'] = 'Scatter2D'
-            if config.get('xAxis') == None: config['xAxis'] = [samples[0]]    
-            if config.get('yAxis') == None: config['yAxis'] = [samples[n] for n in range(1, len(samples))] 
+            if options.get('xAxis') == None: 
+                config['xAxis'] = [samples[0]]
+            else:
+                config['xAxis'] = options['xAxis']       
+            if options.get('yAxis') == None: 
+                config['yAxis'] = [samples[n] for n in range(1, len(samples))]
+            else:
+                config['yAxis'] = options['yAxis']
+                
             if default_options.get('y_label') == None :
                 config['yAxisTitle'] = 'y_axis'
             else:
@@ -604,7 +643,36 @@ class Py_report_html:
         default_options['config_chart'] = config_chart
         html_string = self.canvasXpress_main(default_options)
         return html_string
+    
+    def hexplot(self, **user_options):        
+        default_options = { 'row_names': False, 'transpose': False, "bins": 30}
+        default_options.update(user_options)
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
+            config['graphType'] = 'Scatter2D'
+            config.update({"binplotShape": "hexagon", "binplotBins":f"{default_options['bins']}",
+                          "scatterType":"bin2d", "showScatterDensity":"true"})
+            config['xAxis'] = [samples[0]] if options.get('xAxis') == None else options['xAxis']
+            config['yAxis'] = [samples[1]] if options.get('yAxis') == None else options['yAxis']
+            config["yAxisTitle"] = "y_axis" if default_options.get('y_label') == None else default_options['y_label']
+            config["xAxisTitle"] = "x_axis" if default_options.get('x_label') == None else default_options['x_label']
+            
+        default_options['config_chart'] = config_chart
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
 
+    def radar(self, **user_options):
+        default_options = {"subtype": ["line"]}
+        default_options.update(user_options)
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
+            options['mod_data_structure'] = 'radar'
+            config['graphType'] = 'Circular'
+            config["circularType"] = "radar"
+            config["ringGraphType"] = options["subtype"]
+            config["smpOverlays"] = []
+        default_options['config_chart'] = config_chart
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
+           
     def dotplot(self, **user_options):
         default_options = { 'row_names': True, 'connect': False}
         default_options.update(user_options)
@@ -637,7 +705,7 @@ class Py_report_html:
                 if type(default_options.get('group')) is str:
                     self.reshape(samples, variables, x, values)
                     group = default_options.get('group')
-                    series = 'factor'
+                    series = 'Factor'
                 else:
                     series, group = default_options['group']
                 if config.get("groupingFactors") == None: # if config is defined, we assume that the user set this property to the value that he/she desires
@@ -649,6 +717,7 @@ class Py_report_html:
                 if group != None and config.get("segregateSamplesBy") == None: config["segregateSamplesBy"] = [group] 
             if options.get('extracode') == None and default_options.get('group') == None:
                 options['extracode'] = f"C{object_id}.groupSamples([\"Factor\"]);"
+                #config["groupingFactors"] = ["Factor"] Both options are valid, altough not the same behaviour is achieved with segregateSamplesBy...
         default_options['config_chart'] = config_chart
         html_string = self.canvasXpress_main(default_options)
         return html_string
@@ -698,7 +767,10 @@ class Py_report_html:
             'row_names': False,
             'text' : True,
             'add_header_row_names' : True,
-            'transpose': False
+            'transpose': False,
+            'method': 'elgrapho',
+            'reference_nodes': [],
+            'group_nodes': {},
         }
         options.update(user_options)
         net_data = self.hash_vars[options['id']]
@@ -709,8 +781,8 @@ class Py_report_html:
             graph.add_edges_from([tuple(pair) for pair in values])
             for n in graph.nodes: graph.nodes[n]['layer'] = 'single'
             layers = ['single']
-            reference_nodes = []
-            group_nodes = {}
+            reference_nodes = options['reference_nodes']
+            group_nodes = options['group_nodes']
         elif type(net_data) is dict:
             graph = net_data['graph']
             layers = net_data['layers']
@@ -739,7 +811,23 @@ class Py_report_html:
 
     def cytoscape_network(self, options, graph, layers, reference_nodes, group_nodes):
         model = {'nodes': [], 'edges': []}
-        for n in graph.nodes: model['nodes'].append({'data': {'id' : n}})
+
+        colors = plt.get_cmap("tab10")
+        groups_index = defaultdict(lambda: 0)
+        add = 1 if len(reference_nodes) == 0 else 2 # If there are ref nodes, reserve group index 1 for them
+        
+        if options.get('group') == 'layer':
+            for nodeID, attr in graph.nodes(data=True):
+                groups_index[nodeID] = layers.index(attr['layer']) + add
+        else:
+            for i, gr in enumerate(group_nodes.values()):
+                for gr_node in gr: groups_index[gr_node] = i + add
+
+        for nodeID in graph.nodes:
+            color = 1 if nodeID in reference_nodes else groups_index[nodeID]
+            model['nodes'].append({  'data': {'id': nodeID}, "style": {"background-color": matplotlib.colors.rgb2hex(colors(color))}  })
+
+        #for n in graph.nodes: model['nodes'].append({'data': {'id' : n}})
         for e in graph.edges: model['edges'].append({'data': {'source': e[0], 'target': e[1]}})
         return model 
 
