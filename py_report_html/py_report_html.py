@@ -818,46 +818,35 @@ class Py_report_html:
         self.count_objects += 1
         return string
 
-    def cytoscape_network(self, options, graph, layers, reference_nodes, group_nodes):
-        model = {'nodes': [], 'edges': []}
-
+    def get_nodes_colors(self, options, graph, layers, reference_nodes, group_nodes):
         colors = plt.get_cmap("tab10")
-        groups_index = defaultdict(lambda: 0)
+        groups_nodes_index = defaultdict(lambda: 0)
         add = 1 if len(reference_nodes) == 0 else 2 # If there are ref nodes, reserve group index 1 for them
         
         if options.get('group') == 'layer':
             for nodeID, attr in graph.nodes(data=True):
-                groups_index[nodeID] = layers.index(attr['layer']) + add
+                groups_nodes_index[nodeID] = layers.index(attr['layer']) + add
         else:
             for i, gr in enumerate(group_nodes.values()):
-                for gr_node in gr: groups_index[gr_node] = i + add
+                for gr_node in gr: groups_nodes_index[gr_node] = i + add
+        return groups_nodes_index, lambda color: matplotlib.colors.rgb2hex(colors(color))        
 
+    def cytoscape_network(self, options, graph, layers, reference_nodes, group_nodes):
+        model = {'nodes': [], 'edges': []}
+        groups_index, get_colors = self.get_nodes_colors(options, graph, layers, reference_nodes, group_nodes)
         for nodeID in graph.nodes:
             color = 1 if nodeID in reference_nodes else groups_index[nodeID]
-            model['nodes'].append({  'data': {'id': nodeID}, "style": {"background-color": matplotlib.colors.rgb2hex(colors(color))}  })
-
-        #for n in graph.nodes: model['nodes'].append({'data': {'id' : n}})
+            model['nodes'].append({  'data': {'id': nodeID}, "style": {"background-color": get_colors(color)}  })
+        #for n in graph.nodes: model['nodes'].append({'data': {'id' : n}}) #This is the former loop before adding colors
         for e in graph.edges: model['edges'].append({'data': {'source': e[0], 'target': e[1]}})
         return model 
 
     def elgrapho_network(self, options, graph, layers, reference_nodes, group_nodes):
-        groups_index = defaultdict(lambda: 0)
-        add = 1 if len(reference_nodes) == 0 else 2 # If there are ref nodes, reserve group index 1 for them
-        
-        if options.get('group') == 'layer':
-            for nodeID, attr in graph.nodes(data=True):
-                groups_index[nodeID] = layers.index(attr['layer']) + add
-        else:
-            for i, gr in enumerate(group_nodes.values()):
-                for gr_node in gr: groups_index[gr_node] = i + add
-
         model = {'nodes': [], 'edges': []} 
         if options.get('layout') == 'forcedir':
-            if options.get('steps') == None:
-                model['steps'] = 30
-            else:
-                model['steps'] = options['steps']
+            model['steps'] = 30 if options.get('steps') == None else options['steps']
         nodesIndex = {}
+        groups_index, get_colors = self.get_nodes_colors(options, graph, layers, reference_nodes, group_nodes)
         for i, nodeID in enumerate(graph.nodes):
             nodesIndex[nodeID] = i
             group = 1 if nodeID in reference_nodes else groups_index[nodeID]
@@ -866,26 +855,13 @@ class Py_report_html:
         return model
 
     def sigma_network(self, options, graph, layers, reference_nodes, group_nodes):
-        colors = plt.get_cmap("tab10")
         model = {'nodes': [], 'edges': []} 
-        groups_index = defaultdict(lambda: 0)
-        
-        add = 1 if len(reference_nodes) == 0 else 2 # If there are ref nodes, reserve group index 1 for them
-        
-        if options.get('group') == 'layer':
-            for nodeID, attr in graph.nodes(data=True):
-                groups_index[nodeID] = layers.index(attr['layer']) + add
-        else:
-            for i, gr in enumerate(group_nodes.values()):
-                for gr_node in gr: groups_index[gr_node] = i + add
-
+        groups_index, get_colors = self.get_nodes_colors(options, graph, layers, reference_nodes, group_nodes)
         for nodeID in graph.nodes:
             color = 1 if nodeID in reference_nodes else groups_index[nodeID]
-            model['nodes'].append({'id': nodeID, 'color': matplotlib.colors.rgb2hex(colors(color)), 'x': random.randrange(1000),  'y': random.randrange(1000), 'size': 1})
-
+            model['nodes'].append({'id': nodeID, 'color': get_colors(color), 'x': random.randrange(1000),  'y': random.randrange(1000), 'size': 1})
         for i, e in enumerate(graph.edges): 
             model['edges'].append({'id': i, 'source': e[0], 'target': e[1], 'color': '#202020', 'size': 0.1})
-        
         return model 
         
     ##################################################################################
