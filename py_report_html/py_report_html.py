@@ -461,9 +461,13 @@ class Py_report_html:
             data_structure.update({ 'x' : {'Factor' : samples}})
         elif options.get('mod_data_structure') == 'circular':
             data_structure.update({ 'z' : {'Ring' : options['ring_assignation']}})
-        elif options.get('mod_data_structure') == 'radar':
-            for factor in options['show_factors']:
-                if factor in data_structure['x'].keys() or factor == "-": config["smpOverlays"].append(factor)
+        elif options.get('mod_data_structure') == 'ridgeline':
+            data_structure['y']['smps'] = ["Sample"]
+            data_structure['y']['vars'] = [f"{var}_{times}" for times in range(len(samples)) for var in variables]
+            transposed_values_to_flaten = list(map(lambda *x: list(x), *values))
+            data_structure['y']['data'] = [[item] for sublist in transposed_values_to_flaten for item in sublist]
+            reshaped_factor = [[sample]*len(values) for sample in samples]
+            data_structure.update({ 'z' : {'Factor' : [item for sublist in reshaped_factor for item in sublist]}})
 
         self.inject_attributes(data_structure, options, slot="x")
         self.inject_attributes(data_structure, options, slot="z") 
@@ -637,14 +641,14 @@ class Py_report_html:
                 config['zAxis'] = [samples[2]]
             else:
                 config['zAxis'] = options['zAxis']
-            if default_options.get('y_label') == None:
+            if options.get('y_label') == None:
                 config['yAxisTitle'] = 'y_axis'
             else:
-                config['yAxisTitle'] = default_options['y_label']
-            if default_options.get('z_label') == None:
+                config['yAxisTitle'] = options['y_label']
+            if options.get('z_label') == None:
                 config['zAxisTitle'] = 'z_axis'
             else:
-                config['zAxisTitle'] = default_options['z_label']
+                config['zAxisTitle'] = options['z_label']
             if options.get('upper_limit') != None and options.get('lower_limit') != None and options.get('ranges') != None:
                 diff = (options['upper_limit'] - options['lower_limit'])/options['ranges']
                 sizes = [ options['lower_limit'] + n * diff for n in range(options['ranges'])]
@@ -658,12 +662,12 @@ class Py_report_html:
         default_options.update(user_options)
         def config_chart(options, config, samples, variables, values, object_id, x, z):
             config['graphType'] = 'Scatter2D'
-            config.update({"binplotShape": "hexagon", "binplotBins":f"{default_options['bins']}",
+            config.update({"binplotShape": "hexagon", "binplotBins":f"{options['bins']}",
                           "scatterType":"bin2d", "showScatterDensity":"true"})
             config['xAxis'] = [samples[0]] if options.get('xAxis') == None else options['xAxis']
             config['yAxis'] = [samples[1]] if options.get('yAxis') == None else options['yAxis']
-            config["yAxisTitle"] = "y_axis" if default_options.get('y_label') == None else default_options['y_label']
-            config["xAxisTitle"] = "x_axis" if default_options.get('x_label') == None else default_options['x_label']
+            config["yAxisTitle"] = "y_axis" if options.get('y_label') == None else options['y_label']
+            config["xAxisTitle"] = "x_axis" if options.get('x_label') == None else options['x_label']
             
         default_options['config_chart'] = config_chart
         html_string = self.canvasXpress_main(default_options)
@@ -673,14 +677,36 @@ class Py_report_html:
         default_options = {"subtype": ["line"]}
         default_options.update(user_options)
         def config_chart(options, config, samples, variables, values, object_id, x, z):
-            options['mod_data_structure'] = 'radar'
-            config['graphType'] = 'Circular'
-            config["circularType"] = "radar"
-            config["ringGraphType"] = options["subtype"]
-            config["smpOverlays"] = []
+            config.update({'graphType': 'Circular', "circularType": "radar", 
+                           "ringGraphType": options["subtype"], "smpOverlays": []})
+            if len(options["show_factors"]) > 0:
+                for factor in options['show_factors']:
+                    if factor in x.keys() or factor == "-": config["smpOverlays"].append(factor)
         default_options['config_chart'] = config_chart
         html_string = self.canvasXpress_main(default_options)
         return html_string
+    
+    def ridgeline(self, **user_options):
+        default_options = {"transpose": False, "bins": 30, "ridgelineScale":2}
+        default_options.update(user_options)
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
+            config['graphType'] = 'Scatter2D'
+            config.update({"colorBy":"Factor", "ridgeBy":"Factor", "graphType":"Scatter2D",
+                "hideHistogram":"true", "histogramBins": f"{options['bins']}",
+                "ridgelineScale": options['ridgelineScale'],
+                "showFilledHistogramDensity":"true", "showHistogramDensity":"true"
+            })
+
+            if options.get('splitBy') == None:
+                options['mod_data_structure'] = 'ridgeline'
+            else:
+                config["ridgeBy"] = options['splitBy']
+                config["colorBy"] = options['splitBy']
+        
+        default_options['config_chart'] = config_chart
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
+
            
     def dotplot(self, **user_options):
         default_options = { 'row_names': True, 'connect': False}
