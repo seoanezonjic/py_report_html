@@ -63,7 +63,14 @@ class ReportHtml(unittest.TestCase):
             "gen3    mRNA    ncRNA   100     85       12",
             "gen4    mRNA    ncRNA   85      10       41"
         ]))
-        self.container = {"simple_table": self.simple_table, "complex_table": self.complex_table, "links": self.links}
+        self.table_no_rownames = list(map(lambda x: re.split(r"\s+", x),[
+            "liver   brain  type     cerebellum",
+            "20      13     miRNA    15",
+            "40      60     miRNA    30",
+            "100     85     mRNA     12",
+            "85      10     mRNA     41"
+        ]))
+        self.container = {"simple_table": self.simple_table, "complex_table": self.complex_table, "table_no_rownames": self.table_no_rownames, "links": self.links}
         self.html_title = "Sample"
         self.html = Py_report_html(self.container, title=self.html_title, data_from_files = True, compress= False)
 
@@ -197,11 +204,13 @@ class ReportHtml(unittest.TestCase):
     # DATA MANIPULATION METHODS
     #-------------------------------------------------------------------------------------  
         
-    def test_delete_items(self):
+    def test_select_complementary_items(self):
         nodes = ["nodeA", "nodeB", "nodeC", "nodeD", "nodeF", "nodeG"]
+        nodes_copy = copy.deepcopy(nodes)
         expected = ["nodeB", "nodeD", "nodeF"]
-        self.html.delete_items(nodes, [0, 2, 5])
-        self.assertEqual(nodes, expected)
+        returned = self.html.select_complementary_items(nodes, [0, 2, 5])
+        self.assertEqual(expected, returned)
+        self.assertEqual(nodes_copy, nodes) #Testing that the original list is not modified
 
     def test_extract_rows(self):
         expected = [["1", "3"], ["5", "10"]]
@@ -226,7 +235,8 @@ class ReportHtml(unittest.TestCase):
         self.assertEqual(expected2, returned2)
 
     def test_process_attributes(self):
-        options = self.options
+        options = copy.deepcopy(self.options)
+        expected_hashvar = copy.deepcopy(self.html.hash_vars["complex_table"])
 
         #The aggregated attribute apply a transpose operation on the lists so dims[a,b] of sample fields becomes dims[b,a]
         returned_var_attrs = self.html.process_attributes(self.html.extract_fields(options["id"], options['smp_attr']), options['var_attr'], aggregated = True)
@@ -239,7 +249,12 @@ class ReportHtml(unittest.TestCase):
         #Asserting equality of variables length with variable attributes length (checking the first of the two factors)
         self.assertEqual(len(self.expected_variables), len(returned_var_attrs[0][1:]))
 
+        #Checking that original table has not been modified as more plot calls will be done to the same table
+        self.assertEqual(expected_hashvar, self.html.hash_vars["complex_table"]) 
+
+
     def test_extract_data(self):
+        expected_hashvar = copy.deepcopy(self.html.hash_vars["complex_table"])
         expected_data_str = [
             ["tissue", "liver", "brain", "cerebellum"],
             ["gen1",    "20",   "13",       "15"],
@@ -251,6 +266,22 @@ class ReportHtml(unittest.TestCase):
         self.assertEqual(expected_data_str, returned_data_str)
         self.assertEqual(self.expected_var_attrs, returned_var_attr)
         self.assertEqual(self.expected_smp_attrs, returned_smp_attr)
+        self.assertEqual(expected_hashvar, self.html.hash_vars["complex_table"]) #Checking that original table has not been modified as more plot calls will be done to the same table
+
+        #Testing the table with colnames and no rownames with only one variable attribute (and no sample attribute) as this edge case is giving error 
+        custom_options = copy.deepcopy(self.options)
+        custom_options["rownames"] = False
+        custom_options["header"] = True
+        custom_options["add_header_row_names"] = True
+        custom_options["transpose"] = False
+        custom_options["id"] = "table_no_rownames"
+        custom_options["var_attr"] = [2]
+        custom_options["smp_attr"] = []
+        
+        returned_data_str, returned_smp_attr, returned_var_attr = self.html.extract_data(custom_options)
+        self.assertEqual([row[1:] for row in expected_data_str], returned_data_str)
+        self.assertEqual([["type", "miRNA", "miRNA", "mRNA", "mRNA"]], returned_var_attr)
+        self.assertEqual([], returned_smp_attr)
 
     def test_add_header_row_names(self):
         table_alone = [["1","3"],
@@ -271,9 +302,9 @@ class ReportHtml(unittest.TestCase):
                                       [1, "1", "3"], 
                                       [2, "2", "4"]]
 
-        user_options = {"add_header_row_names": True, "header": False, "row_names": False}
-        user_options_with_header_names = {"add_header_row_names": True, "header": True, "row_names": False}
-        user_options_with_row_names = {"add_header_row_names": True, "header": False, "row_names": True}
+        user_options = {"add_header_row_names": True, "header": False, "row_names": False, "id":"mock"}
+        user_options_with_header_names = {"add_header_row_names": True, "header": True, "row_names": False, "id":"mock"}
+        user_options_with_row_names = {"add_header_row_names": True, "header": False, "row_names": True, "id":"mock"}
 
         #Testing function default filling options for headers and rows
         self.html.add_header_row_names(table_alone, options=user_options)
@@ -288,14 +319,18 @@ class ReportHtml(unittest.TestCase):
         self.assertEqual(expected_custom_header_table, table_custom_headers)
 
     def test_get_data(self):
+        expected_hashvar = copy.deepcopy(self.html.hash_vars["complex_table"])
         custom_options = copy.deepcopy(self.options)
         custom_options["transpose"] = False
         returned_data, returned_smp_attrs, returned_var_attrs = self.html.get_data(custom_options)
         self.assertEqual(self.expected_data, returned_data)
         self.assertEqual(self.expected_var_attrs, returned_var_attrs)
         self.assertEqual(self.expected_smp_attrs, returned_smp_attrs)
+        self.assertEqual(expected_hashvar, self.html.hash_vars["complex_table"]) #Checking that original table has not been modified as more plot calls will be done to the same table
+
 
     def test_get_data_transpose(self):
+        expected_hashvar = copy.deepcopy(self.html.hash_vars["complex_table"])
         custom_options = copy.deepcopy(self.options)
         custom_options["transpose"] = True
          
@@ -305,6 +340,9 @@ class ReportHtml(unittest.TestCase):
         self.assertEqual(transposed_data, returned_data)
         self.assertEqual(self.expected_smp_attrs, returned_var_attrs)
         self.assertEqual(self.expected_var_attrs, returned_smp_attrs)
+        self.assertEqual(expected_hashvar, self.html.hash_vars["complex_table"]) #Checking that original table has not been modified as more plot calls will be done to the same table
+
+
 
     #---------------------------------------------------------------------------------------------
     # TABLE METHODS
@@ -416,6 +454,7 @@ class ReportHtml(unittest.TestCase):
     #-------------------------------------------------------------------------------------
 
     def test_get_data_for_plot(self):
+        expected_hashvar = copy.deepcopy(self.html.hash_vars["complex_table"])
         custom_options = copy.deepcopy(self.options)
         custom_options["transpose"] = False
         values, smp_attr, var_attr, samples, variables = self.html.get_data_for_plot(custom_options)
@@ -425,6 +464,33 @@ class ReportHtml(unittest.TestCase):
         self.assertEqual(self.expected_smp_attrs, smp_attr)
         self.assertEqual(self.expected_samples, samples)
         self.assertEqual(self.expected_variables, variables)
+        self.assertEqual(expected_hashvar, self.html.hash_vars["complex_table"]) #Checking that original table has not been modified as more plot calls will be done to the same table
+
+        #Transposing the table
+        custom_options["transpose"] = True
+        values, smp_attr, var_attr, samples, variables = self.html.get_data_for_plot(custom_options)
+
+        self.assertEqual(self.expected_data_json_transposed["y"]["data"], values)
+        self.assertEqual(self.expected_smp_attrs, sorted(var_attr))
+        self.assertEqual(self.expected_var_attrs, sorted(smp_attr))
+        self.assertEqual(self.expected_variables, samples)
+        self.assertEqual(self.expected_samples, variables)
+
+        #Giving the table default rownames
+        custom_options["row_names"] = False
+        custom_options["header"] = True
+        custom_options["add_header_row_names"] = True
+        custom_options["transpose"] = False
+        custom_options["id"] = "table_no_rownames"
+        custom_options["var_attr"] = [2]
+        custom_options["smp_attr"] = []
+        
+        values, smp_attr, var_attr, samples, variables = self.html.get_data_for_plot(custom_options)
+        self.assertEqual([["type", "miRNA", "miRNA", "mRNA", "mRNA"]], var_attr)
+        self.assertEqual([], smp_attr)
+        self.assertEqual(self.expected_data_json["y"]["data"], values)
+        self.assertEqual(["liver", "brain", "cerebellum"], samples)
+        self.assertEqual([1,2,3,4], variables)
 
     def test_initialize_extracode(self):
         #without options defined
@@ -803,10 +869,15 @@ class ReportHtml(unittest.TestCase):
     # CANVASXPRESS NETWORK PLOTTING METHODS
     #-------------------------------------------------------------------------------------
 
-    def test_cytoscape_network(self): 
+    def test_cytoscape_network(self):
+        user_options = copy.deepcopy(self.options)
+        user_options["reference_nodes"] = []
+        user_options["group_nodes"] = {} 
         expected = {'nodes': [{'data': {'id': 'A'}}, {'data': {'id': 'B'}}, {'data': {'id': 'C'}}, {'data': {'id': 'D'}}, {'data': {'id': 'X'}}, {'data': {'id': 'Y'}}, {'data': {'id': 'Z'}}, {'data': {'id': 'W'}}], 
                     'edges': [{'data': {'source': 'A', 'target': 'B'}}, {'data': {'source': 'A', 'target': 'X'}}, {'data': {'source': 'A', 'target': 'W'}}, {'data': {'source': 'B', 'target': 'C'}}, {'data': {'source': 'B', 'target': 'D'}}, {'data': {'source': 'C', 'target': 'D'}}, {'data': {'source': 'X', 'target': 'Y'}}, {'data': {'source': 'X', 'target': 'Z'}}, {'data': {'source': 'Y', 'target': 'Z'}}]}
-        returned = self.html.cytoscape_network(self.options, self.graph, [], [], [])
+        for node_attrs in expected["nodes"]:
+            node_attrs["style"] = {'background-color': '#1f77b4'}
+        returned = self.html.cytoscape_network(user_options, self.graph, [], [], [])
         self.assertEqual(expected, returned)
 
     def test_elgrapho_network(self): 

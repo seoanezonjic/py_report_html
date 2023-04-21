@@ -11,6 +11,7 @@ import networkx as nx
 import matplotlib
 import matplotlib.pyplot as plt
 import random
+import copy
 
 class Py_report_html:
     
@@ -229,26 +230,48 @@ class Py_report_html:
         if type(ids) is list:
             data = self.merge_tables(options) #TODO: we have to check about this functionallity
         else:   
-            if 'smp_attr' in options and len(options['smp_attr']) > 0: smp_attr = self.process_attributes(self.extract_fields(ids, options['smp_attr']), options['var_attr'], aggregated = True) 
-            if 'var_attr' in options and len(options['var_attr']) > 0: var_attr = self.process_attributes(self.extract_rows(ids, options['var_attr']), options['smp_attr'], aggregated = False)
-            data = self.extract_fields(ids, options.get('fields'), del_fields = options.get('smp_attr'), del_rows = options.get('var_attr'))
+            if 'smp_attr' in options and len(options['smp_attr']) > 0:
+                if 'var_attr' in options and len(options['var_attr']) > 0:
+                    smp_attr = self.process_attributes(self.extract_rows(ids, options['var_attr']), options['smp_attr'], aggregated = False)
+                else:
+                    smp_attr = []
+                    for idx in options['smp_attr']:
+                        attr =  self.extract_rows(ids, [idx])
+                        smp_attr.append([item for sublist in attr for item in sublist])
+            else:
+                smp_attr = []
+            if 'var_attr' in options and len(options['var_attr']) > 0: 
+                if 'smp_attr' in options and len(options['smp_attr']) > 0:                
+                    var_attr = self.process_attributes(self.extract_fields(ids, options['smp_attr']), options['var_attr'], aggregated = True)
+                else:
+                    var_attr = []
+                    for idx in options['var_attr']:
+                        attr =  self.extract_fields(ids, [idx])
+                        var_attr.append([item for sublist in attr for item in sublist])
+            else:
+                var_attr = []
+            data = self.extract_fields(ids, options.get('fields'), del_fields = options.get('var_attr'), del_rows = options.get('smp_attr'))
         return data, smp_attr, var_attr
 
     def extract_fields(self, id, fields, del_fields = [], del_rows = []):
         data = []
+        
         for i, row in enumerate(self.hash_vars[id]):
             if del_rows != None and i in del_rows: continue 
             if len(fields) == 0:
-                row = row.copy() # Copy generates a array copy that avoids to modify original objects on data manipulation creating graphs
-                if del_fields != None: self.delete_items(row, del_fields)
+                row = copy.deepcopy(row) # Copy generates a array copy that avoids to modify original objects on data manipulation creating graphs
+                if del_fields != None: 
+                    row = self.select_complementary_items(row, del_fields)
                 data.append(row)
             else:
                 data.append([ row[field] for field in fields ]) # new list with extracted fields
         return data
 
-    def delete_items(self, list2del, indexes):
+    def select_complementary_items(self, list2del, indexes):
+        returned_list = copy.deepcopy(list2del)
         indexes.sort(reverse=True)
-        for j in indexes: list2del.pop(j)        
+        for j in indexes: returned_list.pop(j)
+        return returned_list        
 
     def extract_rows(self, id, rows):
         table = self.hash_vars[id]
@@ -260,14 +283,14 @@ class Py_report_html:
         if aggregated:
             if delete_items != None and len(delete_items) > 0:
                 indexes = [1] * len(delete_items)
-                self.delete_items(attribs, indexes)
+                attribs = self.select_complementary_items(attribs, indexes)
             for i in range(len(attribs[0])):
                 parsed_attr.append([ at[i] for at in attribs ])
         else:
             for attrib in attribs:
                 if delete_items != None and len(delete_items) > 0:
                     indexes = range(1, len(delete_items) +1)
-                    self.delete_items(attrib, list(indexes))
+                    attrib = self.select_complementary_items(attrib, list(indexes))
                 parsed_attr.append(attrib)
         return parsed_attr
 
@@ -438,8 +461,8 @@ class Py_report_html:
 
         x = {}
         z = {}
-        if var_attr != None and len(var_attr) > 0: self.add_canvas_attr(x, var_attr) 
-        if smp_attr != None and len(smp_attr) > 0: self.add_canvas_attr(z, smp_attr) 
+        if var_attr != None and len(var_attr) > 0: self.add_canvas_attr(z, var_attr) 
+        if smp_attr != None and len(smp_attr) > 0: self.add_canvas_attr(x, smp_attr) 
         options['config_chart'](options, config, samples, variables, values, object_id, x, z) # apply custom chart method to configure plot
         # Build JSON objects and Javascript code
         #-----------------------------------------------
@@ -453,6 +476,7 @@ class Py_report_html:
             'x' : x,
             'z' : z
         }
+
         events = False  #Possible future use for events for CanvasXpress, currently not used
         info = False   #Possible future use for info for CanvasXpress, currently not used
         afterRender = options['after_render']
@@ -686,6 +710,7 @@ class Py_report_html:
         html_string = self.canvasXpress_main(default_options)
         return html_string
     
+    #TODO: test this feature
     def ridgeline(self, **user_options):
         default_options = {"transpose": False, "bins": 30, "ridgelineScale":2}
         default_options.update(user_options)
@@ -844,6 +869,7 @@ class Py_report_html:
         self.count_objects += 1
         return string
 
+    #TODO: test this method
     def get_nodes_colors(self, options, graph, layers, reference_nodes, group_nodes):
         colors = plt.get_cmap("tab10")
         groups_nodes_index = defaultdict(lambda: 0)
@@ -853,8 +879,9 @@ class Py_report_html:
             for nodeID, attr in graph.nodes(data=True):
                 groups_nodes_index[nodeID] = layers.index(attr['layer']) + add
         else:
-            for i, gr in enumerate(group_nodes.values()):
-                for gr_node in gr: groups_nodes_index[gr_node] = i + add
+            if len(group_nodes) > 0: 
+                for i, gr in enumerate(group_nodes.values()):
+                    for gr_node in gr: groups_nodes_index[gr_node] = i + add
         return groups_nodes_index, lambda color: matplotlib.colors.rgb2hex(colors(color))        
 
     def cytoscape_network(self, options, graph, layers, reference_nodes, group_nodes):
