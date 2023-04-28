@@ -190,6 +190,19 @@ class Py_report_html:
                             data[r][c] = float(data[r][c])
 
             self.add_header_row_names(data, options)
+
+            # Renaming samples and variables if user specified
+            if options.get("renamed_samples") and len(options['renamed_samples']) > 0:
+                if len(options['renamed_samples']) == len(data[0]):
+                    data[0] = options['renamed_samples']
+                else:
+                    raise Exception("The number of given sample names is not equal to the number of samples in the data")
+            if options.get("renamed_variables") and len(options['renamed_variables']) > 0:
+                if len(options['renamed_variables']) == len(data):
+                    for i, row in enumerate(data): row[0] = options['renamed_variables'][i]
+                else:
+                    raise Exception("The number of given variable names is not equal to the number of variables in the data")
+
             if options['transpose']:
                 data = list(map(list, zip(*data))) # Transposing data (rows become columns and viceversa)
                 smp_attr_bkp = smp_attr
@@ -310,7 +323,9 @@ class Py_report_html:
             'border': 1,
             'cell_align': [],
             'attrib': {},
-            'func': None
+            'func': None,
+            'renamed_samples': [],
+            'renamed_variables': [],
         }
         options.update(user_options)
         table_attr = self.prepare_table_attribs(options['attrib'])
@@ -441,7 +456,9 @@ class Py_report_html:
             'title': 'Title',
             'config': {},
             'after_render': [],
-            'treeBy': 's'
+            'treeBy': 's',
+            'renamed_samples': [],
+            'renamed_variables': [],
         }
         options.update(user_options)
         config = {
@@ -487,10 +504,16 @@ class Py_report_html:
             data_structure.update({ 'z' : {'Ring' : options['ring_assignation']}})
         elif options.get('mod_data_structure') == 'ridgeline':
             data_structure['y']['smps'] = ["Sample"]
-            data_structure['y']['vars'] = [f"{var}_{times}" for times in range(len(samples)) for var in variables]
             transposed_values_to_flaten = list(map(lambda *x: list(x), *values))
             data_structure['y']['data'] = [[item] for sublist in transposed_values_to_flaten for item in sublist]
+            data_structure['y']['vars'] = [f"s{id}" for id in range(len(data_structure['y']['data']))]
             reshaped_factor = [[sample]*len(values) for sample in samples]
+
+            #print("reshaped_factor:", len(reshaped_factor))
+            #print("data:", len(data_structure['y']['data']))
+            #print("vars:", len(data_structure['y']['vars']))
+            
+
             data_structure.update({ 'z' : {'Factor' : [item for sublist in reshaped_factor for item in sublist]}})
 
         self.inject_attributes(data_structure, options, slot="x")
@@ -644,6 +667,11 @@ class Py_report_html:
                 config['yAxisTitle'] = default_options['y_label']
             if options.get('regressionLine') == True:
                 options['extracode'] = f"C{object_id}.addRegressionLine();"
+            if options.get('pointSize') != None:
+                config['sizeBy'] = options['pointSize']
+                sampleIndex = samples.index(options['pointSize'])
+                samples.pop(sampleIndex)
+                z[options['pointSize']] = [row.pop(sampleIndex) for row in values]
         default_options['config_chart'] = config_chart
         html_string = self.canvasXpress_main(default_options)
         return html_string
@@ -687,7 +715,7 @@ class Py_report_html:
         def config_chart(options, config, samples, variables, values, object_id, x, z):
             config['graphType'] = 'Scatter2D'
             config.update({"binplotShape": "hexagon", "binplotBins":f"{options['bins']}",
-                          "scatterType":"bin2d", "showScatterDensity":"true"})
+                          "scatterType":"bin2d", "showScatterDensity":True})
             config['xAxis'] = [samples[0]] if options.get('xAxis') == None else options['xAxis']
             config['yAxis'] = [samples[1]] if options.get('yAxis') == None else options['yAxis']
             config["yAxisTitle"] = "y_axis" if options.get('y_label') == None else options['y_label']
@@ -717,22 +745,47 @@ class Py_report_html:
         def config_chart(options, config, samples, variables, values, object_id, x, z):
             config['graphType'] = 'Scatter2D'
             config.update({"colorBy":"Factor", "ridgeBy":"Factor", "graphType":"Scatter2D",
-                "hideHistogram":"true", "histogramBins": f"{options['bins']}",
+                "hideHistogram":True, "histogramBins": f"{options['bins']}",
                 "ridgelineScale": options['ridgelineScale'],
-                "showFilledHistogramDensity":"true", "showHistogramDensity":"true"
+                "showFilledHistogramDensity":True, "showHistogramDensity":True
             })
 
-            if options.get('splitBy') == None:
+            if options.get('group') == None:
                 options['mod_data_structure'] = 'ridgeline'
             else:
-                config["ridgeBy"] = options['splitBy']
-                config["colorBy"] = options['splitBy']
+                config["ridgeBy"] = options['group']
+                config["colorBy"] = options['group']
         
         default_options['config_chart'] = config_chart
         html_string = self.canvasXpress_main(default_options)
         return html_string
+    
+    #TODO: test this feature
+    def density(self, **user_options):
+        default_options = {"transpose": False, "fillDensity": False, "median": False}
+        default_options.update(user_options)
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
+            config['graphType'] = 'Scatter2D'
+            config.update({
+                    "graphType":"Scatter2D",
+                    "hideHistogram":True,
+                    "histogramData":"Factor",
+                    "showFilledHistogramDensity":options['fillDensity'],
+                    "showHistogramDensity":True,
+                    "showHistogramMedian":options['median'],
+            })
 
-           
+            if options.get('group') == None:
+                options['mod_data_structure'] = 'ridgeline_density'
+            else:
+                config["histogramData"] = options['group']
+                config["colorBy"] = options['group']
+        
+        default_options['config_chart'] = config_chart
+        html_string = self.canvasXpress_main(default_options)
+        return html_string        
+
+
     def dotplot(self, **user_options):
         default_options = { 'row_names': True, 'connect': False}
         default_options.update(user_options)
