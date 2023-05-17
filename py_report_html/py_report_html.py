@@ -819,8 +819,12 @@ class Py_report_html:
                     self.reshape(samples, variables, x, values)
                     group = default_options.get('group')
                     series = 'Factor'
-                else:
-                    series, group = default_options['group']
+                elif type(default_options.get('group')) is list:
+                    if len(default_options.get('group')) == 2:
+                        series, group = default_options.get('group')
+                    if len(default_options.get('group')) == 1:
+                        series = default_options['group']
+                        group = None
                 if config.get("groupingFactors") == None: # if config is defined, we assume that the user set this property to the value that he/she desires
                     if group == None:
                         config["groupingFactors"] = [series]
