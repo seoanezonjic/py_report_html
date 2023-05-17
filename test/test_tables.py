@@ -842,7 +842,7 @@ class ReportHtml(unittest.TestCase):
         custom_options.update({"y_label": "custom_y_axis", "x_label": "custom_x_axis", "bins": 50})
         expected_config = copy.deepcopy(self.config)
         expected_config.update({"graphType": "Scatter2D", "binplotShape": "hexagon", "binplotBins":"50",
-                          "scatterType":"bin2d", "showScatterDensity":"true",
+                          "scatterType":"bin2d", "showScatterDensity": True,
                           'xAxis': [self.expected_samples[0]], "xAxisTitle": "custom_x_axis",
                           'yAxis': [self.expected_samples[1]], "yAxisTitle": "custom_y_axis"})
 
