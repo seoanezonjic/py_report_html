@@ -615,6 +615,71 @@ class Py_report_html:
         default_options.update(user_options)
         html_string = self.canvasXpress_main(default_options)
         return html_string
+    
+    def barline(self, **user_options):
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
+            config['graphType'] = 'BarLine'
+            config["lineType"] = "spline"
+            if options.get('xAxis') == None: 
+                config['xAxis'] = [variables[n] for n in range(len(variables)//2)]
+            else:
+                config['xAxis'] = options['xAxis']       
+            if options.get('xAxis2') == None: 
+                config['xAxis2'] = [variables[n] for n in range(len(variables)//2, len(variables))]
+            else:
+                config['xAxis2'] = options['xAxis2']
+        default_options = { 'row_names': True, 'config_chart' : config_chart }
+        default_options.update(user_options)
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
+    
+    def dotline(self, **user_options):
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
+            config['graphType'] = 'DotLine'
+            config["lineType"] = "spline"
+            if options.get('xAxis') == None: 
+                config['xAxis'] = [variables[n] for n in range(len(variables)//2)]
+            else:
+                config['xAxis'] = options['xAxis']       
+            if options.get('xAxis2') == None: 
+                config['xAxis2'] = [variables[n] for n in range(len(variables)//2, len(variables))]
+            else:
+                config['xAxis2'] = options['xAxis2']
+        default_options = { 'row_names': True, 'config_chart' : config_chart }
+        default_options.update(user_options)
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
+    
+    def arealine(self, **user_options):
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
+            config['graphType'] = 'AreaLine'
+            config["lineType"] = "spline"
+            config.update({"objectBorderColor":"false",
+                            "objectColorTransparency":0.7})
+            if options.get('xAxis') == None: 
+                config['xAxis'] = [variables[n] for n in range(len(variables)//2)]
+            else:
+                config['xAxis'] = options['xAxis']       
+            if options.get('xAxis2') == None: 
+                config['xAxis2'] = [variables[n] for n in range(len(variables)//2, len(variables))]
+            else:
+                config['xAxis2'] = options['xAxis2']
+        default_options = { 'row_names': True, 'config_chart' : config_chart }
+        default_options.update(user_options)
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
+    
+    def area(self, **user_options):
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
+            config.update({'graphType': 'Area',
+                            "lineType":"spline",
+                            "objectBorderColor":"false",
+                            "objectColorTransparency":0.7})
+            
+        default_options = { 'row_names': True, 'config_chart' : config_chart }
+        default_options.update(user_options)
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
 
     def stacked(self, **user_options):
         def config_chart(options, config, samples, variables, values, object_id, x, z):
@@ -623,6 +688,24 @@ class Py_report_html:
         default_options.update(user_options)
         html_string = self.canvasXpress_main(default_options)
         return html_string
+    
+    def stackedline(self, **user_options):
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
+            config['graphType'] = 'StackedLine'
+            config["lineType"] = "spline"
+            if options.get('xAxis') == None: 
+                config['xAxis'] = [variables[n] for n in range(len(variables)//2)]
+            else:
+                config['xAxis'] = options['xAxis']       
+            if options.get('xAxis2') == None: 
+                config['xAxis2'] = [variables[n] for n in range(len(variables)//2, len(variables))]
+            else:
+                config['xAxis2'] = options['xAxis2']
+        default_options = { 'row_names': True, 'config_chart' : config_chart }
+        default_options.update(user_options)
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
+    
 
     def corplot(self, **user_options):
         default_options = { 'transpose': False, 'correlationAxis': 'samples' }
