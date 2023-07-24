@@ -750,11 +750,67 @@ class Py_report_html:
                 config['yAxisTitle'] = default_options['y_label']
             if options.get('regressionLine') == True:
                 options['extracode'] = f"C{object_id}.addRegressionLine();"
+            
             if options.get('pointSize') != None:
                 config['sizeBy'] = options['pointSize']
                 sampleIndex = samples.index(options['pointSize'])
                 samples.pop(sampleIndex)
                 z[options['pointSize']] = [row.pop(sampleIndex) for row in values]
+
+            if options.get('colorScaleBy') != None:
+                config['colorScaleBy'] = options['colorScaleBy']
+                sampleIndex = samples.index(options['colorScaleBy'])
+                samples.pop(sampleIndex)
+                z[options['colorScaleBy']] = [row.pop(sampleIndex) for row in values]
+        default_options['config_chart'] = config_chart
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
+    
+    #TODO: Test this method
+    def scatter3D(self, **user_options):
+        default_options = { 'row_names': False, 'transpose': False}
+        default_options.update(user_options)
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
+            config['graphType'] = 'Scatter3D'
+            
+            if options.get('xAxis') == None: 
+                config['xAxis'] = [samples[0]]
+            else:
+                config['xAxis'] = options['xAxis']    
+
+            if options.get('yAxis') == None: 
+                config['yAxis'] = [samples[1]]
+            else:
+                config['yAxis'] = options['yAxis']
+
+            if options.get('zAxis') == None: 
+                config['zAxis'] = [samples[2]]
+            else:
+                config['zAxis'] = options['zAxis']
+                
+            if default_options.get('y_label') == None :
+                config['yAxisTitle'] = 'y_axis'
+            else:
+                config['yAxisTitle'] = default_options['y_label']
+            
+            if options.get('regressionLine') == True:
+                options['extracode'] = f"C{object_id}.addRegressionLine();"
+
+            if options.get('pointSize') != None:
+                config['sizeBy'] = options['pointSize']
+                sampleIndex = samples.index(options['pointSize'])
+                samples.pop(sampleIndex)
+                z[options['pointSize']] = [row.pop(sampleIndex) for row in values]
+
+            if options.get('colorScaleBy') != None:
+                config['colorScaleBy'] = options['colorScaleBy']
+                sampleIndex = samples.index(options['colorScaleBy'])
+                samples.pop(sampleIndex)
+                z[options['colorScaleBy']] = [row.pop(sampleIndex) for row in values]
+
+            if options.get('shapeBy') != None:
+                config['shapeBy'] = options['shapeBy']
+
         default_options['config_chart'] = config_chart
         html_string = self.canvasXpress_main(default_options)
         return html_string
