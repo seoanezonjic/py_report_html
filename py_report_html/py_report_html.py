@@ -1,10 +1,6 @@
-import sys
-import os
-import json
+import sys, re, os, json, math, zlib, warnings
 import numpy as np
-import math
 import base64
-import zlib
 from collections import defaultdict
 from mako.template import Template
 import networkx as nx
@@ -758,7 +754,7 @@ class Py_report_html:
                 z[options['pointSize']] = [row.pop(sampleIndex) for row in values]
 
             if options.get('colorScaleBy') != None:
-                config['colorScaleBy'] = options['colorScaleBy']
+                config['colorBy'] = options['colorScaleBy']
                 sampleIndex = samples.index(options['colorScaleBy'])
                 samples.pop(sampleIndex)
                 z[options['colorScaleBy']] = [row.pop(sampleIndex) for row in values]
@@ -792,6 +788,11 @@ class Py_report_html:
                 config['yAxisTitle'] = 'y_axis'
             else:
                 config['yAxisTitle'] = default_options['y_label']
+
+            if default_options.get('z_label') == None :
+                config['zAxisTitle'] = 'z_axis'
+            else:
+                config['zAxisTitle'] = default_options['z_label']
             
             if options.get('regressionLine') == True:
                 options['extracode'] = f"C{object_id}.addRegressionLine();"
@@ -803,7 +804,7 @@ class Py_report_html:
                 z[options['pointSize']] = [row.pop(sampleIndex) for row in values]
 
             if options.get('colorScaleBy') != None:
-                config['colorScaleBy'] = options['colorScaleBy']
+                config['colorBy'] = options['colorScaleBy']
                 sampleIndex = samples.index(options['colorScaleBy'])
                 samples.pop(sampleIndex)
                 z[options['colorScaleBy']] = [row.pop(sampleIndex) for row in values]
@@ -1007,6 +1008,43 @@ class Py_report_html:
                     config['connections'] = link_data
         default_options['config_chart'] = config_chart
         html_string = self.canvasXpress_main(default_options) 
+        return html_string
+    
+    def circular_genome(self, **user_options):
+        default_options = { 'ring_assignation': [], 'ringsType': [], 'ringsWeight': [] }
+        default_options.update(user_options)
+        
+        def config_chart(options, config, samples, variables, values, object_id, x, z):
+            config['graphType'] = 'Circular'
+            config["arcSegmentsSeparation"] = 3
+            config["colorScheme"] = "Tableau"
+            config["colors"] = ["#332288","#6699CC","#88CCEE","#44AA99","#117733","#999933","#DDCC77","#661100","#CC6677","#AA4466","#882255","#AA4499"]
+            config["showIdeogram"] = True
+
+            coordinates = default_options["genomic_coordinates"]
+            chrm = []
+            pos = []
+            tags2remove = []
+            for i, var in enumerate(variables):
+                coord = coordinates.get(var)
+                if coord != None:
+                    tag = re.sub(r"[^\dXY]", "", coord[0])
+                    #tag = coord[0].gsub(/[^\dXY]/,'')
+                    if tag == 'X' or tag == 'Y' or (int(tag) > 0 and int(tag) <= 22):
+                        chrm.append(re.sub(r"[^\dXY]", "", coord[0]))
+                        pos.append(coord[-1] - 1)
+                    else:
+                        tags2remove.append(i)
+                else:
+                    tags2remove.append(i)
+            for i in tags2remove[::-1]:
+                ent = variables.pop(i)
+                warnings.warn(f"Feature {ent} has not valid coordinates") # Remove entities with invalid coordinates
+            z['chr'] = chrm
+            z['pos'] = pos
+        default_options['config_chart'] = config_chart
+        html_string = self.canvasXpress_main(default_options) 
+
         return html_string
 
     #-------------------------------------------------------------------------------------
