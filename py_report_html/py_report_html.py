@@ -758,6 +758,20 @@ class Py_report_html:
                 sampleIndex = samples.index(options['colorScaleBy'])
                 samples.pop(sampleIndex)
                 z[options['colorScaleBy']] = [row.pop(sampleIndex) for row in values]
+
+            if options.get("add_densities") == True:
+                config.update({
+                    "hideHistogram":"false",
+                    "histogramBins":20,
+                    "histogramStat":"count",
+                    "showFilledHistogramDensity":True,
+                    "showHistogramDensity":True,
+                    "showHistogramMedian":True,
+                    "xAxisHistogramHeight":"150",
+                    "xAxisHistogramShow":True,
+                    "yAxisHistogramHeight":"150",
+                    "yAxisHistogramShow":True})
+                
         default_options['config_chart'] = config_chart
         html_string = self.canvasXpress_main(default_options)
         return html_string
@@ -975,6 +989,12 @@ class Py_report_html:
             if options.get('extracode') == None and default_options.get('group') == None:
                 options['extracode'] = f"C{object_id}.groupSamples([\"Factor\"]);"
                 #config["groupingFactors"] = ["Factor"] Both options are valid, altough not the same behaviour is achieved with segregateSamplesBy...
+
+            if options.get('add_violin') == True:
+                config.update({ "showBoxplotIfViolin":True,
+                                "showBoxplotOriginalData":True,
+                                "showViolinBoxplot":True,
+                                "jitter":True})
         default_options['config_chart'] = config_chart
         html_string = self.canvasXpress_main(default_options)
         return html_string
