@@ -969,10 +969,17 @@ class Py_report_html:
             if default_options.get('group') == None:
                 options['mod_data_structure'] = 'boxplot'
             else:
+                #This option is used when your table in shaped in wide format https://en.wikipedia.org/wiki/Wide_and_narrow_data
+                # In this case, variable names are used as series (the levels of the factor or the diferent boxes inside a plot) and the group option (a string) is used to segregate the plots
+                #The function performs a reshape of the data to long format before plotting.
                 if type(default_options.get('group')) is str:
                     self.reshape(samples, variables, x, values)
                     group = default_options.get('group')
                     series = 'Factor'
+
+                #This option is used when your table in shaped in long format https://en.wikipedia.org/wiki/Wide_and_narrow_data
+                # In this case a list is provided. If only one variable is provided in the list, it is used as series.
+                # If two variables are provided, the first one is used as series and the second one as group to segregate the plots
                 elif type(default_options.get('group')) is list:
                     if len(default_options.get('group')) == 2:
                         series, group = default_options.get('group')
