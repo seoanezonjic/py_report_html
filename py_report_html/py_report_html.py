@@ -557,26 +557,29 @@ class Py_report_html:
             'transpose': False,
             'height': 600,
             'width': 600,
-            'whole': False
+            'whole': False,
+            'raw': False
         }
         options.update(user_options)
 
         # Data manipulation
         #------------------------------------------
+        if options['raw'] == False:
+            values, smp_attr, var_attr, samples, variables = self.get_data_for_plot(options)
+            if values == None: return f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO DATA<p></div>"
+            
+            dataframe = pd.DataFrame(values, columns = samples, index = variables)
+            for attr in var_attr:
+                dataframe[attr[0]] = attr[1:]
 
-        values, smp_attr, var_attr, samples, variables = self.get_data_for_plot(options)
-        if values == None: return f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO DATA<p></div>"
-        
-        dataframe = pd.DataFrame(values, columns = samples, index = variables)
-        for attr in var_attr:
-            dataframe[attr[0]] = attr[1:]
-
-        if options.get('melt') != None:
-            melt_columns, new_column_names = options['melt']
-            factor_column, values_column = new_column_names
-            dataframe = pd.melt(dataframe, id_vars = [column for column in dataframe.columns if column not in melt_columns], 
-                                            value_vars=melt_columns, var_name=factor_column, value_name=values_column) 
-
+            if options.get('melt') != None:
+                melt_columns, new_column_names = options['melt']
+                factor_column, values_column = new_column_names
+                dataframe = pd.melt(dataframe, id_vars = [column for column in dataframe.columns if column not in melt_columns], 
+                                                value_vars=melt_columns, var_name=factor_column, value_name=values_column) 
+                
+        else: 
+            dataframe = self.hash_vars[options['id']]
 
         object_id = f"obj_{self.count_objects}_"
         self.count_objects += 1
@@ -587,7 +590,7 @@ class Py_report_html:
 
         if options['plotting_function'] != None:               
             if options["whole"] == True:
-                values = pd.DataFrame(values, columns = samples, index = variables)
+                values = dataframe if options["raw"] == True else pd.DataFrame(values, columns = samples, index = variables)
                 ax = options['plotting_function'](values, plotters)
             else:
                 ax = options['plotting_function'](dataframe, plotters)
