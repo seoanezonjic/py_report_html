@@ -1,11 +1,14 @@
 import sys, re, os, json, math, zlib, warnings
+import pandas as pd
 import numpy as np
 import base64
+from io import BytesIO
 from collections import defaultdict
 from mako.template import Template
 import networkx as nx
 import matplotlib
 import matplotlib.pyplot as plt
+import seaborn as sns
 import random
 import copy
 
@@ -455,12 +458,14 @@ class Py_report_html:
             'treeBy': 's',
             'renamed_samples': [],
             'renamed_variables': [],
+            'alpha': 1,
         }
         options.update(user_options)
         config = {
             'toolbarType' : 'under',
             'xAxisTitle' : options['x_label'],
-            'title' : options['title']
+            'title' : options['title'],
+            "objectColorTransparency": options["alpha"]
         }
         if  options.get('tree') != None : self.set_tree(options, config)
 
@@ -531,6 +536,74 @@ class Py_report_html:
         responsive = ''
         if options['responsive']: responsive = "responsive='true'" 
         html = f"<canvas  id=\"{object_id}\" width=\"{options['width']}\" height=\"{options['height']}\" aspectRatio='1:1' {responsive}></canvas>"
+        return html
+    
+    def matplotlib_main(self, **user_options):
+        # Handle arguments
+        #------------------------------------------
+        options = {
+            'id': None,
+            'func': None,
+            'plotting_function': None,
+            'config_chart': None,
+            'fields': [],
+            'smp_attr': [],
+            'var_attr': [],
+            'segregate': [],
+            'show_factors': [],
+            'header': False,    
+            'row_names': False,
+            'add_header_row_names': True,
+            'transpose': False,
+            'height': 600,
+            'width': 600,
+            'whole': False
+        }
+        options.update(user_options)
+
+        # Data manipulation
+        #------------------------------------------
+
+        values, smp_attr, var_attr, samples, variables = self.get_data_for_plot(options)
+        if values == None: return f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO DATA<p></div>"
+        
+        dataframe = pd.DataFrame(values, columns = samples, index = variables)
+        for attr in var_attr:
+            dataframe[attr[0]] = attr[1:]
+
+        if options.get('melt') != None:
+            melt_columns, new_column_names = options['melt']
+            factor_column, values_column = new_column_names
+            dataframe = pd.melt(dataframe, id_vars = [column for column in dataframe.columns if column not in melt_columns], 
+                                            value_vars=melt_columns, var_name=factor_column, value_name=values_column) 
+
+
+        object_id = f"obj_{self.count_objects}_"
+        self.count_objects += 1
+
+        plotters = {"sns": sns, "plt": plt}
+        plt.style.use('ggplot')
+        fig, ax = plt.subplots(figsize=(options['width']/100, options['height']/100))
+
+        if options['plotting_function'] != None:               
+            if options["whole"] == True:
+                values = pd.DataFrame(values, columns = samples, index = variables)
+                ax = options['plotting_function'](values, plotters)
+            else:
+                ax = options['plotting_function'](dataframe, plotters)
+        else:
+            return f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO PLOTTING FUNCTION<p></div>"
+        
+        if options.get("x_label"): plt.xlabel(options['x_label'])
+        if options.get("title"): plt.title(options['title'])
+        if options.get("y_label"): plt.ylabel(options['y_label'])
+
+        plt.show()
+        tmpfile = BytesIO()
+        plt.savefig(tmpfile, format='png')
+        encoded = base64.b64encode(tmpfile.getvalue()).decode('utf-8')
+        html = self.embed_img(tmpfile, img_attribs=f"id=\'{object_id}\' width=\'{options['width']}\' height=\'{options['height']}\'", bytesIO=True)
+        plt.close('all')
         return html
 
     def initialize_extracode(self, options):
@@ -1182,10 +1255,15 @@ class Py_report_html:
     # EMBED FILES
     ###################################################################################
 
-    def embed_img(self, img_file, img_attribs = None):
-        with open(img_file, 'rb') as f:
+    def embed_img(self, img_file, img_attribs = None, bytesIO = False):
+        if bytesIO:
+            img_base64 = base64.b64encode(img_file.getvalue()).decode('UTF-8')
+            format = "png"
+        else:
+            with open(img_file, 'rb') as f:
                 img_base64 = base64.b64encode(f.read()).decode('UTF-8')
-        format = os.path.basename(img_file).split('.')[-1]
+            format = os.path.basename(img_file).split('.')[-1]
+        
         img_string = f"<img {img_attribs} src=\"data:image/{format};base64,{img_base64}\">"
         return img_string
 
