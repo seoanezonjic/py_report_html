@@ -561,6 +561,7 @@ class Py_report_html:
             'transpose': False,
             'height': 600,
             'width': 600,
+            'dpi': 100,
             'whole': False,
             'raw': False,
             'theme': 'ggplot'
@@ -591,7 +592,7 @@ class Py_report_html:
 
         plotters = {"sns": sns, "plt": plt}
         plt.style.use(options["theme"])
-        fig, ax = plt.subplots( figsize=(options['width']/100, options['height']/100), dpi = 600)
+        fig, ax = plt.subplots( figsize=(options['width']/100, options['height']/100), dpi = options['dpi'])
 
         if options['plotting_function'] != None:               
             if options["whole"] == True:
