@@ -591,7 +591,7 @@ class Py_report_html:
 
         plotters = {"sns": sns, "plt": plt}
         plt.style.use(options["theme"])
-        fig, ax = plt.subplots(figsize=(options['width']/100, options['height']/100))
+        fig, ax = plt.subplots( figsize=(options['width']/100, options['height']/100), dpi = 600)
 
         if options['plotting_function'] != None:               
             if options["whole"] == True:
