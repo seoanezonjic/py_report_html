@@ -459,13 +459,17 @@ class Py_report_html:
             'renamed_samples': [],
             'renamed_variables': [],
             'alpha': 1,
+            'theme': 'cx',
+            'color_scheme': 'CanvasXpress'
         }
         options.update(user_options)
         config = {
             'toolbarType' : 'under',
             'xAxisTitle' : options['x_label'],
             'title' : options['title'],
-            "objectColorTransparency": options["alpha"]
+            "objectColorTransparency": options["alpha"],
+            "theme": options["theme"],
+            "colorScheme": options["color_scheme"]
         }
         if  options.get('tree') != None : self.set_tree(options, config)
 
@@ -538,7 +542,7 @@ class Py_report_html:
         html = f"<canvas  id=\"{object_id}\" width=\"{options['width']}\" height=\"{options['height']}\" aspectRatio='1:1' {responsive}></canvas>"
         return html
     
-    def matplotlib_main(self, **user_options):
+    def static_plot_main(self, **user_options):
         # Handle arguments
         #------------------------------------------
         options = {
@@ -558,7 +562,8 @@ class Py_report_html:
             'height': 600,
             'width': 600,
             'whole': False,
-            'raw': False
+            'raw': False,
+            'theme': 'ggplot'
         }
         options.update(user_options)
 
@@ -585,7 +590,7 @@ class Py_report_html:
         self.count_objects += 1
 
         plotters = {"sns": sns, "plt": plt}
-        plt.style.use('ggplot')
+        plt.style.use(options["theme"])
         fig, ax = plt.subplots(figsize=(options['width']/100, options['height']/100))
 
         if options['plotting_function'] != None:               
