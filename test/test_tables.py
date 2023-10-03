@@ -128,11 +128,17 @@ class ReportHtml(unittest.TestCase):
             "layout": "forcedir", #Testing graph layout
             "x_label": "x_axis", #Testing plots layout
             'title': 'Title',
+            'alpha': 1,
+            'theme': 'cx',
+            'color_scheme': 'CanvasXpress'
             }
         self.config = {
             'toolbarType' : 'under',
             'xAxisTitle' : self.options['x_label'],
-            'title' : self.options['title']
+            'title' : self.options['title'],
+            "objectColorTransparency": self.options["alpha"],
+            "theme": self.options["theme"],
+            "colorScheme": self.options["color_scheme"]
         }
         
         ### GRAPH/NETWORK RELATED DATA FOR TESTING ###
