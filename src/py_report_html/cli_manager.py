@@ -2,6 +2,7 @@ import argparse
 import sys
 import os
 import glob
+import re
 
 from py_report_html import Py_report_html
 
@@ -35,7 +36,7 @@ def main_py_report_html(options):
 
 def load_files(data_files):
 	container = {}
-	for file_path in options.data_files:
+	for file_path in data_files:
 		if not os.path.exists(file_path): sys.exit(f"File path {file_path} not exists") 
 		data_id = os.path.basename(file_path)
 		data = parse_tabular_file(file_path)

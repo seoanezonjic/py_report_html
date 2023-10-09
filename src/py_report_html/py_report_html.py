@@ -508,19 +508,18 @@ class Py_report_html:
         elif options.get('mod_data_structure') == 'circular':
             data_structure.update({ 'z' : {'Ring' : options['ring_assignation']}})
         elif options.get('mod_data_structure') == 'ridgeline':
+            
             data_structure['y']['smps'] = ["Sample"]
             transposed_values_to_flaten = list(map(lambda *x: list(x), *values))
             data_structure['y']['data'] = [[item] for sublist in transposed_values_to_flaten for item in sublist]
             data_structure['y']['vars'] = [f"s{id}" for id in range(len(data_structure['y']['data']))]
             reshaped_factor = [[sample]*len(values) for sample in samples]
-
+            data_structure.update({ 'z' : {'Factor' : [item for sublist in reshaped_factor for item in sublist]}})
             #print("reshaped_factor:", len(reshaped_factor))
             #print("data:", len(data_structure['y']['data']))
             #print("vars:", len(data_structure['y']['vars']))
             
-
-            data_structure.update({ 'z' : {'Factor' : [item for sublist in reshaped_factor for item in sublist]}})
-
+        
         self.inject_attributes(data_structure, options, slot="x")
         self.inject_attributes(data_structure, options, slot="z") 
 
@@ -1012,7 +1011,7 @@ class Py_report_html:
             })
 
             if options.get('group') == None:
-                options['mod_data_structure'] = 'ridgeline_density'
+                options['mod_data_structure'] = 'ridgeline'
             else:
                 config["histogramData"] = options['group']
                 config["colorBy"] = options['group']
@@ -1058,7 +1057,6 @@ class Py_report_html:
                     self.reshape(samples, variables, x, values)
                     group = default_options.get('group')
                     series = 'Factor'
-
                 #This option is used when your table in shaped in long format https://en.wikipedia.org/wiki/Wide_and_narrow_data
                 # In this case a list is provided. If only one variable is provided in the list, it is used as series.
                 # If two variables are provided, the first one is used as series and the second one as group to segregate the plots
@@ -1068,6 +1066,7 @@ class Py_report_html:
                     if len(default_options.get('group')) == 1:
                         series = default_options['group']
                         group = None
+
                 if config.get("groupingFactors") == None: # if config is defined, we assume that the user set this property to the value that he/she desires
                     if group == None:
                         config["groupingFactors"] = [series]
