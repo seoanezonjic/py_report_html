@@ -693,7 +693,7 @@ class Py_report_html:
         html_string = self.canvasXpress_main(default_options)
         return html_string
     
-    def barline(self, **user_options):
+    def barline(self, **user_options): #TODO: test this method
         def config_chart(options, config, samples, variables, values, object_id, x, z):
             config['graphType'] = 'BarLine'
             config["lineType"] = "spline"
@@ -730,7 +730,7 @@ class Py_report_html:
     def arealine(self, **user_options):
         def config_chart(options, config, samples, variables, values, object_id, x, z):
             config['graphType'] = 'AreaLine'
-            config["lineType"] = "spline"
+            config["lineType"] = "rect"
             config.update({"objectBorderColor":"false",
                             "objectColorTransparency":0.7})
             if options.get('xAxis') == None: 
@@ -749,7 +749,7 @@ class Py_report_html:
     def area(self, **user_options):
         def config_chart(options, config, samples, variables, values, object_id, x, z):
             config.update({'graphType': 'Area',
-                            "lineType":"spline",
+                            "lineType":"rect",
                             "objectBorderColor":"false",
                             "objectColorTransparency":0.7})
             
@@ -831,14 +831,14 @@ class Py_report_html:
             if options.get('pointSize') != None:
                 config['sizeBy'] = options['pointSize']
                 sampleIndex = samples.index(options['pointSize'])
-                samples.pop(sampleIndex)
-                z[options['pointSize']] = [row.pop(sampleIndex) for row in values]
+                #samples.pop(sampleIndex)
+                z[options['pointSize']] = [row[sampleIndex] for row in values]
 
             if options.get('colorScaleBy') != None:
                 config['colorBy'] = options['colorScaleBy']
                 sampleIndex = samples.index(options['colorScaleBy'])
-                samples.pop(sampleIndex)
-                z[options['colorScaleBy']] = [row.pop(sampleIndex) for row in values]
+                #samples.pop(sampleIndex)
+                z[options['colorScaleBy']] = [row[sampleIndex] for row in values]
 
             if options.get("add_densities") == True:
                 config.update({
@@ -857,7 +857,7 @@ class Py_report_html:
         html_string = self.canvasXpress_main(default_options)
         return html_string
     
-    #TODO: Test this method
+
     def scatter3D(self, **user_options):
         default_options = { 'row_names': False, 'transpose': False}
         default_options.update(user_options)
@@ -895,14 +895,14 @@ class Py_report_html:
             if options.get('pointSize') != None:
                 config['sizeBy'] = options['pointSize']
                 sampleIndex = samples.index(options['pointSize'])
-                samples.pop(sampleIndex)
-                z[options['pointSize']] = [row.pop(sampleIndex) for row in values]
+                #samples.pop(sampleIndex)
+                z[options['pointSize']] = [row[sampleIndex] for row in values]
 
             if options.get('colorScaleBy') != None:
                 config['colorBy'] = options['colorScaleBy']
                 sampleIndex = samples.index(options['colorScaleBy'])
-                samples.pop(sampleIndex)
-                z[options['colorScaleBy']] = [row.pop(sampleIndex) for row in values]
+                #samples.pop(sampleIndex)
+                z[options['colorScaleBy']] = [row[sampleIndex] for row in values]
 
             if options.get('shapeBy') != None:
                 config['shapeBy'] = options['shapeBy']
@@ -973,7 +973,6 @@ class Py_report_html:
         html_string = self.canvasXpress_main(default_options)
         return html_string
     
-    #TODO: test this feature
     def ridgeline(self, **user_options):
         default_options = {"transpose": False, "bins": 30, "ridgelineScale":2}
         default_options.update(user_options)
@@ -995,7 +994,6 @@ class Py_report_html:
         html_string = self.canvasXpress_main(default_options)
         return html_string
     
-    #TODO: test this feature
     def density(self, **user_options):
         default_options = {"transpose": False, "fillDensity": False, "median": False}
         default_options.update(user_options)
@@ -1118,7 +1116,7 @@ class Py_report_html:
         html_string = self.canvasXpress_main(default_options) 
         return html_string
     
-    def circular_genome(self, **user_options):
+    def circular_genome(self, **user_options): #TODO: test this method
         default_options = { 'ring_assignation': [], 'ringsType': [], 'ringsWeight': [] }
         default_options.update(user_options)
         

@@ -6,6 +6,7 @@
 
 #import json
 from collections import defaultdict
+from io import BytesIO
 import math
 import random
 import json
@@ -20,6 +21,7 @@ from py_report_html import Py_report_html
 
 ROOT_PATH= os.path.dirname(__file__)
 DATA_TEST_PATH = os.path.join(ROOT_PATH, 'data')
+JS_AND_CSS_LIBRARIES_PATH = os.path.join(ROOT_PATH,"..", "src", "py_report_html","js")
 
 ### Defining auxiliary methods for testing purposes ###
 def get_plot_data(reportObject, ObjectMethod, **cust_options):
@@ -45,6 +47,7 @@ class ReportHtml(unittest.TestCase):
         ["red",     "gen3", "gen4"],
         ["black",   "gen1", "gen3"],
         ["black",   "gen2", "gen4"]]
+        self.empty_table_id = []
         self.simple_table = list(map(lambda x: re.split(r"\s+", x),[
             "1	3",
             "2	4",
@@ -70,9 +73,10 @@ class ReportHtml(unittest.TestCase):
             "100     85     mRNA     12",
             "85      10     mRNA     41"
         ]))
-        self.container = {"simple_table": self.simple_table, "complex_table": self.complex_table, "table_no_rownames": self.table_no_rownames, "links": self.links}
+        self.container = {"simple_table": self.simple_table, "complex_table": self.complex_table,
+                           "table_no_rownames": self.table_no_rownames, "links": self.links,
+                           "empty_table_id": self.empty_table_id}
         self.html_title = "Sample"
-        self.html = Py_report_html(self.container, title=self.html_title, data_from_files = True, compress= False)
 
         ## Defining expected results ##
         self.expected_smp_attrs = [    #These are variable attributes, not the variables themselves        
@@ -152,6 +156,20 @@ class ReportHtml(unittest.TestCase):
         self.group_nodes = {"com1": ["B", "C", "D"], "com2": ["X", "Y", "Z"]} #Nodes in group_nodes will have color index 2,3,4,etc like shown in the comment below
         self.layers = ["Phenotypes", "Patients"] # The following colors index will be given: Phenotypes == 2, Patients == 3 
 
+        self.graph_list = []
+        self.graph_dict = {
+            "graph": self.graph, 
+            "reference_nodes": self.reference_nodes, 
+            "group_nodes": self.group_nodes, 
+            "layers": self.layers}
+
+        for line in nx.generate_edgelist(self.graph):
+            self.graph_list.append(line.split())
+
+        self.container.update({"graph_list": self.graph_list, "graph_dict": self.graph_dict})
+
+        ### CREATING PY_REPORT_HTML OBJECT ###
+        self.html = Py_report_html(self.container, title=self.html_title, data_from_files = True, compress= False)
 
         ### REGEX PATTERNS FOR TESTING ###
         self.pattern_html = re.compile(r"<html>.*</html>", re.DOTALL | re.IGNORECASE)
@@ -159,7 +177,12 @@ class ReportHtml(unittest.TestCase):
         self.pattern_body_and_table = re.compile(r"<body.*<table .*"+('table_' + str(self.html.count_objects)) + r".*</table>.*</body>", re.DOTALL)
         self.pattern_ths = re.compile(r"<th.*?>.*?</th>.*"*4, re.DOTALL)
         self.pattern_trs = re.compile(r"<tr.*?>.*?</tr>.*"*5, re.DOTALL)
+        self.pattern_script_tag = re.compile(r'<script type="text/javascript".*?>.*?</script>', re.DOTALL)
+        self.loaded_pattern_script_tag = re.compile(r'<script src=\"data:application/javascript;base64,', re.DOTALL)
+        self.pattern_css_stylesheet_tag = re.compile(r'<link rel="stylesheet" type="text/css".*?>', re.DOTALL)
+        self.loaded_pattern_css_stylesheet_tag = re.compile(r'<style type="text/css">.*?</style>', re.DOTALL)
                 
+
     # -------------------------------------------------------------------------------------
     # RENDER TEMPLATE METHODS
     # -------------------------------------------------------------------------------------    
@@ -181,12 +204,32 @@ class ReportHtml(unittest.TestCase):
         table = self.html.table(**self.options)
         self.html.build(table)
       
+        self.assertTrue(len(self.html.bs_tables) > 0)
         self.assertRegex(self.html.all_report, self.pattern_html)
         self.assertRegex(self.html.all_report, self.pattern_head)
         self.assertRegex(self.html.all_report, self.pattern_body_and_table)
         self.assertRegex(self.html.all_report, self.pattern_ths)
         self.assertRegex(self.html.all_report, self.pattern_trs)
 
+    def test_check_loaded_libraries_inside_html(self):
+        self.html.networks = ["cytoscape", "elgrapho", "sigma"]
+        self.html.dt_tables = ["mock_dt"]
+        self.html.bs_tables = ["mock_bs"]
+        self.html.plots_data = ["mock_plot"]
+        
+        table = self.html.table(**self.options)
+        self.html.build(table)
+
+        self.assertTrue(os.path.exists(JS_AND_CSS_LIBRARIES_PATH))
+        self.assertTrue(os.path.exists(os.path.join(Py_report_html.TEMPLATES, 'sigma_cdn.txt')))
+
+        #Asserting that all libraries are found inside the html
+        self.assertEqual(9, len(re.findall(self.pattern_script_tag, self.html.all_report)))
+        self.assertEqual(4, len(re.findall(self.loaded_pattern_script_tag, self.html.all_report)))
+
+        self.assertEqual(4, len(re.findall(self.pattern_css_stylesheet_tag, self.html.all_report)))
+        self.assertEqual(1, len(re.findall(self.loaded_pattern_css_stylesheet_tag, self.html.all_report)))
+    
     def test_get_report(self):
         table = self.html.table(**self.options)
         self.html.build(table)
@@ -196,16 +239,43 @@ class ReportHtml(unittest.TestCase):
     def test_write(self):
         table = self.html.table(**self.options)
         self.html.build(table)
-        self.html.write("./test/data/test.html")
-        file = open("./test/data/test.html", "r")
+        self.html.write(os.path.join(DATA_TEST_PATH, "test.html"))
+        file = open(os.path.join(DATA_TEST_PATH, "test.html"), "r")
         reread_html = "".join(file.readlines())
         file.close()
         
-        self.assertTrue(os.path.isfile("./test/data/test.html"))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_TEST_PATH, "test.html")))
         self.assertEqual(self.html.all_report, reread_html)
         
-        os.remove("./test/data/test.html")
+        os.remove(os.path.join(DATA_TEST_PATH, "test.html"))
 
+    def test_load_js_libraries(self):
+        files = ["canvasXpress.min.js", "cytoscape.min.js", "ElGrapho.min.js", "pako.min.js"]
+        js_libraries = [os.path.join(JS_AND_CSS_LIBRARIES_PATH,file) for file in files]
+        loaded_js = self.html.load_js_libraries(js_libraries)
+        self.assertEqual(len(js_libraries), len(loaded_js))
+
+    def test_load_css(self):
+        css_library = [os.path.join(JS_AND_CSS_LIBRARIES_PATH, "canvasXpress.css")]
+        loaded_css = self.html.load_css(css_library)
+        self.assertEqual(len(loaded_css), 1)
+
+    def test_compress_decompress_data(self):
+        data = 'This is a test string'
+        expected_data = '"This is a test string"'
+
+        #Testing compression
+        self.html.compress = True
+        compressed_data = self.html.compress_data(data)
+        future_decompressed_data = self.html.decompress_code(compressed_data)
+        expected_future_decompressed_data = 'JSON.parse(pako.inflate(atob("eJxTCsnILFYAokSFktTiEoXikqLMvHQlAFwnB/E="), { to: \'string\' }))'
+        self.assertEqual(expected_future_decompressed_data, future_decompressed_data)
+
+        #Testing compress false case
+        self.html.compress = False
+        compressed_data = self.html.compress_data(data)
+        decompressed_data = self.html.decompress_code(compressed_data)
+        self.assertEqual(expected_data, decompressed_data)
     #-------------------------------------------------------------------------------------
     # DATA MANIPULATION METHODS
     #-------------------------------------------------------------------------------------  
@@ -324,7 +394,7 @@ class ReportHtml(unittest.TestCase):
         self.html.add_header_row_names(table_custom_headers, options=user_options_with_header_names)
         self.assertEqual(expected_custom_header_table, table_custom_headers)
 
-    def test_get_data(self):
+    def test_get_data(self): #TODO: The emtpy case is returning an error in extract_data, so why is there a len(data) > 0 condition
         expected_hashvar = copy.deepcopy(self.html.hash_vars["complex_table"])
         custom_options = copy.deepcopy(self.options)
         custom_options["transpose"] = False
@@ -333,6 +403,14 @@ class ReportHtml(unittest.TestCase):
         self.assertEqual(self.expected_var_attrs, returned_var_attrs)
         self.assertEqual(self.expected_smp_attrs, returned_smp_attrs)
         self.assertEqual(expected_hashvar, self.html.hash_vars["complex_table"]) #Checking that original table has not been modified as more plot calls will be done to the same table
+
+        #emtpy case
+        custom_options = copy.deepcopy(self.options)
+        custom_options.update({"id": "empty_table_id", "fields": [], "var_attr": [], "smp_attr": [], "add_header_row_names": False})
+        returned_data, returned_smp_attrs, returned_var_attrs = self.html.get_data(custom_options)
+        self.assertEqual([], returned_data)
+        self.assertEqual([], returned_var_attrs)
+        self.assertEqual([], returned_smp_attrs)
 
 
     def test_get_data_transpose(self):
@@ -580,7 +658,7 @@ class ReportHtml(unittest.TestCase):
 
     def test_set_tree(self):
         user_options = copy.deepcopy(self.options)
-        user_options.update({"tree": "./test/data/tree.txt",
+        user_options.update({"tree": os.path.join(DATA_TEST_PATH, "tree.txt"),
                              "treeBy": "v"})
         expected_config = copy.deepcopy(self.config)
 
@@ -617,13 +695,95 @@ class ReportHtml(unittest.TestCase):
         self.assertEqual([self.expected_data_json_transposed, expected_config, False, False, []],
                          [data, conf, events, info, afterRender])
 
+    def test_barline(self):
+        custom_options = copy.deepcopy(self.options)
+        custom_options.update({"xAxisTitle": "Expression of genes 1 and 2 (bars)",
+                                "xAxis2Title": "Expression of genes 3 and 4 (lines)",
+                                "xAxis": ["lung"], "xAxis2": ["liver"] })
+        
+        expected_config = copy.deepcopy(self.config)
+        expected_config.update({ "graphType": "BarLine",
+                                "lineType": "spline",
+                                "xAxis": ["lung"],
+                                "xAxis2": ["liver"],})
+        
+        data, conf, events, info, afterRender, canvas_function_call = get_plot_data(self.html, self.html.barline, **custom_options)
+        self.assertEqual([self.expected_data_json_transposed, expected_config, False, False, []],
+                        [data, conf, events, info, afterRender])
+
+    def test_dotline(self):
+        custom_options = copy.deepcopy(self.options)
+        custom_options.update({"xAxisTitle": "Expression of genes 1 and 2 (bars)",
+                                "xAxis2Title": "Expression of genes 3 and 4 (lines)",
+                                "xAxis": ["lung"], "xAxis2": ["liver"] })
+        
+        expected_config = copy.deepcopy(self.config)
+        expected_config.update({ "graphType": "DotLine",
+                                "lineType": "spline",
+                                "xAxis": ["lung"],
+                                "xAxis2": ["liver"],})
+        
+        data, conf, events, info, afterRender, canvas_function_call = get_plot_data(self.html, self.html.dotline, **custom_options)
+        self.assertEqual([self.expected_data_json_transposed, expected_config, False, False, []],
+                        [data, conf, events, info, afterRender])
+
+    def test_arealine(self):
+        custom_options = copy.deepcopy(self.options)
+        custom_options.update({"xAxisTitle": "Expression of genes 1 and 2 (bars)",
+                                "xAxis2Title": "Expression of genes 3 and 4 (lines)",
+                                "xAxis": ["lung"], "xAxis2": ["liver"] })
+        
+        expected_config = copy.deepcopy(self.config)
+        expected_config.update({ "graphType": "AreaLine",
+                                "lineType": "rect",
+                                "xAxis": ["lung"],
+                                "xAxis2": ["liver"],
+                                "objectBorderColor":"false",
+                            "objectColorTransparency":0.7})
+        
+        data, conf, events, info, afterRender, canvas_function_call = get_plot_data(self.html, self.html.arealine, **custom_options)
+        self.assertEqual([self.expected_data_json_transposed, expected_config, False, False, []],
+                        [data, conf, events, info, afterRender])
+
+    def test_area(self):
+        custom_options = copy.deepcopy(self.options)
+        custom_options.update({"xAxisTitle": "Expression of genes 1 and 2 (bars)",
+                                "xAxis2Title": "Expression of genes 3 and 4 (lines)",
+                                "xAxis": ["lung"], "xAxis2": ["liver"] })
+        
+        expected_config = copy.deepcopy(self.config)
+        expected_config.update({ "graphType": "Area",
+                                "lineType": "rect",
+                                "objectBorderColor":"false",
+                                "objectColorTransparency":0.7,})
+        
+        data, conf, events, info, afterRender, canvas_function_call = get_plot_data(self.html, self.html.area, **custom_options)
+        self.assertEqual([self.expected_data_json_transposed, expected_config, False, False, []],
+                        [data, conf, events, info, afterRender])        
+
     def test_stacked(self):
         expected_config = copy.deepcopy(self.config)
         expected_config["graphType"]= "Stacked"
         data, conf, events, info, afterRender, obj_0 = get_plot_data(self.html, self.html.stacked, **self.options)
         self.assertEqual([self.expected_data_json_transposed, expected_config, False, False, []],
                          [data, conf, events, info, afterRender])
+
+    def test_stackedline(self):
+        custom_options = copy.deepcopy(self.options)
+        custom_options.update({"xAxisTitle": "Expression of genes 1 and 2 (bars)",
+                                "xAxis2Title": "Expression of genes 3 and 4 (lines)",
+                                "xAxis": ["lung"], "xAxis2": ["liver"] })
         
+        expected_config = copy.deepcopy(self.config)
+        expected_config.update({ "graphType": "StackedLine",
+                                "lineType": "spline",
+                                "xAxis": ["lung"],
+                                "xAxis2": ["liver"],})
+        
+        data, conf, events, info, afterRender, canvas_function_call = get_plot_data(self.html, self.html.stackedline, **custom_options)
+        self.assertEqual([self.expected_data_json_transposed, expected_config, False, False, []],
+                        [data, conf, events, info, afterRender])
+
     def test_corplot(self):
         expected_config = copy.deepcopy(self.config)
         expected_config.update({"graphType": "Correlation", "correlationAxis": "samples"})
@@ -661,17 +821,23 @@ class ReportHtml(unittest.TestCase):
 
     def test_boxplot_without_factor(self):
         expected_config = copy.deepcopy(self.config)
-        expected_config.update({"graphType": "Boxplot"})
+        expected_config.update({"graphType": "Boxplot",
+                                 "showBoxplotIfViolin":True,
+                                "showBoxplotOriginalData":True,
+                                "showViolinBoxplot":True,
+                                "jitter":True})
 
         ##### First test With default options, no groups defined
-        
+        user_options = copy.deepcopy(self.options)
+        user_options["add_violin"] = True
+
         #Although no change is done in boxplot method, the data is being modified in 
         #canvasXpress_main method, at line 424, with 'if options.get('mod_data_structure') == 'boxplot':'
         custom_data_json = copy.deepcopy(self.expected_data_json_transposed)
         custom_data_json["y"]["smps"] = None
         custom_data_json.update({ 'x' : {'Factor' : self.expected_data_json_transposed["y"]["smps"]}})
 
-        data, conf, events, info, afterRender, obj_0 = get_plot_data(self.html, self.html.boxplot, **self.options)
+        data, conf, events, info, afterRender, obj_0 = get_plot_data(self.html, self.html.boxplot, **user_options)
         self.assertEqual([custom_data_json, expected_config, False, False, []],
                         [data, conf, events, info, afterRender])        
         ###### TODO: Pending to do the test with groups defined. Ask Pedro about the possible options for groups, groupingFactors and extracode 
@@ -775,19 +941,36 @@ class ReportHtml(unittest.TestCase):
         #Testing that the function segregateSamplesBy is used
         self.assertIn(f"segregateSamples(['nerv'])", obj_0)
 
+
     def test_scatter2D(self):
         custom_options = copy.deepcopy(self.options)
-        custom_options.update({"regressionLine": True, "y_label": "custom_y_axis"})
+        custom_options.update({"regressionLine": True, "y_label": "custom_y_axis", "add_densities": True,
+                               "pointSize": self.expected_samples[0],
+                               "colorScaleBy": self.expected_samples[1]})
 
         expected_config = copy.deepcopy(self.config)
         expected_config.update({ "graphType": "Scatter2D", 
                               'xAxis': [self.expected_samples[0]], 
-                              'yAxis': self.expected_samples[1:], "yAxisTitle": "custom_y_axis"})
+                              'yAxis': self.expected_samples[1:], "yAxisTitle": "custom_y_axis",
+                              "sizeBy": self.expected_samples[0],
+                                "colorBy": self.expected_samples[1],
+                              "hideHistogram":"false",
+                            "histogramBins":20,
+                            "histogramStat":"count",
+                            "showFilledHistogramDensity":True,
+                            "showHistogramDensity":True,
+                            "showHistogramMedian":True,
+                            "xAxisHistogramHeight":"150",
+                            "xAxisHistogramShow":True,
+                            "yAxisHistogramHeight":"150",
+                            "yAxisHistogramShow":True})
         
+        expected_data_json = copy.deepcopy(self.expected_data_json)
+        expected_data_json["z"].update({'liver': [20.0, 40.0, 100.0, 85.0], 'brain': [13.0, 60.0, 85.0, 10.0]})
         #Testing with default options (if no xAxis or yAxis are defined, it gets the first column as xAxis and the rest of the samples as yAxis)
         data, conf, events, info, afterRender, canvas_function_call = get_plot_data(self.html, self.html.scatter2D, **custom_options)
 
-        self.assertEqual([self.expected_data_json, expected_config, False, False, []],
+        self.assertEqual([expected_data_json, expected_config, False, False, []],
                         [data, conf, events, info, afterRender])
         self.assertTrue("addRegressionLine()" in canvas_function_call)
 
@@ -842,6 +1025,31 @@ class ReportHtml(unittest.TestCase):
         data, conf, events, info, afterRender, canvas_function_call = get_plot_data(self.html, self.html.scatterbubble2D, **custom_options)
         self.assertEqual([self.expected_data_json, expected_config, False, False, []],
                         [data, conf, events, info, afterRender])
+        
+    def test_scatter3D(self):
+        custom_options = copy.deepcopy(self.options)
+        custom_options.update({"y_label": "custom_y_axis", "z_label": "custom_z_axis",
+                               "xAxis": [self.expected_samples[2]], 
+                               "yAxis": [self.expected_samples[1]],
+                               "zAxis": [self.expected_samples[0]],
+                               "pointSize": self.expected_samples[0],
+                               "colorScaleBy": self.expected_samples[1],
+                               "shapeBy": "nerv"})
+        
+        expected_config = copy.deepcopy(self.config)
+        expected_config.update({"graphType": "Scatter3D",
+                                "sizeBy": self.expected_samples[0],
+                                "colorBy": self.expected_samples[1],
+                                "shapeBy": "nerv",
+                              'xAxis': [self.expected_samples[2]], 
+                              'yAxis': [self.expected_samples[1]], "yAxisTitle": "custom_y_axis",
+                              'zAxis': [self.expected_samples[0]], "zAxisTitle": "custom_z_axis"})
+        
+        expected_data_json = copy.deepcopy(self.expected_data_json)
+        expected_data_json["z"].update({'liver': [20.0, 40.0, 100.0, 85.0], 'brain': [13.0, 60.0, 85.0, 10.0]})
+        data, conf, events, info, afterRender, canvas_function_call = get_plot_data(self.html, self.html.scatter3D, **custom_options)
+        self.assertEqual([expected_data_json, expected_config, False, False, []],
+                        [data, conf, events, info, afterRender])
 
     def test_hexplot(self):
         custom_options = copy.deepcopy(self.options)
@@ -871,9 +1079,92 @@ class ReportHtml(unittest.TestCase):
         self.assertEqual([self.expected_data_json_transposed, expected_config, False, False, []],
                         [data, conf, events, info, afterRender])
 
+    def test_ridgeline(self):
+        custom_options = copy.deepcopy(self.options)
+
+        expected_config = copy.deepcopy(self.config)
+        expected_config.update({ "graphType": "Scatter2D", 
+                                 "colorBy":"Factor", "ridgeBy":"Factor", "graphType":"Scatter2D",
+                                "hideHistogram":True, "histogramBins": "30", "ridgelineScale": 2,
+                                "showFilledHistogramDensity":True, "showHistogramDensity":True})
+        
+        expected_data_json = copy.deepcopy(self.expected_data_json_transposed)
+        expected_data_json["y"]["smps"] = ["Sample"]
+        expected_data_json["y"]["vars"] = [f"s{num}" for num in range(len(self.expected_values)*len(self.expected_values[0]))]
+        expected_data_json["y"]["data"] = list(map(list, zip(*self.expected_values)))
+        expected_data_json["y"]["data"] = [[float(item)] for row in expected_data_json["y"]["data"] for item in row]
+        expected_data_json["z"] = {"Factor":[ [sample]*len(self.expected_values) for sample in self.expected_samples]}
+        expected_data_json["z"]["Factor"] = [item for pack in expected_data_json["z"]["Factor"] for item in pack]
+        expected_data_json["x"] = self.x_reshaped_smp_attrs
+        
+        data, conf, events, info, afterRender, canvas_function_call = get_plot_data(self.html, self.html.ridgeline, **custom_options)
+        self.assertEqual([expected_data_json, expected_config, False, False, []],
+                        [data, conf, events, info, afterRender])
+
+
+    def test_density(self):
+        custom_options = copy.deepcopy(self.options)
+
+        expected_config = copy.deepcopy(self.config)
+        expected_config.update({ "graphType": "Scatter2D", 
+                                 "hideHistogram":True,
+                                 "histogramData":"Factor",
+                                 "showFilledHistogramDensity":False,
+                                 "showHistogramDensity":True,
+                                 "showHistogramMedian":False})
+        
+        expected_data_json = copy.deepcopy(self.expected_data_json_transposed)
+        expected_data_json["y"]["smps"] = ["Sample"]
+        expected_data_json["y"]["vars"] = [f"s{num}" for num in range(len(self.expected_values)*len(self.expected_values[0]))]
+        expected_data_json["y"]["data"] = list(map(list, zip(*self.expected_values)))
+        expected_data_json["y"]["data"] = [[float(item)] for row in expected_data_json["y"]["data"] for item in row]
+        expected_data_json["z"] = {"Factor":[ [sample]*len(self.expected_values) for sample in self.expected_samples]}
+        expected_data_json["z"]["Factor"] = [item for pack in expected_data_json["z"]["Factor"] for item in pack]
+        expected_data_json["x"] = self.x_reshaped_smp_attrs
+        
+        data, conf, events, info, afterRender, canvas_function_call = get_plot_data(self.html, self.html.density, **custom_options)
+        self.assertEqual([expected_data_json, expected_config, False, False, []],
+                        [data, conf, events, info, afterRender])
+
+    def test_circular_genome(self):
+        self.assertTrue(False, "Test not implemented yet")
+
     #-------------------------------------------------------------------------------------
     # CANVASXPRESS NETWORK PLOTTING METHODS
     #-------------------------------------------------------------------------------------
+    def test_network(self):
+        user_options = copy.deepcopy(self.options)
+        user_options.update({
+            "var_attr": [],
+            "smp_attr": [],
+            "add_header_row_names": False,
+            "method": "cytoscape",
+            "id": "graph_list",
+            "reference_nodes": [],
+            "group_nodes": {}
+        })
+
+        #Test the network input as a list of edges
+        returned = self.html.network(**user_options)
+        self.assertIn('<div id="container_0"', returned)
+        self.assertIn("model_0", returned)
+        self.assertIn("cytoscape", returned)
+
+        #Test the network input as a dict object and use the elgrapho method
+        user_options.update({"id": "graph_dict", "method": "elgrapho"})
+        returned2 = self.html.network(**user_options)
+
+        self.assertIn('<div id="container_1"', returned2)
+        self.assertIn("model_1", returned2)
+        self.assertIn("ElGrapho", returned2)
+
+        #Test sigma method
+        user_options.update({"id": "graph_dict", "method": "sigma"})
+        returned3 = self.html.network(**user_options)
+
+        self.assertIn('<div id="container_2"', returned3)
+        self.assertIn("model_2", returned3)
+        self.assertIn("sigma", returned3)
 
     def test_cytoscape_network(self):
         user_options = copy.deepcopy(self.options)
@@ -934,3 +1225,45 @@ class ReportHtml(unittest.TestCase):
         random.seed(1)
         returned_model2 = self.html.sigma_network(custom_options, self.graph, self.layers, self.reference_nodes, {})
         self.assertEqual(expected_model2, returned_model2)
+
+
+    ##################################################################################
+    # EMBED FILES
+    ###################################################################################
+
+    def test_embed_pdf(self):
+        pdf_from_file = os.path.join(DATA_TEST_PATH, "mock_pdf.pdf")
+        returned = self.html.embed_pdf(pdf_from_file)
+
+        self.assertIn("data:application/pdf;base64,", returned)
+        self.assertIn("<embed", returned)
+        self.assertIn("type=\"application/pdf\"", returned)
+
+    def test_embed_img(self):
+        tmp_image = BytesIO(b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x02\x80\x00\x00\x01\xe0\x08\x06\x00\x00\x005\xd1\xdc\xe4\x00\x00\x009tEXtSoftware\x00Matplotlib version3.5.3, https://matplotlib.org/\xcd+\xb9\xd2\x00\x00\x00\tpHYs\x00\x00\x0fa\x00\x00\x0fa\x01\xa8?\xa7i\x00\x00:\xd0IDATx\x9c\xed\xddyx\x94\xf5\xa1\xb7\xf1\xefd\x0f\xd9 \x04\xc2\x92\x04\xc2\xbe$d\x01E(ZpAq\x03\x15\x04b\xad\xb6\xb6\xef\xb1\'\x01\x14\xb5\x8aV\x05\xb7X\xc5\x05\x08z\xf4\xb4G\xed9\x84MDp\x17\x17@\xa4\x88\x90\x85}_\x12\x08\x10\xc2\x92\xc9B&\xc9\xcc\xf3\xfe\xe1)\xa7VE\x96$\xbf\xc9<\xf7\xe7\xba\xe6\xba\x9a\x98\xc0\xd7)dn\x9f\xdfCpX\x96e\t\x00\x00\x00\xb6\xe1gz\x00\x00\x00\x00\x9a\x16\x01\x08\x00\x00`3\x04 \x00\x00\x80\xcd\x10\x80\x00\x00\x006C\x00\x02\x00\x00')
+        image_from_file = os.path.join(DATA_TEST_PATH, "mock_img.png")
+
+        #Testing with a file
+        returned = self.html.embed_img(image_from_file)
+        self.assertIn("data:image/png;base64,", returned)
+        self.assertIn("<img", returned)
+
+        #Testing with a bytes object
+        returned = self.html.embed_img(tmp_image, bytesIO=True)
+        self.assertIn("data:image/png;base64,", returned)
+        self.assertIn("<img", returned)
+
+    ################################################################################
+    # TEST FOR STATIC PLOTTING METHOD(S)
+    ################################################################################
+
+    def test_static_plot_main(self):
+        plotting_function=  lambda data, plotter_list: plotter_list["sns"].scatterplot(data=data, x='liver', y='brain', hue='type', size='cerebellum')
+
+        user_options = copy.deepcopy(self.options)
+        user_options.update({"plotting_function": plotting_function, "theme": "ggplot"})
+
+        returned = self.html.static_plot_main(**user_options)
+        self.assertIn("data:image/png;base64,", returned)
+        self.assertIn("<img", returned)
+

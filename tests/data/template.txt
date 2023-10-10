@@ -1,0 +1,15 @@
+${plotter.table(id= "simple_table.txt",
+            fields= [], var_attr= [], smp_attr= [],
+			add_header_row_names= True, header= False, row_names= False)}
+
+${plotter.table(id= "complex_table.txt",
+            fields= [], var_attr= [1,2], smp_attr= [1,2],
+			add_header_row_names= False, header= True, row_names= True)}
+
+${plotter.line(id= "complex_table.txt",
+            fields= [], var_attr= [1,2], smp_attr= [1,2],
+			add_header_row_names= False, header= True, row_names= True)}
+
+${plotter.scatter2D(id= "simple_table.txt",
+            fields= [], var_attr= [], smp_attr= [],
+			add_header_row_names= True, header= False, row_names= False)}

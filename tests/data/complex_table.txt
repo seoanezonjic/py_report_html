@@ -1,0 +1,7 @@
+tissue	type	type2	liver	brain	cerebellum
+nerv	-	-	no	yes	yes
+pcr	-	-	true	true	false
+gen1	miRNA	tRNA	20	13	15
+gen2	miRNA	tRNA	40	60	30
+gen3	mRNA	ncRNA	100	85	12
+gen4	mRNA	ncRNA	85	10	41
