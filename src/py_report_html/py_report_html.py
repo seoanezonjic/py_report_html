@@ -11,11 +11,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import random
 import copy
+from importlib.resources import files
 
 class Py_report_html:
     
-    JS_FOLDER = os.path.join(os.path.dirname(__file__), 'js')
-    TEMPLATES = os.path.join(os.path.dirname(__file__), 'templates')
+    JS_FOLDER = "py_report_html.js"
+    TEMPLATES = "py_report_html.templates"
+    #JS_FOLDER = os.path.join(os.path.dirname(__file__), 'js')
+    #TEMPLATES = os.path.join(os.path.dirname(__file__), 'templates')
 
     def __init__(self, hash_vars, title = "report", data_from_files = False, compress = True):
         self.all_report = ""
@@ -44,14 +47,16 @@ class Py_report_html:
     def load_js_libraries(self, js_libraries):
         loaded_libraries = []
         for js_lib in js_libraries:
-            with open(os.path.join(Py_report_html.JS_FOLDER, js_lib), 'rb') as f:
+            file = str(files(Py_report_html.JS_FOLDER).joinpath(js_lib))
+            with open(file, 'rb') as f:
                 loaded_libraries.append(base64.b64encode(f.read()).decode('UTF-8'))
         return loaded_libraries
 
     def load_css(self, css_files):
         loaded_css = []
         for css_lib in css_files:
-            with open(os.path.join(Py_report_html.JS_FOLDER, css_lib), 'r') as f:
+            file = str(files(Py_report_html.JS_FOLDER).joinpath(css_lib))
+            with open(file, 'r') as f:
                 loaded_css.append(f.read())
         return loaded_css
 
@@ -88,7 +93,8 @@ class Py_report_html:
 
 
         if 'sigma' in self.networks: # sigma CDN load is HUGE so we read it from file
-            with open(os.path.join(Py_report_html.TEMPLATES, 'sigma_cdn.txt'), 'r') as f:
+            file = str(files(Py_report_html.TEMPLATES).joinpath('sigma_cdn.txt'))
+            with open(os.path.join(file), 'r') as f:
                 self.all_report += f.read() + "\n"
 
         # FILE LOAD
@@ -335,7 +341,8 @@ class Py_report_html:
         if options.get('styled') == 'dt': self.dt_tables.append(table_id) 
         if options.get('styled') == 'bs': self.bs_tables.append(table_id) 
         self.count_objects += 1
-        templ = Template(filename=os.path.join(Py_report_html.TEMPLATES, 'table.txt'))
+        template_file = str(files(Py_report_html.TEMPLATES).joinpath('table.txt'))
+        templ = Template(filename=template_file)
         return templ.render(plotter=self, options=options, array_data=array_data, table_id= table_id, table_attr=table_attr, rowspan = rowspan, colspan=colspan)
 
     def prepare_table_attribs(self, attribs):
@@ -1202,8 +1209,9 @@ class Py_report_html:
             self.networks.append('sigma')
             temp_file = 'sigma.txt'
             model = self.sigma_network(options, graph, layers, reference_nodes, group_nodes)
-
-        templ = Template(filename=os.path.join(Py_report_html.TEMPLATES, temp_file)) 
+        
+        template_file = str(files(Py_report_html.TEMPLATES).joinpath(temp_file))
+        templ = Template(filename=template_file) 
         network = base64.b64encode(zlib.compress(json.dumps(model).encode('UTF-8'))).decode('UTF-8')
         string = templ.render(plotter=self, options=options, network=network, count_objects=self.count_objects)
         self.count_objects += 1
