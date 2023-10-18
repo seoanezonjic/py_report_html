@@ -1267,3 +1267,13 @@ class ReportHtml(unittest.TestCase):
         self.assertIn("data:image/png;base64,", returned)
         self.assertIn("<img", returned)
 
+
+    ################################################################################
+    # TESTS FOR UTILS METHODS
+    ################################################################################
+
+    def test_get_color_palette(self):
+        result = self.html.get_color_palette(5)
+        expected = [(1.0, 0.0, 0.16, 1.0), (1.0, 0.918918918918919, 0.0, 1.0), (0.0, 1.0, 0.0, 1.0), (0.0, 0.9239130434782604, 1.0, 1.0), (0.16304347826086973, 0.0, 1.0, 1.0)]
+        self.assertEqual(len(result), 5)
+        self.assertEqual(result, expected)

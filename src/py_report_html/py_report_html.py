@@ -1,6 +1,5 @@
-import sys, re, os, json, math, zlib, warnings
+import re, os, json, math, zlib, warnings
 import pandas as pd
-import numpy as np
 import base64
 from io import BytesIO
 from collections import defaultdict
@@ -12,6 +11,7 @@ import seaborn as sns
 import random
 import copy
 from importlib.resources import files
+import pylab
 
 class Py_report_html:
     
@@ -1286,3 +1286,16 @@ class Py_report_html:
                 pdf_base64 = base64.b64encode(f.read()).decode('UTF-8')
         pdf_string = f"<embed {pdf_attribs} src=\"data:application/pdf;base64,{pdf_base64}\" type=\"application/pdf\"></embed>"
         return pdf_string
+
+
+    ##################################################################################
+    # UTILS
+    ###################################################################################
+
+    def get_color_palette(self, num, cmap="gist_rainbow"):
+        cm = pylab.get_cmap(cmap)
+        colors = []
+        for i in range(num):
+            color = cm(1.*i/num)  # color will now be an RGBA tuple
+            colors.append(color)
+        return colors
