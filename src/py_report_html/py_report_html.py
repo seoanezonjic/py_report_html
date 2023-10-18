@@ -1292,7 +1292,8 @@ class Py_report_html:
     # UTILS
     ###################################################################################
 
-    def get_color_palette(self, num, cmap="gist_rainbow"):
+    @staticmethod
+    def get_color_palette(num, cmap="gist_rainbow"):
         cm = pylab.get_cmap(cmap)
         colors = []
         for i in range(num):

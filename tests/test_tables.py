@@ -1273,7 +1273,9 @@ class ReportHtml(unittest.TestCase):
     ################################################################################
 
     def test_get_color_palette(self):
-        result = self.html.get_color_palette(5)
+        obj_result = self.html.get_color_palette(5)
+        cls_result = Py_report_html.get_color_palette(5)
         expected = [(1.0, 0.0, 0.16, 1.0), (1.0, 0.918918918918919, 0.0, 1.0), (0.0, 1.0, 0.0, 1.0), (0.0, 0.9239130434782604, 1.0, 1.0), (0.16304347826086973, 0.0, 1.0, 1.0)]
-        self.assertEqual(len(result), 5)
-        self.assertEqual(result, expected)
+        
+        self.assertEqual(obj_result, expected)
+        self.assertEqual(cls_result, expected)
