@@ -29,6 +29,7 @@ class Py_report_html:
         self.count_objects = 0
         self.dt_tables = [] #Tables to be styled with the DataTables js lib"
         self.bs_tables = [] #Tables to be styled with the bootstrap js lib"
+        self.mermaid = False #Mermaid graph objects
         self.compress = compress
         self.networks = []
 
@@ -96,6 +97,9 @@ class Py_report_html:
             file = str(files(Py_report_html.TEMPLATES).joinpath('sigma_cdn.txt'))
             with open(os.path.join(file), 'r') as f:
                 self.all_report += f.read() + "\n"
+
+        if self.mermaid: 
+            self.all_report += "<script type=\"module\"> import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; </script>"+"\n"
 
         # FILE LOAD
         js_libraries = []
@@ -1264,6 +1268,14 @@ class Py_report_html:
         for i, e in enumerate(graph.edges): 
             model['edges'].append({'id': i, 'source': e[0], 'target': e[1], 'color': '#202020', 'size': 0.1})
         return model 
+
+    ##################################################################################
+    # DIAGRAM CHART REPRESENTATION
+    ###################################################################################
+    def mermaid_chart(self, chart_sintaxis):
+        self.mermaid = True #Mermaid graph objects
+        mermaid_string = f"<pre class=\"mermaid\">\n{chart_sintaxis}\n</pre>"
+        return mermaid_string
         
     ##################################################################################
     # EMBED FILES
