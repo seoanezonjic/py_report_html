@@ -295,3 +295,19 @@ ${ plotter.network(id = 'network.txt', method = 'elgrapho', group = 'layer', lay
 <div style="overflow: hidden">
         ${ plotter.network(id = 'network.txt', method = 'pyvis', reference_nodes = ["a", "e"], group_nodes= {"g1": ["i", "j"], "g2": ["b", "c"]}) }
 </div>
+
+
+<div style="overflow: hidden">
+<%
+        num=5
+        graph=f"""
+                graph LR;
+                        A --- B ;
+                        A --- E({num}) ;
+                        B-->C[fa:fa-ban forbidden];
+                        B-->D(fa:fa-spinner);
+                """
+%>
+        ${ plotter.mermaid_chart(graph)}
+<div>
+
