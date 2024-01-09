@@ -5,6 +5,7 @@ from io import BytesIO
 from collections import defaultdict
 from mako.template import Template
 import networkx as nx
+#from pyvis.network import Network
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -107,6 +108,7 @@ class Py_report_html:
         if self.compress: js_libraries.append('pako.min.js')
         if 'cytoscape' in self.networks: js_libraries.append('cytoscape.min.js')
         if 'elgrapho' in self.networks: js_libraries.append('ElGrapho.min.js')
+        if 'pyvis' in self.networks: js_libraries.append('PyvisUtils.js')
 
         if len(self.plots_data) > 0:
             js_libraries.append('canvasXpress.min.js')
@@ -1200,7 +1202,7 @@ class Py_report_html:
             reference_nodes = net_data['reference_nodes']
             group_nodes = net_data['group_nodes']
 
-
+        node_names = []
         if options['method'] == 'cytoscape':
             self.networks.append('cytoscape')
             temp_file = 'cytoscape.txt'
@@ -1213,11 +1215,15 @@ class Py_report_html:
             self.networks.append('sigma')
             temp_file = 'sigma.txt'
             model = self.sigma_network(options, graph, layers, reference_nodes, group_nodes)
+        elif options['method'] == 'pyvis':
+            self.networks.append('pyvis')
+            temp_file = 'pyvis.txt'
+            model, node_names = self.pyvis_network(options, graph, layers, reference_nodes, group_nodes)
         
         template_file = str(files(Py_report_html.TEMPLATES).joinpath(temp_file))
         templ = Template(filename=template_file) 
         network = base64.b64encode(zlib.compress(json.dumps(model).encode('UTF-8'))).decode('UTF-8')
-        string = templ.render(plotter=self, options=options, network=network, count_objects=self.count_objects)
+        string = templ.render(plotter=self, options=options, network=network, count_objects=self.count_objects, node_names=node_names)
         self.count_objects += 1
         return string
 
@@ -1267,7 +1273,20 @@ class Py_report_html:
             model['nodes'].append({'id': nodeID, 'color': get_colors(color), 'x': random.randrange(1000),  'y': random.randrange(1000), 'size': 1})
         for i, e in enumerate(graph.edges): 
             model['edges'].append({'id': i, 'source': e[0], 'target': e[1], 'color': '#202020', 'size': 0.1})
-        return model 
+        return model
+
+    def pyvis_network(self, options, graph, layers, reference_nodes, group_nodes):
+        model = {'nodes': [], 'edges': []}
+        groups_index, get_colors = self.get_nodes_colors(options, graph, layers, reference_nodes, group_nodes)
+        node_names = []
+        for nodeID in graph.nodes:
+            color_group = 1 if nodeID in reference_nodes else groups_index[nodeID]
+            model['nodes'].append({'id': nodeID, 'label': nodeID, 'group': color_group, 'color': get_colors(color_group), 'size': 10, 'shape': 'dot'})
+            node_names.append(nodeID)
+
+        for i, e in enumerate(graph.edges): 
+            model['edges'].append({'from': e[0], 'to': e[1], 'width': 1})
+        return model, node_names
 
     ##################################################################################
     # DIAGRAM CHART REPRESENTATION
@@ -1277,7 +1296,7 @@ class Py_report_html:
         mermaid_string = f"<pre class=\"mermaid\">\n{chart_sintaxis}\n</pre>"
         return mermaid_string
         
-    ##################################################################################
+    #################################################################################
     # EMBED FILES
     ###################################################################################
 
@@ -1298,6 +1317,13 @@ class Py_report_html:
                 pdf_base64 = base64.b64encode(f.read()).decode('UTF-8')
         pdf_string = f"<embed {pdf_attribs} src=\"data:application/pdf;base64,{pdf_base64}\" type=\"application/pdf\"></embed>"
         return pdf_string
+
+    def embed_html(self, html_file, html_attribs = None):
+        #with open(html_file, 'rb') as f:
+        #        html_base64 = base64.b64encode(f.read()).decode('UTF-8')
+        #html_string = f"<embed {html_attribs} src=\"data:text/html;base64,{html_base64}\" type=\"text/html\" height=\"100%\" width=\"100%\" ></embed>"
+        html_string = f"<iframe {html_attribs} src=\"{html_file}\" height=\"100%\" width=\"100%\"></iframe>"
+        return html_string
 
 
     ##################################################################################

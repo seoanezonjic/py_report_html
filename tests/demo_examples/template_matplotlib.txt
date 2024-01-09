@@ -1,0 +1,130 @@
+<p>Introduccion</p>
+
+<%
+import pandas as pd
+import numpy as np
+import scipy
+
+groups = [ row[4] for row in plotter.hash_vars["boxplot_factor_long.txt"] ]
+groups = groups[1:]
+groups = pd.Series(groups)
+lut = dict(zip(groups.unique(), "rbg"))
+row_colors = groups.map(lut)
+row_colors = list(pd.Series(list(row_colors), index=[ row[0] for row in plotter.hash_vars["boxplot_factor_long.txt"] ][1:]))
+linkages = scipy.cluster.hierarchy.linkage( np.array([row[1:-1] for row in plotter.hash_vars["boxplot_factor_long.txt"]][1:]), method="complete" )
+
+chromosome_lengths = { "1": 247249719, "2": 242951149, "3": 199501827, "4": 191273063, "5": 180857866, 
+"6": 170899992, "7": 158821424, "8": 146274826, "9": 140273252, "10": 135374737, "11": 134452384, 
+"12": 132349534, "13": 114142980, "14": 106368585, "15": 100338915, "16": 88827254, "17": 78774742, 
+"18": 76117153, "19": 63811651, "20": 62435964, "21": 46944323, "22": 49691432, "X": 154913754, "Y": 57772954}
+
+def delete_outliers(data):
+    indexes = list(range(1,400))
+    for index in indexes[::-1]:
+        del data[index]
+
+def plot_coverage(data, plotter_list):
+    data["chr"] = pd.Categorical(data["chr"], chromosome_lengths.keys())
+    sortedd = data.sort_values(by=["chr", "pos"])
+    chromosomes_order = sortedd["chr"].unique()
+    
+    g = plotter_list["sns"].FacetGrid(data=sortedd, col="chr", hue="chr", col_wrap=2).map(plotter_list["plt"].plot, 'pos', 'cov').map(plotter_list["plt"].fill_between, 'pos', 'cov')
+    for ax, chrm in zip(g.axes.flat, chromosomes_order):
+        ax.axvline(x=chromosome_lengths[chrm], color='r', linestyle=':')
+    return g
+%>
+
+
+
+<p>descripcion</p>
+
+<table width="1100">
+    <tr>
+           ${ plotter.static_plot_main( id="coverage_data_modified.txt", header=True, row_names=False, var_attr=[0], height= 1200,
+                plotting_function= plot_coverage )}
+    </tr>
+    <tr>
+        <td>
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+                                        plotting_function= lambda data, plotter_list: plotter_list["plt"].hexbin(data=data, x='liver', y='brain', gridsize=20) )}
+        </td>
+        <td>
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4],
+                                        plotting_function= lambda data, plotter_list: plotter_list["plt"].boxplot(x=data), whole=True)}
+        </td>
+        <td>
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+                                        plotting_function= lambda data, plotter_list: plotter_list["sns"].boxplot(data=data, x='liver', y='pathway') )}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+                                        plotting_function= lambda data, plotter_list: plotter_list["sns"].violinplot(data=data, x='liver', y='pathway') )}
+        </td>
+        <td>
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+                                        plotting_function= lambda data, plotter_list: plotter_list["sns"].swarmplot(data=data, x='liver', y='pathway') )}
+        </td>
+        <td>
+            ${ plotter.static_plot_main( id="x_y_crowded.txt", header=True, row_names=True, 
+                                        plotting_function= lambda data, plotter_list: plotter_list["sns"].boxenplot(data=data, y='brain_exp') )}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+                                        plotting_function= lambda data, plotter_list: plotter_list["sns"].ecdfplot(data=data, x='liver', hue='pathway') )}
+        </td>
+        <td>
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+                                        plotting_function= lambda data, plotter_list: plotter_list["sns"].displot(data=data, x='liver', kde=True) )}
+        </td>
+        <td>
+            ${ plotter.static_plot_main( id="x_y_crowded.txt", header=True, row_names=False, fields=[0,1], func = delete_outliers,
+                                        plotting_function= lambda data, plotter_list: plotter_list["sns"].displot(data=data, x='n_genes', y='brain_exp') )}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+                                        plotting_function= lambda data, plotter_list: plotter_list["sns"].displot(data=data, x='liver', hue='pathway', multiple="stack") )}
+        </td>
+        <td>
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], melt = [["liver", "brain", "lung"],["tissue", "values"]],
+                                        plotting_function=  lambda data, plotter_list: plotter_list["sns"].displot(data=data, x='values', hue='tissue', col='pathway', kind="kde")  )}        
+        </td>
+        <td>
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+                                        plotting_function= lambda data, plotter_list: plotter_list["sns"].displot(data=data, x='liver', y='brain', kind="kde", rug=True) )}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+                                        plotting_function= lambda data, plotter_list: plotter_list["plt"].hist(data=data, x='liver') )}
+        </td>
+        <td>
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+                                        plotting_function= lambda data, plotter_list: plotter_list["sns"].heatmap(data=data), whole=True)}
+        </td>
+        <td>
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4],
+                                        plotting_function= lambda data, plotter_list: plotter_list["sns"].clustermap(data=data, row_colors=row_colors, row_linkage=linkages) , whole=True)}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], melt = [["liver", "brain", "lung"],["factor", "values"]],
+                                        plotting_function=  lambda data, plotter_list: plotter_list["sns"].boxplot(data=data, x='values', y='factor', hue='pathway')  )}
+        </td>
+        <td>
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+                                        plotting_function=  lambda data, plotter_list: plotter_list["sns"].scatterplot(data=data, x='liver', y='brain', hue='pathway', size='lung') )}
+        </td>
+        <td>
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+                                        plotting_function=  lambda data, plotter_list: plotter_list["sns"].jointplot(data=data, x='liver', y='brain', hue='pathway') )}
+        </td>
+    </tr>
+</table>

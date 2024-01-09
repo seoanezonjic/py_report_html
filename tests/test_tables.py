@@ -19,9 +19,12 @@ import matplotlib
 import matplotlib.pyplot as plt
 from py_report_html import Py_report_html
 
+from importlib.resources import files
+
 ROOT_PATH= os.path.dirname(__file__)
 DATA_TEST_PATH = os.path.join(ROOT_PATH, 'data')
-JS_AND_CSS_LIBRARIES_PATH = os.path.join(ROOT_PATH,"..", "src", "py_report_html","js")
+JS_AND_CSS_LIBRARIES_PATH =  Py_report_html.JS_FOLDER
+TEMPLATES_PATH = Py_report_html.TEMPLATES
 
 ### Defining auxiliary methods for testing purposes ###
 def get_plot_data(reportObject, ObjectMethod, **cust_options):
@@ -216,12 +219,15 @@ class ReportHtml(unittest.TestCase):
         self.html.dt_tables = ["mock_dt"]
         self.html.bs_tables = ["mock_bs"]
         self.html.plots_data = ["mock_plot"]
+        self.html.compress = True #In order to activate and load pako.js library too
         
         table = self.html.table(**self.options)
         self.html.build(table)
 
-        self.assertTrue(os.path.exists(JS_AND_CSS_LIBRARIES_PATH))
-        self.assertTrue(os.path.exists(os.path.join(Py_report_html.TEMPLATES, 'sigma_cdn.txt')))
+        sigma_cdn_filepath = str(files(TEMPLATES_PATH).joinpath('sigma_cdn.txt'))
+        self.assertTrue(sigma_cdn_filepath != "")
+        self.assertTrue(sigma_cdn_filepath != None)
+        self.assertTrue(sigma_cdn_filepath.endswith("sigma_cdn.txt"))        
 
         #Asserting that all libraries are found inside the html
         self.assertEqual(9, len(re.findall(self.pattern_script_tag, self.html.all_report)))
@@ -251,12 +257,11 @@ class ReportHtml(unittest.TestCase):
 
     def test_load_js_libraries(self):
         files = ["canvasXpress.min.js", "cytoscape.min.js", "ElGrapho.min.js", "pako.min.js"]
-        js_libraries = [os.path.join(JS_AND_CSS_LIBRARIES_PATH,file) for file in files]
-        loaded_js = self.html.load_js_libraries(js_libraries)
-        self.assertEqual(len(js_libraries), len(loaded_js))
+        loaded_js = self.html.load_js_libraries(files)
+        self.assertEqual(len(files), len(loaded_js))
 
     def test_load_css(self):
-        css_library = [os.path.join(JS_AND_CSS_LIBRARIES_PATH, "canvasXpress.css")]
+        css_library = ["canvasXpress.css"]
         loaded_css = self.html.load_css(css_library)
         self.assertEqual(len(loaded_css), 1)
 
