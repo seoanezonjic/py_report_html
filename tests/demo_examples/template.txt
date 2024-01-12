@@ -103,9 +103,6 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
 <table width="1100">
         <tr>
                 <td>
-                        ${ plotter.barplot(id='simbolic_table', header = True) }
-                </td>
-                <td>
                         ${ plotter.barplot(id='barplot1.txt', header = True, config={'graphOrientation': 'vertical', "xAxisTitle": "Valores"}) }
                 </td>
                <td>
@@ -301,19 +298,19 @@ ${ plotter.network(id = 'network.txt', method = 'elgrapho', group = 'layer', lay
 <%
         num=5
         graph=f"""
-		---
-		title: Hello Title
-		config:
-		  theme: base
-		  themeVariables:
-		    primaryColor: "#00ff00"
-                ---
-                graph LR;
-                        A --- B ;
-                        A --- E({num}) ;
-                        B-->C[fa:fa-ban forbidden];
-                        B-->D(fa:fa-spinner);
-                """
+        ---
+        title: Hello Title
+        config:
+         theme: base
+         themeVariables:
+           primaryColor: "#00ff00"
+       ---
+       graph LR;
+         A --- B ;
+         A --- E({num}) ;
+         B-->C[fa:fa-ban forbidden];
+         B-->D(fa:fa-spinner);
+"""
 %>
         ${ plotter.mermaid_chart(graph)}
 <div>

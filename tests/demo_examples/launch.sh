@@ -2,7 +2,6 @@
 . ~soft_bio_267/initializes/init_python
 
 paths=`echo -e "
-file_data/simbolic_table,
 file_data/barplot1.txt,
 file_data/barplot2.txt,
 file_data/barplot3.txt,
