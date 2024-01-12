@@ -301,6 +301,13 @@ ${ plotter.network(id = 'network.txt', method = 'elgrapho', group = 'layer', lay
 <%
         num=5
         graph=f"""
+		---
+		title: Hello Title
+		config:
+		  theme: base
+		  themeVariables:
+		    primaryColor: "#00ff00"
+                ---
                 graph LR;
                         A --- B ;
                         A --- E({num}) ;
