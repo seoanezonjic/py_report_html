@@ -93,18 +93,19 @@ class Py_report_html:
             self.all_report += '<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>' + "\n"
             self.all_report += '<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>' + "\n"
 
-
         if 'sigma' in self.networks: # sigma CDN load is HUGE so we read it from file
             file = str(files(Py_report_html.TEMPLATES).joinpath('sigma_cdn.txt'))
             with open(os.path.join(file), 'r') as f:
                 self.all_report += f.read() + "\n"
 
-        if self.mermaid: 
-            self.all_report += "<script type=\"module\"> import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; </script>"+"\n"
-
         # FILE LOAD
         js_libraries = []
         css_files = []
+        
+        if self.mermaid: 
+            self.all_report += "<script type=\"module\"> import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; </script>"+"\n"
+            css_files.append('mermaid.css')
+
         if self.compress: js_libraries.append('pako.min.js')
         if 'cytoscape' in self.networks: js_libraries.append('cytoscape.min.js')
         if 'elgrapho' in self.networks: js_libraries.append('ElGrapho.min.js')

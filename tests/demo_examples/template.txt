@@ -279,22 +279,7 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
 	</tr>
 </table>
 
-${ plotter.network(id = 'network.txt', method = 'cytoscape', reference_nodes = ["a", "e"], group_nodes= {"g1": ["i", "j"], "g2": ["b", "c"]}) }
-${ plotter.network(id = 'network.txt', method = 'elgrapho', group = 'layer', layout = 'forcedir', reference_nodes = ["a", "e"]) }
-
-<div style="overflow: hidden">
-	${ plotter.network(id = 'network.txt', method = 'sigma', reference_nodes = ["a", "e"]) }
-	${ plotter.embed_img('file_data/example.png')}
-</div>
-
-<br><br><br>
-
-<div style="overflow: hidden">
-        ${ plotter.network(id = 'network.txt', method = 'pyvis', reference_nodes = ["a", "e"], group_nodes= {"g1": ["i", "j"], "g2": ["b", "c"]}) }
-</div>
-
-
-<div style="overflow: hidden">
+<div>
 <%
         num=5
         graph=f"""
@@ -310,8 +295,58 @@ ${ plotter.network(id = 'network.txt', method = 'elgrapho', group = 'layer', lay
          A --- E({num}) ;
          B-->C[fa:fa-ban forbidden];
          B-->D(fa:fa-spinner);
+         click A callback "Texto para el tooltip"
+         click B href "#CanvasXpress-ParentNode-obj_3_"
 """
 %>
         ${ plotter.mermaid_chart(graph)}
+</div>
+
+${ plotter.network(id = 'network.txt', method = 'cytoscape', reference_nodes = ["a", "e"], group_nodes= {"g1": ["i", "j"], "g2": ["b", "c"]}) }
+${ plotter.network(id = 'network.txt', method = 'elgrapho', group = 'layer', layout = 'forcedir', reference_nodes = ["a", "e"]) }
+
+<div style="overflow: hidden">
+	${ plotter.network(id = 'network.txt', method = 'sigma', reference_nodes = ["a", "e"]) }
+	${ plotter.embed_img('file_data/example.png')}
+</div>
+
+<br><br><br>
+
+<div style="overflow: hidden">
+        ${ plotter.network(id = 'network.txt', method = 'pyvis', reference_nodes = ["a", "e"], group_nodes= {"g1": ["i", "j"], "g2": ["b", "c"]}) }
+</div>
+
 <div>
+<%
+        graph2=f"""
+        ---
+        title: Hello Title
+        config:
+            theme: base
+            themeVariables:
+            primaryColor: "#00ff00"
+        ---
+        timeline
+        title Workflow
+          section Cluster Steps
+            get reliable pairs : Net Metrics
+            get clusters : Cluster Metrics
+                         : CDLib Metrics
+            clean clusters : Cluster Metrics
+                           : CDLib Metrics
+            prepare and randomize clusters : Nothing                    
+            cluster ranking : CRank Metrics
+          section Disease Steps
+            disease prediction : Disease Metrics
+          section Ranker Steps
+            gene ranking metrics : First Ranker Metrics
+                                 : First Ranker Metrics Best Genes
+            geometric mean integration : Geometric integration
+            gene disease ranking : Second Ranker Metrics
+                                 : Second Ranker Metrics Best Genes
+            get control prediction: Phen2Gene Metrics
+"""
+%>
+        ${ plotter.mermaid_chart(graph2)}
+</div>
 

@@ -1,6 +1,12 @@
 #! /usr/bin/env bash
 . ~soft_bio_267/initializes/init_python
 
+#mkdir -p ~/tests/py_report_venv
+#python -m venv ~/tests/py_report_venv --system-site-packages
+#source ~/tests/py_report_venv/bin/activate
+#pip install -e ~/dev_py/py_report_html
+#export PATH=~/tests/py_report_venv/bin:$PATH
+
 paths=`echo -e "
 file_data/barplot1.txt,
 file_data/barplot2.txt,

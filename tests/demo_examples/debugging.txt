@@ -1,0 +1,24 @@
+${ plotter.network(id = 'network.txt', method = 'elgrapho', group = 'layer', layout = 'forcedir', reference_nodes = ["a", "e"]) }
+${ plotter.network(id = 'network.txt', method = 'cytoscape', reference_nodes = ["a", "e"], group_nodes= {"g1": ["i", "j"], "g2": ["b", "c"]}) }
+
+<div>
+<%
+        num=5
+        graph=f"""
+        ---
+        title: Hello Title
+        config:
+         theme: base
+         themeVariables:
+           primaryColor: "#00ff00"
+       ---
+       graph LR;
+         A --- B ;
+         A --- E({num}) ;
+         B-->C[fa:fa-ban forbidden];
+         B-->D(fa:fa-spinner);
+         click A callback "Texto para el tooltip"
+"""
+%>
+        ${ plotter.mermaid_chart(graph)}
+</div>
