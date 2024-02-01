@@ -33,6 +33,8 @@ class Py_report_html:
         self.mermaid = False #Mermaid graph objects
         self.compress = compress
         self.networks = []
+        self.figures = {}
+        self.tables = {}
 
     ###################################################################################
     # RENDER TEMPLATE METHODS
@@ -1326,7 +1328,29 @@ class Py_report_html:
         html_string = f"<iframe {html_attribs} src=\"{html_file}\" height=\"100%\" width=\"100%\"></iframe>"
         return html_string
 
+    #################################################################################
+    # FIGURE AND TABLE NUMBERING
+    ###################################################################################
+    def add_figure(self, name):
+        n_figure = f"{len(self.figures) + 1}"
+        self.figures[name] = n_figure
+        return n_figure
 
+    def get_figure(self, name):
+        n_figure = self.figures.get(name)
+        if n_figure == None: n_figure = "NOT FOUND"
+        return n_figure
+
+    def add_table(self, name):
+        n_table = f"{len(self.tables) + 1}"
+        self.tables[name] = n_table
+        return n_table
+
+    def get_table(self, name):
+        n_table = self.tables.get(name)
+        if n_table == None: n_table = "NOT FOUND"
+        return n_table
+        
     ##################################################################################
     # UTILS
     ###################################################################################

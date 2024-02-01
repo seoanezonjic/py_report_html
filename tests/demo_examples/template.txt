@@ -82,6 +82,21 @@
 </table>
 
 <p>Introduccion</p>
+<p> Fig ${ plotter.add_figure('example') } : This is an example </p>
+
+<p> We cite ${ plotter.get_figure('example') } as an example </p>
+
+<p> Fig ${ plotter.add_figure('test') } : This is a test </p>
+
+<p> We cite ${ plotter.get_figure('test') } as a test </p>
+
+<p> Table ${ plotter.add_table('tab:example') } : This is an example table </p>
+
+<p> We cite table ${ plotter.get_table('tab:example') } as an example </p>
+
+<p> Table ${ plotter.add_table('tab:test') } : This is a test table </p>
+
+<p> We cite table ${ plotter.get_table('tab:test') } as a test table </p>
 
 ${ plotter.table(id='table1.txt') }
 
