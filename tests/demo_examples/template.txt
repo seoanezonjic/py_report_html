@@ -98,7 +98,12 @@
 
 <p> We cite table ${ plotter.get_table('tab:test') } as a test table </p>
 
-${ plotter.table(id='table1.txt') }
+${ plotter.create_clickable_title('Click me', 'clickme_id') }
+<% example_div = plotter.table(id='table1.txt') %>
+
+${ plotter.create_collapsable_container('clickme_id', example_div) }
+
+${ plotter.table(id='table1.txt')}
 
 <%
 	def mod_data(data):

@@ -103,7 +103,9 @@ class Py_report_html:
         # FILE LOAD
         js_libraries = []
         css_files = []
-        
+        js_libraries.append('py_report_html.js') # CUSTOM JAVASCRIPT CREATED BY py_report_html AUTHORS!!!!
+        css_files.append('py_report_html.css') # CUSTOM CSS CREATED BY py_report_html AUTHORS!!!!
+
         if self.mermaid: 
             self.all_report += "<script type=\"module\"> import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; </script>"+"\n"
             css_files.append('mermaid.css')
@@ -1350,6 +1352,16 @@ class Py_report_html:
         n_table = self.tables.get(name)
         if n_table == None: n_table = "NOT FOUND"
         return n_table
+
+    #################################################################################
+    # CLICKABLE ELEMENTS
+    ###################################################################################
+    def create_clickable_title(self, text, id, hlevel=1):
+        return f"<h{hlevel} class=\"py_accordion\" onclick=\"hide_show_element('{id}')\">{text}</h{hlevel}>"
+
+    def create_collapsable_container(self, id, html_code, display='none'): #display ='block'
+        return f"<div style=\"display:{display}\" id=\"{id}\">\n{html_code}\n</div>"
+
         
     ##################################################################################
     # UTILS
