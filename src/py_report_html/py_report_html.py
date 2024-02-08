@@ -35,10 +35,44 @@ class Py_report_html:
         self.networks = []
         self.figures = {}
         self.tables = {}
+        self.js_libraries = []
+        self.css_files = []
+        self.js_cdn = []
+        self.css_cdn = []
 
     ###################################################################################
     # RENDER TEMPLATE METHODS
     ###################################################################################
+
+    def add_js_files(self, files):
+        self.js_libraries.extend(files)
+
+    def add_css_files(self, files):
+        self.css_files.extend(files)
+
+    def add_js_cdn(self, cdns):
+        self.js_cdn.extend(cdns)
+
+    def add_css_cdn(self, cdns):
+        self.css_cdn.extend(cdns)
+
+    def get_css_cdn(self):
+        string = []
+        for cc in self.css_cdn:
+            if re.search("^http", cc): # CAnonical form of css CDN loading
+                string.append(f"<link rel=\"stylesheet\" type=\"text/css\" href=\"{cc}\"/>")
+            else: # Other sintaxis, inject line as is
+                string.append(cc)
+        return  "\n".join(string)+"\n"
+
+    def get_js_cdn(self):
+        string = []
+        for jc in self.js_cdn:
+            if re.search("^http", jc): # CAnonical form of js CDN loading
+                string.append(f"<script type=\"text/javascript\" src=\"{jc}\"></script>")
+            else: # Other sintaxis, inject line as is
+                string.append(jc)
+        return  "\n".join(string)+"\n"
 
     def build(self, template, build_options = {}):
         templ = Template(template)
@@ -51,7 +85,10 @@ class Py_report_html:
     def load_js_libraries(self, js_libraries):
         loaded_libraries = []
         for js_lib in js_libraries:
-            file = str(files(Py_report_html.JS_FOLDER).joinpath(js_lib))
+            if os.path.exists(js_lib): # External file not provided by py_report_html
+                file = js_lib
+            else: # File provided by py_report_html
+                file = str(files(Py_report_html.JS_FOLDER).joinpath(js_lib))
             with open(file, 'rb') as f:
                 loaded_libraries.append(base64.b64encode(f.read()).decode('UTF-8'))
         return loaded_libraries
@@ -59,7 +96,10 @@ class Py_report_html:
     def load_css(self, css_files):
         loaded_css = []
         for css_lib in css_files:
-            file = str(files(Py_report_html.JS_FOLDER).joinpath(css_lib))
+            if os.path.exists(css_lib): # External file not provided by py_report_html
+                file = css_lib
+            else: # File provided by py_report_html
+                file = str(files(Py_report_html.JS_FOLDER).joinpath(css_lib))
             with open(file, 'r') as f:
                 loaded_css.append(f.read())
         return loaded_css
@@ -79,54 +119,59 @@ class Py_report_html:
 
         # CDN LOAD
         if len(self.dt_tables) > 0 or len(self.bs_tables) > 0: #Bootstrap for datatables or only for static tables. Use bootstrap version needed by datatables to avoid incompatibility issues
-            self.all_report += '<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>'+"\n"
+            self.css_cdn.append('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css')
 
         if len(self.dt_tables) > 0: # CDN load, this library is difficult to embed in html file
-            self.all_report += '<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap.min.css"/>'+"\n"
-            self.all_report += '<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css"/>'+"\n"
-            self.all_report += '<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css"/>'+"\n"
-            self.all_report += '<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>' + "\n"
-            self.all_report += '<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>' + "\n"
-            self.all_report += '<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap.min.js"></script>' + "\n"
-            self.all_report += '<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>' + "\n"
-            self.all_report += '<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>' + "\n"
-            self.all_report += '<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>' + "\n"
-            self.all_report += '<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>' + "\n"
-            self.all_report += '<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>' + "\n"
-            self.all_report += '<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>' + "\n"
+            self.css_cdn.extend([
+                'https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap.min.css',
+                'https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css',
+                'https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css'
+            ])
+            self.js_cdn.extend([
+                'https://code.jquery.com/jquery-3.5.1.js',
+                'https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js',
+                'https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap.min.js',
+                'https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js',
+                'https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js',
+                'https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js'
+            ])
 
         if 'sigma' in self.networks: # sigma CDN load is HUGE so we read it from file
             file = str(files(Py_report_html.TEMPLATES).joinpath('sigma_cdn.txt'))
             with open(os.path.join(file), 'r') as f:
-                self.all_report += f.read() + "\n"
+                self.js_cdn.extend(f.readlines())
+
+        if self.mermaid: self.js_cdn.append("<script type=\"module\"> import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; </script>")
+        
+        self.css_cdn.reverse() # Priorize custom cdn
+        self.js_cdn.reverse() # Priorize custom cdn
+
+        self.all_report += self.get_css_cdn()
+        self.all_report += self.get_js_cdn()
+
 
         # FILE LOAD
-        js_libraries = []
-        css_files = []
-        js_libraries.append('py_report_html.js') # CUSTOM JAVASCRIPT CREATED BY py_report_html AUTHORS!!!!
-        css_files.append('py_report_html.css') # CUSTOM CSS CREATED BY py_report_html AUTHORS!!!!
+        self.js_libraries.append('py_report_html.js') # CUSTOM JAVASCRIPT CREATED BY py_report_html AUTHORS!!!!
+        self.css_files.append('py_report_html.css') # CUSTOM CSS CREATED BY py_report_html AUTHORS!!!!
 
-        if self.mermaid: 
-            self.all_report += "<script type=\"module\"> import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; </script>"+"\n"
-            css_files.append('mermaid.css')
-
-        if self.compress: js_libraries.append('pako.min.js')
-        if 'cytoscape' in self.networks: js_libraries.append('cytoscape.min.js')
-        if 'elgrapho' in self.networks: js_libraries.append('ElGrapho.min.js')
-        if 'pyvis' in self.networks: js_libraries.append('PyvisUtils.js')
+        if self.compress: self.js_libraries.append('pako.min.js')
+        if 'cytoscape' in self.networks: self.js_libraries.append('cytoscape.min.js')
+        if 'elgrapho' in self.networks: self.js_libraries.append('ElGrapho.min.js')
+        if 'pyvis' in self.networks: self.js_libraries.append('PyvisUtils.js')
 
         if len(self.plots_data) > 0:
-            js_libraries.append('canvasXpress.min.js')
-            css_files.append('canvasXpress.css')
+            self.js_libraries.append('canvasXpress.min.js')
+            self.css_files.append('canvasXpress.css')
 
-        loaded_js_libraries = self.load_js_libraries(js_libraries)
-        loaded_css = self.load_css(css_files)
-        for css in loaded_css:
-            self.all_report += (
-                f"<style type=\"text/css\"/>\n"
-                f"{css}"
-                f"\n</style>\n\n")
-        for lib in loaded_js_libraries:
+        self.css_files.reverse() # Priorize custom files
+        for css in self.load_css(self.css_files):
+            self.all_report += (f"<style type=\"text/css\"/>\n{css}\n</style>\n\n")
+
+        self.js_libraries.reverse() # Priorize custom files
+        for lib in self.load_js_libraries(self.js_libraries):
             self.all_report += f"<script src=\"data:application/javascript;base64,{lib}\" type=\"application/javascript\"></script>\n\n"
         
         # ADD CUSTOM FUNCTIONS TO USE LOADED JS LIBRARIES
