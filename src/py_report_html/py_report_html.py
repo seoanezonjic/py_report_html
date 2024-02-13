@@ -39,22 +39,33 @@ class Py_report_html:
         self.css_files = []
         self.js_cdn = []
         self.css_cdn = []
+        self.custom_css_js = {'js': {'file': [], 'cdn': []}, 'css': {'file': [], 'cdn': []}}
+        self.headers = []
+        self.header_index = False
 
     ###################################################################################
     # RENDER TEMPLATE METHODS
     ###################################################################################
 
     def add_js_files(self, files):
-        self.js_libraries.extend(files)
+        self.custom_css_js['js']['file'].extend(files)
 
     def add_css_files(self, files):
-        self.css_files.extend(files)
+        self.custom_css_js['css']['file'].extend(files)
 
     def add_js_cdn(self, cdns):
-        self.js_cdn.extend(cdns)
+        self.custom_css_js['js']['cdn'].extend(cdns)
 
     def add_css_cdn(self, cdns):
-        self.css_cdn.extend(cdns)
+        self.custom_css_js['css']['cdn'].extend(cdns)
+
+    def merge_custom_cdn(self):
+        self.js_cdn.extend(self.custom_css_js['js']['cdn'])
+        self.css_cdn.extend(self.custom_css_js['css']['cdn'])
+
+    def merge_custom_files(self):
+        self.js_libraries.extend(self.custom_css_js['js']['file'])
+        self.css_files.extend(self.custom_css_js['css']['file'])
 
     def get_css_cdn(self):
         string = []
@@ -146,9 +157,7 @@ class Py_report_html:
 
         if self.mermaid: self.js_cdn.append("<script type=\"module\"> import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; </script>")
         
-        self.css_cdn.reverse() # Priorize custom cdn
-        self.js_cdn.reverse() # Priorize custom cdn
-
+        self.merge_custom_cdn()
         self.all_report += self.get_css_cdn()
         self.all_report += self.get_js_cdn()
 
@@ -166,11 +175,10 @@ class Py_report_html:
             self.js_libraries.append('canvasXpress.min.js')
             self.css_files.append('canvasXpress.css')
 
-        self.css_files.reverse() # Priorize custom files
+        self.merge_custom_files()
         for css in self.load_css(self.css_files):
-            self.all_report += (f"<style type=\"text/css\"/>\n{css}\n</style>\n\n")
+            self.all_report += (f"<style type=\"text/css\">\n{css}\n</style>\n\n")
 
-        self.js_libraries.reverse() # Priorize custom files
         for lib in self.load_js_libraries(self.js_libraries):
             self.all_report += f"<script src=\"data:application/javascript;base64,{lib}\" type=\"application/javascript\"></script>\n\n"
         
@@ -202,9 +210,9 @@ class Py_report_html:
 
     def build_body(self, template):
         if len(self.plots_data) > 0:
-            self.all_report += f"<body onload=\"initPage();\">\n{template}\n</body>\n"
+            self.all_report += f"<body onload=\"initPage();\">\n{self.create_header_index()}\n{template}\n</body>\n"
         else:
-            self.all_report += f"<body>\n{template}\n</body>\n"
+            self.all_report += f"<body>\n{self.create_header_index()}\n{template}\n</body>\n"
 
     def get_report(self): #return all html string
         templ = Template(self.all_report)
@@ -1401,11 +1409,35 @@ class Py_report_html:
     #################################################################################
     # CLICKABLE ELEMENTS
     ###################################################################################
-    def create_clickable_title(self, text, id, hlevel=1):
-        return f"<h{hlevel} class=\"py_accordion\" onclick=\"hide_show_element('{id}')\">{text}</h{hlevel}>"
+    def create_title(self, text, id=None, hlevel=1, indexable=True, clickable=False, t_id=None, clickable_text = '(Click me)'):
+        if indexable: self.headers.append([id, text, hlevel])
+        if clickable:
+            header = f"<h{hlevel} id=\"{id}\" class=\"py_accordion\" onclick=\"hide_show_element('{t_id}')\">{text} {clickable_text}</h{hlevel}>"
+        else:
+            header = f"<h{hlevel} id=\"{id}\">{text}</h{hlevel}>"
+        return header
 
     def create_collapsable_container(self, id, html_code, display='none'): #display ='block'
         return f"<div style=\"display:{display}\" id=\"{id}\">\n{html_code}\n</div>"
+
+    def create_header_index(self):
+        if self.header_index:
+            index = f"<h1>Table of contents</h1>\n<div>\n"
+            last_level = 0
+            for t_id, text, level in self.headers:
+                if level > last_level: index += "<ul>\n"
+                if level < last_level: 
+                    diff = last_level - level
+                    for i in range(diff): index += "</ul>\n"
+                index += f"<li><a href=#{t_id}>{text}</a></li>\n"
+                last_level = level
+            index += f"</ul>\n</div>\n"
+        else:
+            index=''
+        return index
+
+    def set_header(self):
+        self.header_index = True
 
         
     ##################################################################################

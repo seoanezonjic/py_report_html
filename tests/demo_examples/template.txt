@@ -1,4 +1,4 @@
-
+<% plotter.set_header() %>
 <h3> There are plenty of themes and color schemes than can be uses with options["theme"] and options["color_scheme"] </h3>
 
 <table>
@@ -98,7 +98,13 @@
 
 <p> We cite table ${ plotter.get_table('tab:test') } as a test table </p>
 
-${ plotter.create_clickable_title('Click me', 'clickme_id') }
+${ plotter.create_title('Demo', id='click_demo', hlevel=1, indexable=True, clickable=True, t_id='clickme_id', clickable_text = '(Click me)') }
+${ plotter.create_title('Demo2', id='demo2', hlevel=2, indexable=True, clickable=False) }
+${ plotter.create_title('Demo3', id='demo3', hlevel=1, indexable=True, clickable=False) }
+${ plotter.create_title('Demo4', id='demo4', hlevel=2, indexable=True, clickable=False) }
+${ plotter.create_title('Demo5', id='demo5', hlevel=3, indexable=True, clickable=False) }
+${ plotter.create_title('Demo6', id='demo6', hlevel=1, indexable=True, clickable=False) }
+
 <% example_div = plotter.table(id='table1.txt') %>
 
 ${ plotter.create_collapsable_container('clickme_id', example_div) }
