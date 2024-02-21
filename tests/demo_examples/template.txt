@@ -117,10 +117,15 @@ ${ plotter.table(id='table1.txt')}
 			for j, cell in enumerate(row):
 				if i > 0: data[i][j] = cell * 100	
 %>
+
+<p>Data table (Header true, text false, style DT):</p>
 ${ plotter.table(id='table1_header.txt', header=True, styled='dt', attrib =  {'class' : 'table'}, func=mod_data)}
 
+<p>Data table (Header true, text false, style BS):</p>
 ${ plotter.table(id='table1.txt', header=True, styled='bs', attrib = {'class' : 'table table-striped'}) }
 
+<p>Data table (Header false, text true, style DT):</p>
+${ plotter.table(id='text_number_tab.txt', header=False, text=True, styled='dt', attrib = {'class' : 'table'}) }
 
 <p>descripcion</p>
 
