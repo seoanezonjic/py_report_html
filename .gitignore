@@ -52,3 +52,7 @@ MANIFEST
 .venv*/
 .conda*/
 .python-version
+
+# Other files
+tests/demo_examples/Report.html
+tests/demo_examples/Report_matplotlib.html

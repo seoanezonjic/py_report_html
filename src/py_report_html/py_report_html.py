@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings(action='ignore', category=FutureWarning, module="seaborn")
+
 import re, os, json, math, zlib, warnings
 import pandas as pd
 import base64
@@ -397,6 +400,7 @@ class Py_report_html:
             'renamed_variables': [],
         }
         options.update(user_options)
+        if options.get('styled') == 'dt' and not options["header"]: raise Exception("Tables styled as datatables need to have a header to be properly displayed")
         table_attr = self.prepare_table_attribs(options['attrib'])
         array_data, _, _ = self.get_data(options)
         if options.get('func') != None: options['func'](array_data)

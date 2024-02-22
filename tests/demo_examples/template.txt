@@ -112,10 +112,18 @@ ${ plotter.create_collapsable_container('clickme_id', example_div) }
 ${ plotter.table(id='table1.txt')}
 
 <%
+        from functools import partial
 	def mod_data(data):
 		for i, row in enumerate(data):
 			for j, cell in enumerate(row):
-				if i > 0: data[i][j] = cell * 100	
+				if i > 0: data[i][j] = cell * 100
+
+        def col_to_num(data, cols):
+                for i, row in enumerate(data):
+                        for j in cols:
+                                if i > 0: data[i][j] = float(data[i][j])
+
+        convert_col_1_to_numeric = partial(col_to_num, cols=[1])	
 %>
 
 <p>Data table (Header true, text false, style DT):</p>
@@ -124,8 +132,8 @@ ${ plotter.table(id='table1_header.txt', header=True, styled='dt', attrib =  {'c
 <p>Data table (Header true, text false, style BS):</p>
 ${ plotter.table(id='table1.txt', header=True, styled='bs', attrib = {'class' : 'table table-striped'}) }
 
-<p>Data table (Header false, text true, style DT):</p>
-${ plotter.table(id='text_number_tab.txt', header=False, text=True, styled='dt', attrib = {'class' : 'table'}) }
+<p>Data table (Header true, text true, style DT):</p>
+${ plotter.table(id='text_number_tab.txt', header=True, text=True, styled='dt', func=convert_col_1_to_numeric, attrib = {'class' : 'table'}) }
 
 <p>descripcion</p>
 
