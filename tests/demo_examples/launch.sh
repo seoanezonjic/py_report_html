@@ -8,6 +8,7 @@
 #python -m venv ~/tests/py_report_venv --system-site-packages
 #source ~/tests/py_report_venv/bin/activate
 #pip install -e ~/dev_py/py_report_html
+#export PATH=~/tests/py_report_venv/bin:$PATH
 
 paths=`echo -e "
 file_data/barplot1.txt,

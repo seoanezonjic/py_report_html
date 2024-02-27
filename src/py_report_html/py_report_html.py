@@ -33,6 +33,7 @@ class Py_report_html:
         self.count_objects = 0
         self.dt_tables = [] #Tables to be styled with the DataTables js lib"
         self.bs_tables = [] #Tables to be styled with the bootstrap js lib"
+        self.custom_buttons = []
         self.mermaid = False #Mermaid graph objects
         self.compress = compress
         self.networks = []
@@ -132,26 +133,27 @@ class Py_report_html:
         # -----------------------------------------------
 
         # CDN LOAD
-        if len(self.dt_tables) > 0 or len(self.bs_tables) > 0: #Bootstrap for datatables or only for static tables. Use bootstrap version needed by datatables to avoid incompatibility issues
+        if len(self.bs_tables) > 0: #Bootstrap for datatables or only for static tables. Use bootstrap version needed by datatables to avoid incompatibility issues
             self.css_cdn.append('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css')
 
         if len(self.dt_tables) > 0: # CDN load, this library is difficult to embed in html file
             self.css_cdn.extend([
-                'https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap.min.css',
-                'https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css',
-                'https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css'
+                'https://cdn.datatables.net/2.0.0/css/dataTables.dataTables.css',
+                'https://cdn.datatables.net/buttons/3.0.0/css/buttons.dataTables.css'
             ])
             self.js_cdn.extend([
-                'https://code.jquery.com/jquery-3.5.1.js',
-                'https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js',
-                'https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap.min.js',
-                'https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js',
-                'https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js',
-                'https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js'
+                'https://code.jquery.com/jquery-3.7.1.js',
+                'https://cdn.datatables.net/2.0.0/js/dataTables.js',
+                'https://cdn.datatables.net/buttons/3.0.0/js/dataTables.buttons.js',
+                'https://cdn.datatables.net/buttons/3.0.0/js/buttons.dataTables.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+                'https://cdn.datatables.net/buttons/3.0.0/js/buttons.html5.min.js',
             ])
+            if 'pdfHtml5' in self.custom_buttons:
+                self.js_cdn.extend([
+                    'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js',
+                    'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js'
+                ])
 
         if 'sigma' in self.networks: # sigma CDN load is HUGE so we read it from file
             file = str(files(Py_report_html.TEMPLATES).joinpath('sigma_cdn.txt'))
@@ -200,11 +202,12 @@ class Py_report_html:
 
         #DT tables
         if len(self.dt_tables) > 0:
+            embedded_buttons = ','.join([f"'{button}'" for button in self.custom_buttons])
             self.all_report += (
                 f"<script>\n"
                 f"    % for dt_table in plotter.dt_tables:\n"
                 f"        $(document).ready(function () {{\n"
-                f"            $('#${{ dt_table }}').DataTable({{ dom:'Bfrtip', buttons: ['copy', 'csv', 'excel', 'pdf', 'print'] }});\n"
+                f"            $('#${{ dt_table }}').DataTable({{ dom:'Bfrtip', buttons: [{embedded_buttons}] }});\n"
                 f"        }});\n"
                 f"    % endfor\n"
                 f"</script>\n")
@@ -398,15 +401,20 @@ class Py_report_html:
             'func': None,
             'renamed_samples': [],
             'renamed_variables': [],
+            'custom_buttons': ['copyHtml5', 'excelHtml5', 'csvHtml5']
         }
         options.update(user_options)
-        if options.get('styled') == 'dt' and not options["header"]: raise Exception("Tables styled as datatables need to have a header to be properly displayed")
+        
         table_attr = self.prepare_table_attribs(options['attrib'])
         array_data, _, _ = self.get_data(options)
         if options.get('func') != None: options['func'](array_data)
         rowspan, colspan = self.get_col_n_row_span(array_data)
         table_id = 'table_' + str(self.count_objects)
-        if options.get('styled') == 'dt': self.dt_tables.append(table_id) 
+        if options.get('styled') == 'dt': 
+            if not options["header"]: raise Exception("Tables styled as datatables need to have a header to be properly displayed")
+            self.dt_tables.append(table_id)
+            self.custom_buttons = options['custom_buttons'] 
+        
         if options.get('styled') == 'bs': self.bs_tables.append(table_id) 
         self.count_objects += 1
         template_file = str(files(Py_report_html.TEMPLATES).joinpath('table.txt'))

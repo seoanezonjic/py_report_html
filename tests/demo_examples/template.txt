@@ -127,13 +127,13 @@ ${ plotter.table(id='table1.txt')}
 %>
 
 <p>Data table (Header true, text false, style DT):</p>
-${ plotter.table(id='table1_header.txt', header=True, styled='dt', attrib =  {'class' : 'table'}, func=mod_data)}
+${ plotter.table(id='table1_header.txt', header=True, styled='dt', attrib =  {'class' : 'table'}, func=mod_data, custom_buttons = ['copyHtml5', 'excelHtml5', 'csvHtml5', 'pdfHtml5'])}
 
 <p>Data table (Header true, text false, style BS):</p>
 ${ plotter.table(id='table1.txt', header=True, styled='bs', attrib = {'class' : 'table table-striped'}) }
 
 <p>Data table (Header true, text true, style DT):</p>
-${ plotter.table(id='text_number_tab.txt', header=True, text=True, styled='dt', func=convert_col_1_to_numeric, attrib = {'class' : 'table'}) }
+${ plotter.table(id='text_number_tab.txt', header=True, text=True, styled='dt', func=convert_col_1_to_numeric, attrib = {'class' : 'table'}, custom_buttons = ['copyHtml5', 'excelHtml5', 'csvHtml5']) }
 
 <p>descripcion</p>
 
