@@ -1085,17 +1085,11 @@ class Py_report_html:
             config.update({
                     "graphType":"Scatter2D",
                     "hideHistogram":True,
-                    "histogramData":"Factor",
+                    "showHistogram": options.get('group') or True,
                     "showFilledHistogramDensity":options['fillDensity'],
                     "showHistogramDensity":True,
                     "showHistogramMedian":options['median'],
             })
-
-            if options.get('group') == None:
-                options['mod_data_structure'] = 'ridgeline'
-            else:
-                config["histogramData"] = options['group']
-                config["colorBy"] = options['group']
         
         default_options['config_chart'] = config_chart
         html_string = self.canvasXpress_main(default_options)

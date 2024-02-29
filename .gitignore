@@ -54,5 +54,5 @@ MANIFEST
 .python-version
 
 # Other files
-tests/demo_examples/Report.html
-tests/demo_examples/Report_matplotlib.html
+tests/demo_examples/debugging.sh
+tests/demo_examples/debugging.txt

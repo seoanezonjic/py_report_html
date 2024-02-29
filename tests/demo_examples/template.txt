@@ -291,8 +291,15 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
                         ${ plotter.ridgeline(id = 'ridgeline.txt', header = True, row_names = True) }
                 </td>
                 <td>
-                        ${ plotter.density(id = 'ridgeline.txt', header = True, row_names = True,
-                                        fillDensity = False, median = False)}
+                        ${plotter.density(id="density_one_serie.txt", row_names = False, header = True, fields=[0])}
+                </td>
+        </tr>
+        <tr>
+                <td>
+                        ${plotter.density(id="density_one_serie.txt", row_names = False, header = True, var_attr=[1], group="Group", config={"histogramStat":"density"})}
+                </td>
+                <td>
+                        ${plotter.density(id="ridgeline.txt",  header = True, row_names = True, fillDensity = True, median = True)}
                 </td>
         </tr>
 	<tr>
