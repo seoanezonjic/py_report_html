@@ -1,0 +1,383 @@
+<%
+        #PREPARE HERE THINGS THAT WILL BE USED IN THE DOCUMENT
+        from functools import partial
+        import math
+	def mod_data(data):
+		for i, row in enumerate(data):
+			for j, cell in enumerate(row):
+				if i > 0 and j > 0: data[i][j] = math.log(float(data[i][j]))
+
+        def col_to_num(data, cols):
+                for i, row in enumerate(data):
+                        for j in cols:
+                                if i > 0: data[i][j] = float(data[i][j])
+
+        convert_col_1_to_numeric = partial(col_to_num, cols=[1])
+
+
+        plotter.hash_vars["themes"] = [["economist", "excel", "tableau", "stata", "igray"], ["solarized", "paulTol", "ggplot", "wallStreetJournal", "cx"]]
+        plotter.hash_vars["color_schemes"] = [
+        ["CanvasXpress", "CanvasXpressT", "BlackAndWhite", "StataMono", "Stata3", "Stata2", "Stata", "WallStreetJournalDemRep"], 
+        ["WallStreetJournalBlackGreen", "WallStreetJournalRedGreen", "WallStreetJournal3", "WallStreetJournal2", "WallStreetJournal", "Tableau", "GGPlot", "Solarized"], 
+        ["Excel3", "Excel2", "Excel", "Bootstrap", "Economist", "EconomistBG", "Pastel", "Pastel2"], 
+        ["Balanced", "YlGn", "YlGnBu", "GnBu", "BuGn", "PuBuGn", "PuBu", "BuPu"],
+        ["RdPu", "PuRd", "OrRd", "YlOrRd", "YlOrBr", "Purples", "Blues", "Greens"],
+        ["Oranges", "Reds", "Greys", "Solarized", "Excel3", "Excel2", "Excel", ""]]
+
+
+        chuletario = {
+                "embedded_images": [
+                        plotter.embed_img('file_data/example.png')
+                ],
+                "tables": [
+                        plotter.table(id='table1_header.txt', header=True, styled='dt', attrib =  {'class' : 'table'}, func=mod_data, custom_buttons = ['copyHtml5', 'excelHtml5', 'csvHtml5', 'pdfHtml5']),
+                        plotter.table(id='table1.txt', header=True, styled='bs', attrib = {'class' : 'table table-striped'}),
+                        plotter.table(id='text_number_tab.txt', header=True, text=True, styled='dt', func=convert_col_1_to_numeric, attrib = {'class' : 'table'}, custom_buttons = ['copyHtml5', 'excelHtml5', 'csvHtml5'])
+                ],
+                "plots": {
+                    "barplots": [
+                        """plotter.barplot(id='barplot1.txt', header = True, config={'graphOrientation': 'vertical', "xAxisTitle": "Valores"})""",
+                        """plotter.barplot(id = 'barplot2.txt', header = True, height = 300)""",
+                        """plotter.barplot(id = 'barplot3.txt', header= True, smp_attr = [1,2], var_attr = [1,2], segregate = {'var': ['nerv'], 'smp' : ['type2']},
+                	        config = {'layoutCollapse' : 'false', 'layoutType' : 'rows', 'graphOrientation' : 'vertical'}, height = 300, width = 300)""",
+                    ],
+                    "stacked_barplots": [
+                        """plotter.stacked(id = 'barplot1.txt', header = True, config = {'graphOrientation' : 'vertical'}, theme="stata")"""
+                    ],
+                    "stackedline": [
+                        """plotter.stackedline(id = 'barplot3.txt', header= True, smp_attr = [1,2], var_attr = [1,2], transpose = False, height = 500, width = 500,
+        	                xAxis = ["gen1", "gen2"], #These variable names are used for stacked barplots
+                                xAxis2 = ["gen3", "gen4"], #These variable names are used for lineplots
+                	        config = {'graphOrientation' : 'vertical', "xAxis2Show": True,
+                                             "xAxis2TickFormat":"%.2f G3-4",
+                                             "xAxisTickFormat":"%.2f G1-2",
+                                             "xAxisTitle": "Expression of genes 1 and 2 (bars)",
+                                             "xAxis2Title": "Expression of genes 3 and 4 (lines)"})"""
+                    ],
+                    "lineplots": [
+                        """plotter.line(id= 'barplot1.txt', header = True, func=mod_data )"""
+                    ],
+                    "barline": [
+                        """plotter.barline(id = 'barplot3.txt', header= True, smp_attr = [1,2], var_attr = [1,2], transpose = False, height = 500, width = 500,
+        	                xAxis = ["gen1", "gen2"], #These variable names are used for barplots
+                                xAxis2 = ["gen3", "gen4"], #These variable names are used for lineplots
+                	        config = {'graphOrientation' : 'vertical', "xAxis2Show": True,
+                                             "xAxis2TickFormat":"%.2f G3-4",
+                                             "xAxisTickFormat":"%.2f G1-2",
+                                             "xAxisTitle": "Expression of genes 1 and 2 (bars)",
+                                             "xAxis2Title": "Expression of genes 3 and 4 (lines)"})"""
+                    ],
+                    "dotplots": [
+                        """plotter.dotplot(id = 'canvas_table', header = True, row_names = True, connect = True, height = 300)"""
+                    ],
+                    "pie": [
+                        """plotter.pie(id= 'pie_uniq.txt')""",
+                        """plotter.pie(id= 'barplot1.txt', header = True, row_names = True)""",
+                        """plotter.pie(id= 'barplot1.txt', header = True, row_names = True, transpose = True)"""
+                    ],
+                    "correlation_plots":[ 
+                        """plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, correlationAxis = 'variables')"""
+                    ],
+                    "scatterplots_2D": [
+                        """plotter.scatter2D(id= 'x_y.txt', header= True, x_label = 'Num genes', y_label = 'FPKM', alpha = 0.3, theme="tableau"  )""",
+                        """plotter.scatter2D(id= 'x_y.txt', header= True, x_label = 'Num genes', y_label = 'FPKM', add_densities=True)""",
+                        """plotter.scatter2D(id= 'x_y_crowded.txt', header= True, x_label = 'Num genes', y_label = 'FPKM', add_densities=True, alpha = 0.3 )""",
+                        """plotter.scatter2D(id= 'x_y_crowded.txt', header= True, x_label = 'Num genes', y_label = 'FPKM', static=True, theme="tableau" )"""
+                    ],
+                    "scatterplots_3D": [
+                        """plotter.scatter3D(id= 'scatter3dsizeAndColor.txt', header= True, row_names = True, x_label = 'Num genes', y_label = 'FPKM', z_label= "3thMetric",
+                                                var_attr=[6], xAxis = "liver", yAxis="brain", zAxis="lung", pointSize="spleen", colorScaleBy="kidney", shapeBy="pathway")"""
+                    ],
+                    "scatterplots_bubble": [
+                        """plotter.scatterbubble2D(id = 'haplotipe_array', header = True, row_names = False, upper_limit = 70, lower_limit = 4, ranges = 80,
+                                                xAxis = ['pos'], yAxis = ['haplotipe'], zAxis = ['freq'])"""
+                    ],
+                    "hexplots": [
+                        """plotter.hexplot(id= 'x_y_crowded.txt', header= True, x_label = 'Num genes', y_label = 'FPKM', bins=30)"""
+                    ],
+                    "boxplots": [
+                        """plotter.boxplot(id = 'boxplot.txt', header = True, row_names = True)""",
+                        """plotter.boxplot(id = 'boxplot_one_series.txt', header = True, row_names = True)""",
+                        """plotter.boxplot(id = 'boxplot_factor.txt', header = True, row_names = True, default= False, var_attr = [4], group = 'pathway' )""",
+                        """plotter.boxplot(id = 'rank_distribution.txt', header = True, row_names = False, default =  False, var_attr = [0,1,2], 
+                                        group = ["clust_method", "clust_status"], height = 500, width= 900)""",
+                        """plotter.boxplot(id = 'boxplot_grid.txt', header = True, row_names = False, default =  False, var_attr = [0,1], 
+                                        group = ["genes", "samples"], height = 700, width= 800, config={"graphOrientation":"vertical"})"""
+
+                    ],
+                    "boxplot_violin": [
+                        """plotter.boxplot(id = 'boxplot_factor.txt', header = True, row_names = True, default= False, 
+                                                var_attr = [4], group = 'pathway', add_violin=True )"""
+                    ],
+                    "density": [
+                        """plotter.density(id="density_one_serie.txt", row_names = False, header = True, fields=[0])""",
+                        """plotter.density(id="density_one_serie.txt", row_names = False, header = True, var_attr=[1], group="Group", config={"histogramStat":"density"})""",
+                        """plotter.density(id="ridgeline.txt",  header = True, row_names = True, fillDensity = True, median = True)"""
+                    ],
+                    "ridgeline": [
+                        """plotter.ridgeline(id = 'ridgeline.txt', header = True, row_names = True)"""
+                    ],
+                    "radar": [
+                        """plotter.radar(id='barplot4.txt', header = True, row_names = True, subtype=["stacked"] or ["bar", "area", "line", "dot"])""",
+                        """plotter.radar(id='barplot3.txt', header = True, row_names = True, smp_attr = [1,2], var_attr = [1,2], subtype=["area"], show_factors=["type", "-", "type2"])"""
+                    ],
+                    "circular": [
+                        """plotter.circular(id = 'circular.txt', header = True, row_names = True, links = 'links', ringsType = ['heatmap', 'dot', 'bar'])"""
+                    ],
+                    "heatmap": [
+                        """plotter.heatmap(id = 'hap_sample', header = True, row_names = True )"""
+                    ],
+                    "area": [
+                        """plotter.area(id = 'barplot3.txt', header= True, smp_attr = [1,2], var_attr = [1,2], transpose = False,
+                	        config = {'graphOrientation' : 'vertical', "xAxis2Show": True}, height = 500, width = 500)"""
+                    ],
+                    "arealine":[
+                        """plotter.arealine(id = 'barplot3.txt', header= True, smp_attr = [1,2], var_attr = [1,2], transpose = False, height = 500, width = 500,
+        	                xAxis = ["gen3", "gen4"], #These variable names are used for dotplots
+                                xAxis2 = ["gen1", "gen2"], #These variable names are used for lineplots
+                	        config = {'graphOrientation' : 'vertical', "xAxis2Show": True})"""
+                    ],
+                    "dotline":[
+                        """plotter.dotline(id = 'barplot3.txt', header= True, smp_attr = [1,2], var_attr = [1,2], transpose = False, height = 500, width = 500,
+        	                xAxis = ["gen3", "gen4"], #These variable names are used for dotplots
+                                xAxis2 = ["gen1", "gen2"], #These variable names are used for lineplots
+                	        config = {'graphOrientation' : 'vertical', "xAxis2Show": True})"""
+                    ],
+                                                
+                },
+                "networks": {
+                    "cytoscape":
+                        plotter.network(id = 'network.txt', method = 'cytoscape', reference_nodes = ["a", "e"], group_nodes= {"g1": ["i", "j"], "g2": ["b", "c"]}),
+                    "elgrapho":
+                        plotter.network(id = 'network.txt', method = 'elgrapho', group = 'layer', layout = 'forcedir', reference_nodes = ["a", "e"]),
+                    "sigma":
+                        plotter.network(id = 'network.txt', method = 'sigma', reference_nodes = ["a", "e"]),
+                    "pyvis":
+                        plotter.network(id = 'network.txt', method = 'pyvis', reference_nodes = ["a", "e"], group_nodes= {"g1": ["i", "j"], "g2": ["b", "c"]})
+                }
+        }
+
+
+
+        num=5
+        basic_flowchart=f"""
+        ---
+        title: Hello Title
+        config:
+         theme: base
+         themeVariables:
+           primaryColor: "#00ff00"
+       ---
+       graph LR;
+         A --- B ;
+         A --- E(5) ;
+         B-->C[fa:fa-ban forbidden];
+         B-->D(fa:fa-spinner);
+         click A callback "Texto para el tooltip"
+         click B href "#CanvasXpress-ParentNode-obj_3_"
+        """
+        
+        mermaid_timeline=f"""
+        ---
+        title: Hello Title
+        config:
+            theme: base
+            themeVariables:
+            primaryColor: "#00ff00"
+        ---
+        timeline
+        title Workflow
+          section Cluster Steps
+            get reliable pairs : Net Metrics
+            get clusters : Cluster Metrics
+                         : CDLib Metrics
+            clean clusters : Cluster Metrics
+                           : CDLib Metrics
+            prepare and randomize clusters : Nothing                    
+            cluster ranking : CRank Metrics
+          section Disease Steps
+            disease prediction : Disease Metrics
+          section Ranker Steps
+            gene ranking metrics : First Ranker Metrics
+                                 : First Ranker Metrics Best Genes
+            geometric mean integration : Geometric integration
+            gene disease ranking : Second Ranker Metrics
+                                 : Second Ranker Metrics Best Genes
+            get control prediction: Phen2Gene Metrics
+        """
+%>
+
+<% plotter.set_header() %>
+
+
+
+${ plotter.create_title('Canvasxpress Themes and Color Schemec', id='sub_themes_from', hlevel=1, indexable=True, clickable=True, t_id='sub_themes_to', clickable_text = '(Click me)') }
+<% 
+        sub_themes = (
+                f"<h1>CanvasXpress themes and color schemes</h1>\n"
+                f"<p> There are plenty of themes and color schemes than can be uses with options['theme'] and options['color_scheme']. For example, the following plot uses the ''wallStreetJournal'' theme and the ''Economist'' color scheme:</p>\n"
+                f"<%text><p><code> ${{ plotter.barplot(id='barplot1.txt', header = True, theme = 'wallStreetJournal', color_scheme='Economist') }} </code></p></%text>\n")
+        sub_themes += "<p> The following table shows the available themes:</p>\n"
+        sub_themes += plotter.table(id="themes", header = False, text = True, styled = 'bs')
+        sub_themes += "<p> The following table shows the available color schemes:</p>\n"
+        sub_themes += plotter.table(id="color_schemes", header = False, text = True, styled = 'bs')
+%>
+${ plotter.create_collapsable_container('sub_themes_to', sub_themes) }
+
+
+
+
+${ plotter.create_title('How to cite tables and figures', id='sub_cites_from', hlevel=1, indexable=True, clickable=True, t_id='sub_cites_to', clickable_text = '(Click me)') }
+<%
+        sub_cites = ( 
+                f"<h1>How to cite tables and figures</h1>\n"
+                f"<p> You can cite tables and figures using the following syntax:</p>\n"
+                f"<%text><p> We use ${{plotter.add_figure('example')}} to add a new reference to 'example' text, so it marks it as 1, and from now on we can use that refence by using ${{ plotter.get_figure('example') }}. continued calls to 'plotter.add_figure' with other ids will increase the value of the counter, so each text will have its own reference.</p></%text>\n"
+                f"<%text><p> The same is also true for tables, for example for a table called table1, we use ${{ plotter.add_table('tab:table1')}} and ${{ plotter.add_table('tab:table1')}} </%text>\n"
+                f"<p> We will show some examples:</p>\n"
+                f"<p> Fig ${ plotter.add_figure('example') } : This is an example </p>\n"
+                f"<p> We cite ${ plotter.get_figure('example') } as an example </p>\n"
+                f"<p> Fig ${ plotter.add_figure('test') } : This is a test </p>\n"
+                f"<p> We cite ${ plotter.get_figure('test') } as a test </p>\n"
+                f"<p> Table ${ plotter.add_table('tab:example') } : This is an example table </p>\n"
+                f"<p> We cite table ${ plotter.add_table('tab:example') } as an example </p>\n"
+                f"<p> Table ${ plotter.add_table('tab:test') } : This is a test table </p>\n"
+                f"<p> We cite table ${ plotter.get_table('tab:test') } as a test table </p>\n"
+        )
+%>
+${ plotter.create_collapsable_container('sub_cites_to', sub_cites) }
+
+
+
+${ plotter.create_title('How to define and use titles and clicables ', id='sub_clickables_from', hlevel=1, indexable=True, clickable=True, t_id='sub_clickables_to', clickable_text = '(Click me)') }
+<%
+        example_div = plotter.table(id='table1.txt')
+        sub_clickables = (
+                f"<h1>How to define and use titles and clicables</h1>\n"
+        )
+        sub_clickables += plotter.create_title('Demo', id='click_demo', hlevel=2, indexable=True, clickable=True, t_id='clickme_id', clickable_text = '(Click me)')
+        sub_clickables += plotter.create_title('Demo2', id='demo2', hlevel=3, indexable=True, clickable=False)
+        sub_clickables += plotter.create_title('Demo3', id='demo3', hlevel=2, indexable=True, clickable=False)
+        sub_clickables += plotter.create_title('Demo4', id='demo4', hlevel=3, indexable=True, clickable=False)
+        sub_clickables += plotter.create_title('Demo5', id='demo5', hlevel=4, indexable=True, clickable=False)
+        sub_clickables += plotter.create_title('Demo6', id='demo6', hlevel=2, indexable=True, clickable=False)
+        sub_clickables += plotter.create_collapsable_container('clickme_id', example_div)
+
+%>
+${ plotter.create_collapsable_container('sub_clickables_to', sub_clickables) }
+
+
+
+
+${ plotter.create_title('How to embed images', id='sub_images_from', hlevel=1, indexable=True, clickable=True, t_id='sub_images_to', clickable_text = '(Click me)') }
+<%
+        sub_images = ( 
+                f"<h1>How to embed images inside the report</h1>\n"
+                f"<p> You can embed images using the following syntax (for an image called example.png):</p>\n"
+                f"<%text><p><code> ${{ plotter.embed_img('file_data/example.png') }}</code></p></%text>\n"
+                f"<p> We will show an example:</p>\n"
+        )
+        sub_images += plotter.embed_img('file_data/example.png')
+%>
+${ plotter.create_collapsable_container('sub_images_to', sub_images) }
+
+
+
+${ plotter.create_title('How to create tables', id='sub_tables_from', hlevel=1, indexable=True, clickable=True, t_id='sub_tables_to', clickable_text = '(Click me)') }
+<%
+        sub_tables = ( 
+                f"<h1>How to create tables</h1>\n"
+                f"<p> You can create tables using the following syntax (eg: for a table called table1.txt):</p>\n"
+                f"<%text><p><code> ${{ plotter.table(id='table1.txt', header=True, styled='dt', attrib =  {{'class' : 'table'}}, func=mod_data, custom_buttons = ['copyHtml5', 'excelHtml5', 'csvHtml5', 'pdfHtml5']) }}</code></p></%text>\n"
+                f"<p>In the above example we are creating a table with 'datatable' style, applying a custom function called 'mod_data' where we are modifying (applying logarithms) the values of the table before being shown, and adding buttons to save the table in different formats (this option is only available with dt styled tables)</p>\n"
+                f"<p> We will show some examples that can be check in the template.txt file:</p>\n"
+        )
+        sub_tables += "<p style=\"font-size: 4vw;font-weight: bold;text-align: center;\">Data table (Header true, text false, style DT):</p>\n"
+        sub_tables += chuletario["tables"][0] + "\n"
+        sub_tables += "<p style=\"font-size: 4vw;font-weight: bold;text-align: center;\">Data table (Header true, text false, style BS):</p>\n"
+        sub_tables += chuletario["tables"][1] + "\n"
+        sub_tables += "<p style=\"font-size: 4vw;font-weight: bold;text-align: center;\">Data table (Header true, text true, style DT):</p>\n"
+        sub_tables += chuletario["tables"][2] + "\n"
+%>
+${ plotter.create_collapsable_container('sub_tables_to', sub_tables) }
+
+
+${ plotter.create_title('Mermaid flowcharts', id='sub_mermaid_from', hlevel=1, indexable=True, clickable=True, t_id='sub_mermaid_to', clickable_text = '(Click me(NOT WORKING YET))') }
+<% 
+        sub_mermaid = (
+                f"<h1>Mermaid charts (flowcharts, timelines and so on)</h1>\n"
+                f"<p> You can create mermaid charts using the mermaidJS syntax. Because it is not so straightforward to draw common patterns, we will leave mermaidJS documentation for further reference (<a href=\"https://mermaid.js.org/intro\">MermaidJS documentation</a>):</p>\n"
+                )
+
+        sub_mermaid += "<p>Here are some examples of mermaid charts:</p>\n"
+        sub_mermaid += "<p style=\"font-size: 8vw;font-weight: bold;text-align: center;\">Flowchart:</p>\n"
+        sub_mermaid += plotter.mermaid_chart(basic_flowchart) + "\n"
+        sub_mermaid += "<p style=\"font-size: 8vw;font-weight: bold;text-align: center;\">Timeline:</p>\n"
+        sub_mermaid += plotter.mermaid_chart(mermaid_timeline) + "\n"
+
+%>
+${ plotter.create_collapsable_container('sub_mermaid_to', sub_mermaid) }
+
+
+
+${ plotter.create_title('CanvasXpress plots', id='sub_canvas_from', hlevel=1, indexable=True, clickable=True, t_id='sub_canvas_to', clickable_text = '(Click me)') }
+<%
+        sub_canvas = "<h1> How to create CanvasXpress plots </h1>\n"
+        for type_of_plot in chuletario["plots"]:
+                clickable_string = f"\"hide_show_element('{type_of_plot}')\""
+                sub_canvas += f"<h1 style=\"text-align: center; background-color:#d6eaf8\" class=\"py_accordion\" onclick={clickable_string}>{type_of_plot}</h1>"
+                sub_canvas += f"<div id=\"{type_of_plot}\" style=\"display:none;width:100%\">\n"
+                for plot in chuletario["plots"][type_of_plot]:
+                        sub_canvas += f"<div style=\"width: 100vw;\">"
+                        sub_canvas += f"<%text><p><code>{plot}</code></p></%text>\n"
+                        sub_canvas += eval(plot) + "\n"
+                        sub_canvas += "</div>\n"
+            
+                sub_canvas += "</div>\n"
+%>
+${ plotter.create_collapsable_container('sub_canvas_to', sub_canvas) }
+
+
+${ plotter.create_title('How to create networks', id='sub_network_from', hlevel=1, indexable=True, clickable=True, t_id='sub_network_to', clickable_text = '(Click me)') }
+<% 
+        sub_network = (
+                f"<h1>How to create Networks with different plotting libraries</h1>\n"
+                f"<p> You can create networks using different plotting libraries. The following examples show how to create networks using different libraries.</p>\n"
+                f"<h2>Cytoscape</h2>\n"
+                f'<%text><p><code> ${{ plotter.network(id = "network.txt", method = "cytoscape", reference_nodes = ["a", "e"], group_nodes= {{"g1": ["i", "j"], "g2": ["b", "c"]}}) }} </code></p></%text>\n'
+                f"<h2>Elgrapho</h2>\n"
+                f'<%text><p><code> ${{ plotter.network(id = "network.txt", method = "elgrapho", group = "layer", layout = "forcedir", reference_nodes = ["a", "e"]) }} </code></p></%text>\n'
+                f"<h2>Sigma</h2>\n"
+                f'<%text><p><code> ${{ plotter.network(id = "network.txt", method = "sigma", reference_nodes = ["a", "e"]) }} </code></p></%text>\n'
+                f"<h2>Pyvis</h2>\n"
+                f'<%text><p><code> ${{ plotter.network(id = "network.txt", method = "pyvis", reference_nodes = ["a", "e"], group_nodes= {{"g1": ["i", "j"], "g2": ["b", "c"]}}) }} </code></p></%text>\n'
+                f"<p> We will show some examples:</p>\n"
+        )
+        
+        sub_network += "<p style=\"font-size: 8vw;font-weight: bold;text-align: center;\"> Cytoscape:</p>\n"
+        sub_network += chuletario["networks"]["cytoscape"] + "\n"
+        sub_network += "<p style=\"font-size: 8vw;font-weight: bold;text-align: center;\"> Elgrapho:</p>\n"
+        sub_network += chuletario["networks"]["elgrapho"] + "\n"
+        sub_network += "<p style=\"font-size: 8vw;font-weight: bold;text-align: center;\"> Pyvis:</p>\n"
+        sub_network += chuletario["networks"]["pyvis"] + "\n"
+        #sub_network += "<p style=\"font-size: 8vw;font-weight: bold;text-align: center;\"> Sigma:</p>\n"
+        #sub_network += chuletario["networks"]["sigma"] + "\n"
+%>
+${ plotter.create_collapsable_container('sub_network_to', sub_network) }
+
+
+
+<h2 style="font-size: 8vw;font-weight: bold;text-align: center;">Debugging section</h2>
+<p style="font-size: 2vw; text-align: center;"> These plots (sigma network and mermaid plots) are still not properly shown inside foldable containers, so we will leave it here for reference until fixed</p>
+
+<p style="font-size: 4vw;font-weight: bold;text-align: center;"> Mermaid Flowchart:</p>
+${f"<%text><p><code>${{plotter.mermaid_chart(basic_flowchart)}}</code></p></%text>"}
+${plotter.mermaid_chart(basic_flowchart)}
+
+<p style="font-size: 4vw;font-weight: bold;text-align: center;"> Mermaid Timeline:</p>
+${f"<%text><p><code>${{plotter.mermaid_chart(mermaid_timeline)}}</code></p></%text>"}
+${plotter.mermaid_chart(mermaid_timeline)}
+
+<p style="font-size: 4vw;font-weight: bold;text-align: center;"> Sigma network:</p>
+${f"<%text><p><code>${{plotter.network(id = \"network.txt\", method = \"pyvis\", reference_nodes = [\"a\", \"e\"], group_nodes= {{\"g1\": [\"i\", \"j\"], \"g2\": [\"b\", \"c\"]}}) }}</code></p></%text>"}
+${chuletario["networks"]["sigma"]}
