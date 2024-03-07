@@ -763,6 +763,9 @@ class Py_report_html:
     def barplot(self, **user_options):
         def config_chart(options, config, samples, variables, values, object_id, x, z):
             config['graphType'] = 'Bar'
+            if options.get("colorScale"):
+                x[options['x_label']] = values[0]
+                config["colorBy"] = options['x_label']
         default_options = { 'row_names': True, 'config_chart' : config_chart }
         default_options.update(user_options)
         html_string = self.canvasXpress_main(default_options)

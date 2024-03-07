@@ -148,6 +148,9 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
                         ${ plotter.barplot(id = 'barplot2.txt', header = True, height = 300) }
                 </td>
                 <td>
+                        ${ plotter.barplot(id = 'barplot2.txt', header = True, height = 300, colorScale=True, config = { 'graphOrientation' : 'vertical'}) }
+                </td>
+                <td>
                         ${ plotter.barplot(id = 'barplot3.txt', header= True,
 	                        smp_attr = [1,2], var_attr = [1,2],
         	                segregate = {'var': ['nerv'], 'smp' : ['type2']},

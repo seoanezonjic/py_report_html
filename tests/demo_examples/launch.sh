@@ -4,10 +4,10 @@
 #### Uncomment the following lines to create a virtual environment and install the package 
 #### if you want to check changes in the package done by yourself
 
-mkdir -p ~/tests/py_report_venv
-python -m venv ~/tests/py_report_venv --system-site-packages
+#mkdir -p ~/tests/py_report_venv
+#python -m venv ~/tests/py_report_venv --system-site-packages
 source ~/tests/py_report_venv/bin/activate
-pip install -e ~/dev_py/py_report_html
+#pip install -e ~/dev_py/py_report_html
 export PATH=~/tests/py_report_venv/bin:$PATH
 
 paths=`echo -e "
