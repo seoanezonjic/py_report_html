@@ -1,0 +1,5 @@
+function go2userNode(){
+	let input_value = document.getElementById("hpoSearch").value;
+	let out_obj = document.getElementById("output");
+	out_obj.value = input_value; 
+}

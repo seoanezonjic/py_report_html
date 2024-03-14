@@ -40,6 +40,7 @@ class Py_report_html:
         self.figures = {}
         self.tables = {}
         self.js_libraries = []
+        self.dynamic_js = [] # Chunks of js code that are generated in template rendering
         self.css_files = []
         self.js_cdn = []
         self.css_cdn = []
@@ -96,6 +97,10 @@ class Py_report_html:
         self.make_head()
         self.build_body(renderered_template)
         self.all_report += "\n</HTML>"
+
+    def add_dynamic_js(self):
+        string_chunks = "\n".join(self.dynamic_js)
+        return f"<script>\n{string_chunks}\n</script>\n"
 
     def load_js_libraries(self, js_libraries):
         loaded_libraries = []
@@ -190,28 +195,26 @@ class Py_report_html:
         # ADD CUSTOM FUNCTIONS TO USE LOADED JS LIBRARIES
         #canvasXpress objects
         if len(self.plots_data) > 0:
-            self.all_report += (
-                f"<script>\n"
-                f"    var initPage = function () {{\n"
+            self.dynamic_js.append(
+                (f"    var initPage = function () {{\n"
                 f"        % for plot_data in plotter.plots_data:\n"
                 f"            ${{plot_data}}\n"
                 f"        % endfor\n"
-                f"    }}\n"
-                f"</script>\n")
-                #f"            ${{plot_data}}\n"
+                f"    }}\n")
+            )
 
         #DT tables
         if len(self.dt_tables) > 0:
             embedded_buttons = ','.join([f"'{button}'" for button in self.custom_buttons])
-            self.all_report += (
-                f"<script>\n"
-                f"    % for dt_table in plotter.dt_tables:\n"
+            self.dynamic_js.append(
+                (f"    % for dt_table in plotter.dt_tables:\n"
                 f"        $(document).ready(function () {{\n"
                 f"            $('#${{ dt_table }}').DataTable({{ dom:'Bfrtip', buttons: [{embedded_buttons}] }});\n"
                 f"        }});\n"
-                f"    % endfor\n"
-                f"</script>\n")
+                f"    % endfor\n")
+            )
 
+        self.all_report += self.add_dynamic_js()
         self.all_report +=  "</head>\n"
 
     def build_body(self, template):
@@ -1428,6 +1431,21 @@ class Py_report_html:
 
     def create_collapsable_container(self, id, html_code, display='none'): #display ='block'
         return f"<div style=\"display:{display}\" id=\"{id}\">\n{html_code}\n</div>"
+
+    def create_autocomplete_box(self, box_id, item_list, js_function_name, button_text = 'Search'):
+        string = (
+        f"<div>\n"
+            f"<input id=\"{box_id}\" type=\"text\">\n"
+            f"<button id=\"button_{box_id}\" class=\"btn btn-secondary\" >{button_text}</button>\n"
+        f"</div>\n"
+        )
+        self.dynamic_js.append(
+            (f"document.addEventListener(\"DOMContentLoaded\", function(event){{\n" # Needed to wait to create DOM objects and add listeners to them
+                f"autocomplete(document.getElementById(\"{box_id}\"), {self.decompress_code(self.compress_data(item_list))});\n"
+                f"document.getElementById('button_{box_id}').onclick = {js_function_name};\n"
+            f"}});\n")
+        )
+        return string
 
     def create_header_index(self):
         if self.header_index:

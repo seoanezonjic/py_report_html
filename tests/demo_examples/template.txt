@@ -398,4 +398,8 @@ ${ plotter.network(id = 'network.txt', method = 'elgrapho', group = 'layer', lay
 %>
         ${ plotter.mermaid_chart(graph2)}
 </div>
-
+<div style="overflow:hidden; padding:10px; height:200px">
+	<p> Type h in below box </p>
+        ${ plotter.create_autocomplete_box('hpoSearch', ['hola', 'hello', 'halo'], 'go2userNode')}
+	<input id="output" type="text" placeholder="test">
+</div>
