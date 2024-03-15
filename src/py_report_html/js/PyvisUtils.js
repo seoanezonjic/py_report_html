@@ -153,6 +153,7 @@ function neighbourhoodHighlight(params) {
   }
   
   function selectNode(nodes) {
+    network.focus([nodes[0]]);
     network.selectNodes(nodes);
     neighbourhoodHighlight({ nodes: nodes });
     return nodes;

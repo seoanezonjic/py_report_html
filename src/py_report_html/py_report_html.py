@@ -1436,13 +1436,12 @@ class Py_report_html:
         string = (
         f"<div>\n"
             f"<input id=\"{box_id}\" type=\"text\">\n"
-            f"<button id=\"button_{box_id}\" class=\"btn btn-secondary\" >{button_text}</button>\n"
+            f"<button id=\"button_{box_id}\" onclick=\"{js_function_name}\" class=\"btn btn-secondary\" >{button_text}</button>\n"
         f"</div>\n"
         )
         self.dynamic_js.append(
             (f"document.addEventListener(\"DOMContentLoaded\", function(event){{\n" # Needed to wait to create DOM objects and add listeners to them
                 f"autocomplete(document.getElementById(\"{box_id}\"), {self.decompress_code(self.compress_data(item_list))});\n"
-                f"document.getElementById('button_{box_id}').onclick = {js_function_name};\n"
             f"}});\n")
         )
         return string
