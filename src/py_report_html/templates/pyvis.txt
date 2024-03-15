@@ -106,12 +106,15 @@
         "hideEdgesOnDrag": false,
         "hideNodesOnDrag": false
     },
+    "layout":{
+        "improvedLayout": false
+    },
     "physics": {
         "enabled": true,
         "stabilization": {
             "enabled": true,
             "fit": true,
-            "iterations": 1000,
+            "iterations": 100,
             "onlyDynamicEdges": false,
             "updateInterval": 50
         }
