@@ -14,3 +14,12 @@
 .active, .py_accordion:hover {
   background-color: #ccc; 
 }
+
+#mynetwork {
+  width: 1000px;
+  height: 1000px;
+  background-color: #ffffff;
+  border: 1px solid lightgray;
+  position: relative;
+  float: left;
+}

@@ -138,8 +138,10 @@ class Py_report_html:
         # -----------------------------------------------
 
         # CDN LOAD
-        if len(self.bs_tables) > 0: #Bootstrap for datatables or only for static tables. Use bootstrap version needed by datatables to avoid incompatibility issues
-            self.css_cdn.append('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css')
+        #UPDATED: Now bootstrap is loaded by default
+        #self.css_cdn.append('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css')
+        self.css_cdn.append('https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css')
+        self.js_cdn.append("https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js")
 
         if len(self.dt_tables) > 0: # CDN load, this library is difficult to embed in html file
             self.css_cdn.extend([
@@ -167,6 +169,10 @@ class Py_report_html:
 
         if self.mermaid: self.js_cdn.append("<script type=\"module\"> import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; </script>")
         
+        if 'pyvis' in self.networks: 
+            self.js_cdn.append("https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js")
+            self.css_cdn.append("https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css")
+
         self.merge_custom_cdn()
         self.all_report += self.get_css_cdn()
         self.all_report += self.get_js_cdn()
