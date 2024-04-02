@@ -29,22 +29,20 @@ class Py_report_html:
         self.title = title
         self.hash_vars = hash_vars
         self.data_from_files = data_from_files
-        self.plots_data = []
         self.count_objects = 0
-        self.dt_tables = [] #Tables to be styled with the DataTables js lib"
-        self.bs_tables = [] #Tables to be styled with the bootstrap js lib"
-        self.custom_buttons = []
-        self.mermaid = False #Mermaid graph objects
-        self.compress = compress
-        self.networks = []
         self.figures = {}
         self.tables = {}
+        self.compress = compress
+        self.features = { 
+            'mermaid': False, 'dt_tables': False, 'pdfHtml5': False, 'canvasXpress': False, 'pako': False,
+            'cytoscape': False, 'pyvis': False, 'elgrapho': False, 'sigma': False
+        }
         self.js_libraries = []
-        self.dynamic_js = [] # Chunks of js code that are generated in template rendering
         self.css_files = []
         self.js_cdn = []
         self.css_cdn = []
         self.custom_css_js = {'js': {'file': [], 'cdn': []}, 'css': {'file': [], 'cdn': []}}
+        self.dynamic_js = [] # Chunks of js code that are generated in template rendering
         self.headers = []
         self.header_index = False
 
@@ -143,7 +141,7 @@ class Py_report_html:
         self.css_cdn.append('https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css')
         self.js_cdn.append("https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js")
 
-        if len(self.dt_tables) > 0: # CDN load, this library is difficult to embed in html file
+        if self.features['dt_tables']: # CDN load, this library is difficult to embed in html file
             self.css_cdn.extend([
                 'https://cdn.datatables.net/2.0.0/css/dataTables.dataTables.css',
                 'https://cdn.datatables.net/buttons/3.0.0/css/buttons.dataTables.css'
@@ -156,20 +154,20 @@ class Py_report_html:
                 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
                 'https://cdn.datatables.net/buttons/3.0.0/js/buttons.html5.min.js',
             ])
-            if 'pdfHtml5' in self.custom_buttons:
+            if self.features['pdfHtml5']:
                 self.js_cdn.extend([
                     'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js',
                     'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js'
                 ])
 
-        if 'sigma' in self.networks: # sigma CDN load is HUGE so we read it from file
+        if self.features['mermaid']: self.js_cdn.append("<script type=\"module\"> import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; </script>")
+
+        if self.features['sigma']: # sigma CDN load is HUGE so we read it from file
             file = str(files(Py_report_html.TEMPLATES).joinpath('sigma_cdn.txt'))
             with open(os.path.join(file), 'r') as f:
                 self.js_cdn.extend(f.readlines())
-
-        if self.mermaid: self.js_cdn.append("<script type=\"module\"> import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; </script>")
         
-        if 'pyvis' in self.networks: 
+        if self.features['pyvis']: 
             self.js_cdn.append("https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js")
             self.css_cdn.append("https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css")
 
@@ -182,12 +180,12 @@ class Py_report_html:
         self.js_libraries.append('py_report_html.js') # CUSTOM JAVASCRIPT CREATED BY py_report_html AUTHORS!!!!
         self.css_files.append('py_report_html.css') # CUSTOM CSS CREATED BY py_report_html AUTHORS!!!!
 
-        if self.compress: self.js_libraries.append('pako.min.js')
-        if 'cytoscape' in self.networks: self.js_libraries.append('cytoscape.min.js')
-        if 'elgrapho' in self.networks: self.js_libraries.append('ElGrapho.min.js')
-        if 'pyvis' in self.networks: self.js_libraries.append('PyvisUtils.js')
+        if self.features['pako']: self.js_libraries.append('pako.min.js')
+        if self.features['cytoscape']: self.js_libraries.append('cytoscape.min.js')
+        if self.features['elgrapho']: self.js_libraries.append('ElGrapho.min.js')
+        if self.features['pyvis']: self.js_libraries.append('PyvisUtils.js')
 
-        if len(self.plots_data) > 0:
+        if self.features['canvasXpress']:
             self.js_libraries.append('canvasXpress.min.js')
             self.css_files.append('canvasXpress.css')
 
@@ -198,36 +196,11 @@ class Py_report_html:
         for lib in self.load_js_libraries(self.js_libraries):
             self.all_report += f"<script src=\"data:application/javascript;base64,{lib}\" type=\"application/javascript\"></script>\n\n"
         
-        # ADD CUSTOM FUNCTIONS TO USE LOADED JS LIBRARIES
-        #canvasXpress objects
-        if len(self.plots_data) > 0:
-            self.dynamic_js.append(
-                (f"    var initPage = function () {{\n"
-                f"        % for plot_data in plotter.plots_data:\n"
-                f"            ${{plot_data}}\n"
-                f"        % endfor\n"
-                f"    }}\n")
-            )
-
-        #DT tables
-        if len(self.dt_tables) > 0:
-            embedded_buttons = ','.join([f"'{button}'" for button in self.custom_buttons])
-            self.dynamic_js.append(
-                (f"    % for dt_table in plotter.dt_tables:\n"
-                f"        $(document).ready(function () {{\n"
-                f"            $('#${{ dt_table }}').DataTable({{ dom:'Bfrtip', buttons: [{embedded_buttons}] }});\n"
-                f"        }});\n"
-                f"    % endfor\n")
-            )
-
         self.all_report += self.add_dynamic_js()
         self.all_report +=  "</head>\n"
 
     def build_body(self, template):
-        if len(self.plots_data) > 0:
-            self.all_report += f"<body onload=\"initPage();\">\n{self.create_header_index()}\n{template}\n</body>\n"
-        else:
-            self.all_report += f"<body>\n{self.create_header_index()}\n{template}\n</body>\n"
+        self.all_report += f"<body>\n{self.create_header_index()}\n{template}\n</body>\n"
 
     def get_report(self): #return all html string
         templ = Template(self.all_report)
@@ -246,6 +219,7 @@ class Py_report_html:
 
     def decompress_code(self, data):
         if self.compress:
+            self.features['pako'] = True
             string = "JSON.parse(pako.inflate(atob(\"" + data + "\"), { to: 'string' }))"
         else:
             string =  data
@@ -420,11 +394,18 @@ class Py_report_html:
         rowspan, colspan = self.get_col_n_row_span(array_data)
         table_id = 'table_' + str(self.count_objects)
         if options.get('styled') == 'dt': 
-            if not options["header"]: raise Exception("Tables styled as datatables need to have a header to be properly displayed")
-            self.dt_tables.append(table_id)
-            self.custom_buttons = options['custom_buttons'] 
-        
-        if options.get('styled') == 'bs': self.bs_tables.append(table_id) 
+            if not options["header"]: raise Exception("Tables styled as datatables need to have a header to be properly displayed")    
+
+            embedded_buttons = ','.join([f"'{button}'" for button in options['custom_buttons']])
+            if 'pdfHtml5' in options['custom_buttons']: self.features['pdfHtml5'] = True
+
+            self.features['dt_tables'] = True
+            self.dynamic_js.append(
+                (f"        $(document).ready(function () {{\n"
+                f"            $('#{table_id}').DataTable({{ dom:'Bfrtip', buttons: [{embedded_buttons}] }});\n"
+                f"        }});\n")
+            )
+
         self.count_objects += 1
         template_file = str(files(Py_report_html.TEMPLATES).joinpath('table.txt'))
         templ = Template(filename=template_file)
@@ -619,15 +600,22 @@ class Py_report_html:
         if len(options['segregate']) > 0: extracode += self.segregate_data(f"C{object_id}", options['segregate']) + "\n"
         if options.get('group_samples') != None: extracode += f"C{object_id}.groupSamples({options['group_samples']})\n"
   
+        self.features['canvasXpress'] = True
+
         plot_data = (
             f"var data = {self.decompress_code(self.compress_data(data_structure))};"
             f"var conf = {json.dumps(config)};"
             f"var events = {json.dumps(events)};"
             f"var info = {json.dumps(info)};"
             f"var afterRender = {json.dumps(afterRender)};"
-            f"var C{object_id} = new CanvasXpress(\"{object_id}\", data, conf, events, info, afterRender);\n{extracode}")
-        self.plots_data.append(plot_data)
-        
+            f"var C{object_id} = new CanvasXpress(\"{object_id}\", data, conf, events, info, afterRender);\n{extracode}\n")
+
+        self.dynamic_js.append(
+            (f"        $(document).ready(function () {{\n"
+            f"            {plot_data}"
+            f"        }});\n")
+        )        
+
         responsive = ''
         if options['responsive']: responsive = "responsive='true'" 
         html = f"<canvas  id=\"{object_id}\" width=\"{options['width']}\" height=\"{options['height']}\" aspectRatio='1:1' {responsive}></canvas>"
@@ -1279,20 +1267,17 @@ class Py_report_html:
             group_nodes = net_data['group_nodes']
 
         node_names = []
+        self.features[options['method']] = True
         if options['method'] == 'cytoscape':
-            self.networks.append('cytoscape')
             temp_file = 'cytoscape.txt'
             model = self.cytoscape_network(options, graph, layers, reference_nodes, group_nodes)
         elif options['method'] == 'elgrapho':
-            self.networks.append('elgrapho')
             temp_file = 'elgrapho.txt'
             model = self.elgrapho_network(options, graph, layers, reference_nodes, group_nodes)
         elif options['method'] == 'sigma':
-            self.networks.append('sigma')
             temp_file = 'sigma.txt'
             model = self.sigma_network(options, graph, layers, reference_nodes, group_nodes)
         elif options['method'] == 'pyvis':
-            self.networks.append('pyvis')
             temp_file = 'pyvis.txt'
             model, node_names = self.pyvis_network(options, graph, layers, reference_nodes, group_nodes)
         
@@ -1368,7 +1353,7 @@ class Py_report_html:
     # DIAGRAM CHART REPRESENTATION
     ###################################################################################
     def mermaid_chart(self, chart_sintaxis):
-        self.mermaid = True #Mermaid graph objects
+        self.features['mermaid'] = True #Mermaid graph objects
         mermaid_string = f"<pre class=\"mermaid\">\n{chart_sintaxis}\n</pre>"
         return mermaid_string
         
