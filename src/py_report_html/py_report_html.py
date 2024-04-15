@@ -556,7 +556,6 @@ class Py_report_html:
         z = {}
         if var_attr != None and len(var_attr) > 0: self.add_canvas_attr(z, var_attr) 
         if smp_attr != None and len(smp_attr) > 0: self.add_canvas_attr(x, smp_attr) 
-        options['config_chart'](options, config, samples, variables, values, object_id, x, z) # apply custom chart method to configure plot
         # Build JSON objects and Javascript code
         #-----------------------------------------------
         self.count_objects += 1
@@ -569,38 +568,21 @@ class Py_report_html:
             'x' : x,
             'z' : z
         }
-
-        events = False  #Possible future use for events for CanvasXpress, currently not used
-        info = False   #Possible future use for info for CanvasXpress, currently not used
-        afterRender = options['after_render']
-        if options.get('mod_data_structure') == 'boxplot':
-            data_structure['y']['smps'] = None
-            data_structure.update({ 'x' : {'Factor' : samples}})
-        elif options.get('mod_data_structure') == 'circular':
-            data_structure.update({ 'z' : {'Ring' : options['ring_assignation']}})
-        elif options.get('mod_data_structure') == 'ridgeline':
-            
-            data_structure['y']['smps'] = ["Sample"]
-            transposed_values_to_flaten = list(map(lambda *x: list(x), *values))
-            data_structure['y']['data'] = [[item] for sublist in transposed_values_to_flaten for item in sublist]
-            data_structure['y']['vars'] = [f"s{id}" for id in range(len(data_structure['y']['data']))]
-            reshaped_factor = [[sample]*len(values) for sample in samples]
-            data_structure.update({ 'z' : {'Factor' : [item for sublist in reshaped_factor for item in sublist]}})
-            #print("reshaped_factor:", len(reshaped_factor))
-            #print("data:", len(data_structure['y']['data']))
-            #print("vars:", len(data_structure['y']['vars']))
-            
-        
+        options['config_chart'](options, config, data_structure, object_id) # apply custom chart method to configure plot
         self.inject_attributes(data_structure, options, slot="x")
         self.inject_attributes(data_structure, options, slot="z") 
 
+        events = False  #Possible future use for events for CanvasXpress, currently not used
+        info = False   #Possible future use for info for CanvasXpress, currently not used
+        afterRender = options['after_render']        
+        
         extracode = self.initialize_extracode(options)
         if len(options['segregate']) > 0: extracode += self.segregate_data(f"C{object_id}", options['segregate']) + "\n"
         if options.get('group_samples') != None: extracode += f"C{object_id}.groupSamples({options['group_samples']})\n"
   
+        # add javascript for CanvasXpress object
         self.features['canvasXpress'] = True
-
-        plot_data = (
+        plot_data = ( 
             f"var data = {self.decompress_code(self.compress_data(data_structure))};"
             f"var conf = {json.dumps(config)};"
             f"var events = {json.dumps(events)};"
@@ -614,6 +596,7 @@ class Py_report_html:
             f"        }});\n")
         )        
 
+        # generate HTML for CanvasXpress object
         responsive = ''
         if options['responsive']: responsive = "responsive='true'" 
         html = f"<canvas  id=\"{object_id}\" width=\"{options['width']}\" height=\"{options['height']}\" aspectRatio='1:1' {responsive}></canvas>"
@@ -755,8 +738,18 @@ class Py_report_html:
     
     # Chart methods
     #-------------------------------------------------------------------------------------
+    def get_data_structure_vars(self, data_structure):
+        samples = data_structure['y']['smps']; 
+        variables = data_structure['y']['vars']
+        values = data_structure['y']['data']
+        x = data_structure['x']
+        z = data_structure['z']
+        return samples, variables, values, x, z
+
+
     def barplot(self, **user_options):
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Bar'
             if options.get("colorScale"):
                 x[options['x_label']] = values[0]
@@ -767,7 +760,8 @@ class Py_report_html:
         return html_string
 
     def line(self, **user_options):
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Line'
         default_options = { 'row_names': True, 'config_chart' : config_chart }
         default_options.update(user_options)
@@ -775,7 +769,8 @@ class Py_report_html:
         return html_string
     
     def barline(self, **user_options): #TODO: test this method
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'BarLine'
             config["lineType"] = "spline"
             if options.get('xAxis') == None: 
@@ -792,7 +787,8 @@ class Py_report_html:
         return html_string
     
     def dotline(self, **user_options):
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'DotLine'
             config["lineType"] = "spline"
             if options.get('xAxis') == None: 
@@ -809,7 +805,8 @@ class Py_report_html:
         return html_string
     
     def arealine(self, **user_options):
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'AreaLine'
             config["lineType"] = "rect"
             config.update({"objectBorderColor":"false",
@@ -828,7 +825,8 @@ class Py_report_html:
         return html_string
     
     def area(self, **user_options):
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config.update({'graphType': 'Area',
                             "lineType":"rect",
                             "objectBorderColor":"false",
@@ -840,7 +838,8 @@ class Py_report_html:
         return html_string
 
     def stacked(self, **user_options):
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Stacked'
         default_options = { 'row_names': True, 'config_chart' : config_chart }
         default_options.update(user_options)
@@ -848,7 +847,8 @@ class Py_report_html:
         return html_string
     
     def stackedline(self, **user_options):
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'StackedLine'
             config["lineType"] = "spline"
             if options.get('xAxis') == None: 
@@ -868,7 +868,8 @@ class Py_report_html:
     def corplot(self, **user_options):
         default_options = { 'transpose': False, 'correlationAxis': 'samples' }
         default_options.update(user_options)
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Correlation'
             config['correlationAxis'] = default_options['correlationAxis']
         default_options['config_chart'] = config_chart
@@ -876,7 +877,8 @@ class Py_report_html:
         return html_string
 
     def pie(self, **user_options): 
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Pie'
             if len(samples) > 1:
                 config['showPieGrid'] = True
@@ -891,7 +893,8 @@ class Py_report_html:
     def scatter2D(self, **user_options):
         default_options = { 'row_names': False, 'transpose': False}
         default_options.update(user_options)
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Scatter2D'
             if options.get('xAxis') == None: 
                 config['xAxis'] = [samples[0]]
@@ -942,7 +945,8 @@ class Py_report_html:
     def scatter3D(self, **user_options):
         default_options = { 'row_names': False, 'transpose': False}
         default_options.update(user_options)
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Scatter3D'
             
             if options.get('xAxis') == None: 
@@ -995,7 +999,8 @@ class Py_report_html:
     def scatterbubble2D(self, **user_options):
         default_options = { 'row_names': True, 'transpose': False}
         default_options.update(user_options)
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'ScatterBubble2D'
             if options.get('xAxis') == None: 
                 config['xAxis'] = [samples[0]]
@@ -1028,7 +1033,8 @@ class Py_report_html:
     def hexplot(self, **user_options):        
         default_options = { 'row_names': False, 'transpose': False, "bins": 30}
         default_options.update(user_options)
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Scatter2D'
             config.update({"binplotShape": "hexagon", "binplotBins":f"{options['bins']}",
                           "scatterType":"bin2d", "showScatterDensity":True})
@@ -1044,7 +1050,8 @@ class Py_report_html:
     def radar(self, **user_options):
         default_options = {"subtype": ["line"]}
         default_options.update(user_options)
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config.update({'graphType': 'Circular', "circularType": "radar", 
                            "ringGraphType": options["subtype"], "smpOverlays": []})
             if len(options["show_factors"]) > 0:
@@ -1057,7 +1064,8 @@ class Py_report_html:
     def ridgeline(self, **user_options):
         default_options = {"transpose": False, "bins": 30, "ridgelineScale":2}
         default_options.update(user_options)
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Scatter2D'
             config.update({"colorBy":"Factor", "ridgeBy":"Factor", "graphType":"Scatter2D",
                 "hideHistogram":True, "histogramBins": f"{options['bins']}",
@@ -1066,7 +1074,16 @@ class Py_report_html:
             })
 
             if options.get('group') == None:
-                options['mod_data_structure'] = 'ridgeline'
+                y_data = data_structure['y']
+                y_data['smps'] = ["Sample"]
+                transposed_values_to_flaten = list(map(lambda *x: list(x), *values))
+                y_data['data'] = [[item] for sublist in transposed_values_to_flaten for item in sublist]
+                y_data['vars'] = [f"s{id}" for id in range(len(data_structure['y']['data']))]
+                reshaped_factor = [[sample]*len(values) for sample in samples]
+                z['Factor'] = [item for sublist in reshaped_factor for item in sublist]
+                #print("reshaped_factor:", len(reshaped_factor))
+                #print("data:", len(data_structure['y']['data']))
+                #print("vars:", len(data_structure['y']['vars']))
             else:
                 config["ridgeBy"] = options['group']
                 config["colorBy"] = options['group']
@@ -1078,7 +1095,8 @@ class Py_report_html:
     def density(self, **user_options):
         default_options = {"transpose": False, "fillDensity": False, "median": False}
         default_options.update(user_options)
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Scatter2D'
             config.update({
                     "graphType":"Scatter2D",
@@ -1097,7 +1115,8 @@ class Py_report_html:
     def dotplot(self, **user_options):
         default_options = { 'row_names': True, 'connect': False}
         default_options.update(user_options)
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Dotplot'
             if default_options.get('connect'):
                 config['dotplotType'] = "stacked"
@@ -1108,7 +1127,8 @@ class Py_report_html:
         return html_string
 
     def heatmap(self, **user_options):
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Heatmap' 
         default_options = { 'row_names' : True, 'config_chart' : config_chart }
         default_options.update(user_options)
@@ -1118,10 +1138,12 @@ class Py_report_html:
     def boxplot(self, **user_options):
         default_options = { 'row_names' : True, 'header' : True }
         default_options.update(user_options)
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Boxplot'
             if default_options.get('group') == None:
-                options['mod_data_structure'] = 'boxplot'
+                data_structure['y']['smps'] = None
+                data_structure.update({ 'x' : {'Factor' : samples}})
             else:
                 #This option is used when your table in shaped in wide format https://en.wikipedia.org/wiki/Wide_and_narrow_data
                 # In this case, variable names are used as series (the levels of the factor or the diferent boxes inside a plot) and the group option (a string) is used to segregate the plots
@@ -1163,8 +1185,8 @@ class Py_report_html:
     def circular(self, **user_options):
         default_options = { 'ring_assignation': [], 'ringsType': [], 'ringsWeight': [] }
         default_options.update(user_options)
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
-            options['mod_data_structure'] = 'circular'
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Circular'
             config['segregateVariablesBy'] = ['Ring']
             if len(default_options['ringsType']) == 0:
@@ -1177,9 +1199,10 @@ class Py_report_html:
             else:
                 config['ringGraphWeight'] = default_options['ringsWeight']
             if len(default_options['ring_assignation']) == 0:
-                options['ring_assignation'] = [ str(i+1) for i in range(len(variables)) ]
+                ring_assignation = [ str(i+1) for i in range(len(variables)) ]
             else:
-                options['ring_assignation'] = [ str(i) for i in default_options['ring_assignation'] ]
+                ring_assignation = [ str(i) for i in default_options['ring_assignation'] ]
+            z['Ring'] = ring_assignation
             links_id = default_options.get('links')
             if links_id != None:
                 link_data = self.hash_vars.get(links_id)
@@ -1195,7 +1218,8 @@ class Py_report_html:
         default_options = { 'ring_assignation': [], 'ringsType': [], 'ringsWeight': [] }
         default_options.update(user_options)
         
-        def config_chart(options, config, samples, variables, values, object_id, x, z):
+        def config_chart(options, config, data_structure, object_id):
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Circular'
             config["arcSegmentsSeparation"] = 3
             config["colorScheme"] = "Tableau"
