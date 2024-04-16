@@ -356,7 +356,9 @@ ${ plotter.network(id = 'network.txt', method = 'elgrapho', group = 'layer', lay
 
 <div style="overflow: hidden">
 	${ plotter.network(id = 'network.txt', method = 'sigma', reference_nodes = ["a", "e"]) }
-	${ plotter.embed_img('file_data/example.png')}
+        ${ plotter.embed_img('file_data/example.png')}
+        ${ plotter.embed_img('file_data/example.png', img_attribs='class="fitting_img"')}
+	${ plotter.embed_img('file_data/example.png', rezisable=True)}
 </div>
 
 <br><br><br>

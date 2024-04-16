@@ -671,7 +671,10 @@ class Py_report_html:
         tmpfile = BytesIO()
         plt.savefig(tmpfile, format='png')
         encoded = base64.b64encode(tmpfile.getvalue()).decode('utf-8')
-        html = self.embed_img(tmpfile, img_attribs=f"id=\'{object_id}\' width=\'{options['width']}\' height=\'{options['height']}\'", bytesIO=True)
+        if options.get('rezisable') == None:
+            html = self.embed_img(tmpfile, img_attribs=f"id=\'{object_id}\' width=\'{options['width']}\' height=\'{options['height']}\'", bytesIO=True)
+        else:            
+            html = self.embed_img(tmpfile, img_attribs=f"id=\'{object_id}\'", bytesIO=True, rezisable= True)
         plt.close('all')
         return html
 
@@ -1382,8 +1385,11 @@ class Py_report_html:
     #################################################################################
     # EMBED FILES
     ###################################################################################
+    def make_rezisable(self, html_string):
+        rezisable = f"<div class=\"resizable_img\">{html_string}</div>"
+        return rezisable
 
-    def embed_img(self, img_file, img_attribs = None, bytesIO = False):
+    def embed_img(self, img_file, img_attribs = None, bytesIO = False, rezisable = False):
         if bytesIO:
             img_base64 = base64.b64encode(img_file.getvalue()).decode('UTF-8')
             format = "png"
@@ -1391,8 +1397,13 @@ class Py_report_html:
             with open(img_file, 'rb') as f:
                 img_base64 = base64.b64encode(f.read()).decode('UTF-8')
             format = os.path.basename(img_file).split('.')[-1]
-        
+        if rezisable: # fitting_img add fitting_img class to img to apply css needed to expand img on drag
+            if img_attribs == None:
+                img_attribs = 'class="fitting_img"'
+            else:
+                img_attribs = img_attribs + ' class="fitting_img"'
         img_string = f"<img {img_attribs} src=\"data:image/{format};base64,{img_base64}\">"
+        if rezisable: img_string = self.make_rezisable(img_string)
         return img_string
 
     def embed_pdf(self, pdf_file, pdf_attribs = None):

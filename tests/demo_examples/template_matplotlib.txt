@@ -47,6 +47,8 @@ def plot_coverage(data, plotter_list):
         <td>
             ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
                                         plotting_function= lambda data, plotter_list: plotter_list["plt"].hexbin(data=data, x='liver', y='brain', gridsize=20) )}
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], rezisable=True, 
+                                        plotting_function= lambda data, plotter_list: plotter_list["plt"].hexbin(data=data, x='liver', y='brain', gridsize=20) )}
         </td>
         <td>
             ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4],
