@@ -139,7 +139,8 @@ class Py_report_html:
         #UPDATED: Now bootstrap is loaded by default
         #self.css_cdn.append('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css')
         self.css_cdn.append('https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css')
-        self.js_cdn.append("https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js")
+        self.js_cdn.extend(["https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js",
+                            "https://code.jquery.com/jquery-3.7.1.js"])
 
         if self.features['dt_tables']: # CDN load, this library is difficult to embed in html file
             self.css_cdn.extend([
@@ -147,7 +148,6 @@ class Py_report_html:
                 'https://cdn.datatables.net/buttons/3.0.0/css/buttons.dataTables.css'
             ])
             self.js_cdn.extend([
-                'https://code.jquery.com/jquery-3.7.1.js',
                 'https://cdn.datatables.net/2.0.0/js/dataTables.js',
                 'https://cdn.datatables.net/buttons/3.0.0/js/dataTables.buttons.js',
                 'https://cdn.datatables.net/buttons/3.0.0/js/buttons.dataTables.js',
@@ -624,7 +624,8 @@ class Py_report_html:
             'dpi': 100,
             'whole': False,
             'raw': False,
-            'theme': 'ggplot'
+            'theme': 'ggplot',
+            'tight': False
         }
         options.update(user_options)
 
@@ -667,6 +668,7 @@ class Py_report_html:
         if options.get("title"): plt.title(options['title'])
         if options.get("y_label"): plt.ylabel(options['y_label'])
 
+        if options['tight']: fig.tight_layout()
         plt.show()
         tmpfile = BytesIO()
         plt.savefig(tmpfile, format='png')
