@@ -621,14 +621,26 @@ class Py_report_html:
             'transpose': False,
             'height': 600,
             'width': 600,
+            'units': 'pixels' or ["pixels", "inches", "cm"],
             'dpi': 100,
             'whole': False,
             'raw': False,
             'theme': 'ggplot',
-            'tight': False
+            'tight': False,
+            'img_properties': None,
+            'rezisable': False
         }
         options.update(user_options)
+        measures_to_inches = {'pixels': 1/options["dpi"], 'inches': 1, "cm": 0.3937}
+        chosen_matplot_factor = measures_to_inches[options['units']]
+        matplot_height = chosen_matplot_factor * options["height"]
+        matplotlib_width = chosen_matplot_factor * options["width"]
+        inches_to_pixels_factor = options["dpi"]
 
+        if options.get('img_properties') == None: 
+            options['img_properties'] = f"width=\'{int(inches_to_pixels_factor*matplotlib_width)}px\' height=\'{int(inches_to_pixels_factor*matplot_height)}px\'"
+
+        
         # Data manipulation
         #------------------------------------------
         if options['raw'] == False:
@@ -653,7 +665,7 @@ class Py_report_html:
 
         plotters = {"sns": sns, "plt": plt}
         plt.style.use(options["theme"])
-        fig, ax = plt.subplots( figsize=(options['width']/100, options['height']/100), dpi = options['dpi'])
+        fig, ax = plt.subplots( figsize=(matplotlib_width, matplot_height), dpi = options['dpi'])
 
         if options['plotting_function'] != None:               
             if options["whole"] == True:
@@ -673,10 +685,7 @@ class Py_report_html:
         tmpfile = BytesIO()
         plt.savefig(tmpfile, format='png')
         encoded = base64.b64encode(tmpfile.getvalue()).decode('utf-8')
-        if options.get('rezisable') == None:
-            html = self.embed_img(tmpfile, img_attribs=f"id=\'{object_id}\' width=\'{options['width']}\' height=\'{options['height']}\'", bytesIO=True)
-        else:            
-            html = self.embed_img(tmpfile, img_attribs=f"id=\'{object_id}\'", bytesIO=True, rezisable= True)
+        html = self.embed_img(tmpfile, img_attribs=f"id=\'{object_id}\' {options['img_properties']}", bytesIO=True, rezisable=options["rezisable"])
         plt.close('all')
         return html
 
@@ -1387,11 +1396,26 @@ class Py_report_html:
     #################################################################################
     # EMBED FILES
     ###################################################################################
-    def make_rezisable(self, html_string):
-        rezisable = f"<div class=\"resizable_img\">{html_string}</div>"
+    def make_rezisable(self, html_string, height, height_unit, width, width_unit):
+        rezisable = f"<div class=\"resizable_img_regex\" style=\"height: {height}{height_unit}; width: {width}{width_unit};\">{html_string}</div>"
         return rezisable
+    
+    def find_height_size_and_units(self, html_string):
+        regex = re.search(r"width='([0-9]+)([a-z%]{0,2})'\s+height='([0-9]+)([a-z%]{0,2})'", html_string)
+        inverse_regex = re.search(r"height='([0-9]+)([a-z%]{0,2})'\s+width='([0-9]+)([a-z%]{0,2})'", html_string)
+        if regex:
+            height, height_unit, width, width_unit = regex.groups()
+            if height_unit == '': height_unit = "px"
+            if width_unit == '': width_unit = "px"            
+        elif inverse_regex:
+            width, width_unit, height, height_unit = inverse_regex.groups()
+            if height_unit == '': height_unit = "px"
+            if width_unit == '': width_unit = "px"
+        return height, height_unit, width, width_unit         
 
     def embed_img(self, img_file, img_attribs = None, bytesIO = False, rezisable = False):
+        height, height_unit, width, width_unit = self.find_height_size_and_units(img_attribs)
+        style = f"\"height: {height}{height_unit}; width: {width}{width_unit}\""
         if bytesIO:
             img_base64 = base64.b64encode(img_file.getvalue()).decode('UTF-8')
             format = "png"
@@ -1404,8 +1428,10 @@ class Py_report_html:
                 img_attribs = 'class="fitting_img"'
             else:
                 img_attribs = img_attribs + ' class="fitting_img"'
+        else:
+            img_attribs = img_attribs + " " + style
         img_string = f"<img {img_attribs} src=\"data:image/{format};base64,{img_base64}\">"
-        if rezisable: img_string = self.make_rezisable(img_string)
+        if rezisable: img_string = self.make_rezisable(img_string, height, height_unit, width, width_unit)
         return img_string
 
     def embed_pdf(self, pdf_file, pdf_attribs = None):

@@ -30,6 +30,12 @@
   overflow: hidden; 
   resize: both; 
   border: 1px solid black;
+}
+
+.resizable_img_regex {  
+  overflow: hidden; 
+  resize: both; 
+  border: 1px solid black;
 } 
 
 .fitting_img {

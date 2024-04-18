@@ -35,21 +35,30 @@ def plot_coverage(data, plotter_list):
 %>
 
 
+<div>
 
 <p>descripcion</p>
 
 <table width="1100">
     <tr>
-           ${ plotter.static_plot_main( id="coverage_data_modified.txt", header=True, row_names=False, var_attr=[0], height= 1200,
+        <td>
+           ${ plotter.static_plot_main( id="coverage_data_modified.txt", header=True, row_names=False, var_attr=[0], 
+                height= 1800, width=500, dpi=400, tight= True,
                 plotting_function= plot_coverage )}
+        </td>
+    </tr>
+        <td>
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+                rezisable=True, height=500, width=500, dpi=100,
+                plotting_function= lambda data, plotter_list: plotter_list["plt"].hexbin(data=data, x='liver', y='brain', gridsize=20) )}
+        </td>
     </tr>
     <tr>
         <td>
-            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
-                                        plotting_function= lambda data, plotter_list: plotter_list["plt"].hexbin(data=data, x='liver', y='brain', gridsize=20) )}
-            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], rezisable=True, 
+            ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], height=400, width=400,
                                         plotting_function= lambda data, plotter_list: plotter_list["plt"].hexbin(data=data, x='liver', y='brain', gridsize=20) )}
         </td>
+    </tr>
         <td>
             ${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4],
                                         plotting_function= lambda data, plotter_list: plotter_list["plt"].boxplot(x=data), whole=True)}
@@ -130,3 +139,92 @@ def plot_coverage(data, plotter_list):
         </td>
     </tr>
 </table>
+
+</div>
+
+<div style="width: 100vw; height: 20vh; background-color: grey"></div>
+<div>
+<h1>Playing with size images</h1>
+<h3>All default parameters</h3>
+
+${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+    plotting_function= lambda data, plotter_list: plotter_list["plt"].hexbin(data=data, x='liver', y='brain', gridsize=20) )}
+</div>
+
+
+<div style="width: 100vw; height: 20vh; background-color: grey"></div>
+<div>
+<h3>Specifing only matplotlib figure size (300x300) in pixels (default option) and dpi of 50</h3>
+
+${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+    height=300, width=300, dpi=50, #units = "pixels", this option is optional in this case, as it is the default value
+    plotting_function= lambda data, plotter_list: plotter_list["plt"].hexbin(data=data, x='liver', y='brain', gridsize=20) )}
+
+</div>
+
+
+<div style="width: 100vw; height: 20vh; background-color: grey"></div>
+<div>
+<h3>Specifing only matplotlib figure size Using inches (6x6) instead of pixels (which is the default) and dpi of 50 (img tag size returned in pixels which are the default)</h3>
+
+${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+    height=6, width=6, dpi=50, units = "inches",
+    plotting_function= lambda data, plotter_list: plotter_list["plt"].hexbin(data=data, x='liver', y='brain', gridsize=20) )}
+
+</div>    
+
+
+<div style="width: 100vw; height: 20vh; background-color: grey"></div>
+<div>
+<h3>Specifing only matplotlib figure size Using cm (10x10) instead of pixels (which is the default) and dpi of 50 (img tag size returned in pixels which are the default)</h3>
+
+${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+    height=10, width=10, dpi=50, units = "cm",
+    plotting_function= lambda data, plotter_list: plotter_list["plt"].hexbin(data=data, x='liver', y='brain', gridsize=20) )}
+
+</div>
+
+
+<div style="width: 100vw; height: 20vh; background-color: grey"></div>
+<div>
+<h3>Using default parameters for matplotlib width and height (600,600) and units (pixels) and dpi 100, <br>
+ but changing img tag output size (height='30%' width='30%')</h3>
+
+${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+    img_properties = "height='30%' width='30%'",
+    plotting_function= lambda data, plotter_list: plotter_list["plt"].hexbin(data=data, x='liver', y='brain', gridsize=20) )}
+
+</div>
+
+
+<div style="width: 100vw; height: 20vh; background-color: grey"></div>
+<div>
+<h3>Using default parameters for matplotlib width and height (600,600) and units (pixels) and dpi 100, <br>
+ but changing img tag output size (height='30vh' width='30vw')</h3>
+
+${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+    img_properties = "height='30vh' width='30vw'",
+    plotting_function= lambda data, plotter_list: plotter_list["plt"].hexbin(data=data, x='liver', y='brain', gridsize=20) )}
+</div>
+
+
+<div style="width: 100vw; height: 20vh; background-color: grey"></div>
+<div>
+<h3>Using default parameters for matplotlib width and height (600,600) and units (pixels) but dpi 200, <br>
+ and changing img tag output size (height='1000px' width='1000px') and also making it resizable</h3>
+
+${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+    img_properties = "height='1000px' width='1000px'", rezisable=True,
+    plotting_function= lambda data, plotter_list: plotter_list["plt"].hexbin(data=data, x='liver', y='brain', gridsize=20) )}
+</div>
+
+
+<div style="width: 100vw; height: 20vh; background-color: grey"></div>
+<div>
+<h3>Using matplotlib image size of 20x20 inches and a img tag size of 20x20 cm and also making it resizable</h3>
+
+${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, var_attr=[4], 
+    img_properties = "height='20cm' width='20cm'", rezisable=True,
+    height=20, width=20, units = "inches",
+    plotting_function= lambda data, plotter_list: plotter_list["plt"].hexbin(data=data, x='liver', y='brain', gridsize=20) )}
+</div>
