@@ -1413,7 +1413,7 @@ class Py_report_html:
             if width_unit == '': width_unit = "px"
         return height, height_unit, width, width_unit         
 
-    def embed_img(self, img_file, img_attribs = None, bytesIO = False, rezisable = False):
+    def embed_img(self, img_file, img_attribs = "height='600px' width='600px'", bytesIO = False, rezisable = False):
         height, height_unit, width, width_unit = self.find_height_size_and_units(img_attribs)
         style = f"\"height: {height}{height_unit}; width: {width}{width_unit}\""
         if bytesIO:
@@ -1481,8 +1481,8 @@ class Py_report_html:
             header = f"<h{hlevel} id=\"{id}\">{text}</h{hlevel}>"
         return header
 
-    def create_collapsable_container(self, id, html_code, display='none'): #display ='block'
-        return f"<div style=\"display:{display}\" id=\"{id}\">\n{html_code}\n</div>"
+    def create_collapsable_container(self, id, html_code, display='hidden'): #display ='visible'
+        return f"<div style=\"visibility:{display}; height:0px\" id=\"{id}\">\n{html_code}\n</div>"
 
     def create_autocomplete_box(self, box_id, item_list, js_function_name, button_text = 'Search'):
         string = (

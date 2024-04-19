@@ -324,7 +324,7 @@ ${ plotter.create_title('CanvasXpress plots', id='sub_canvas_from', hlevel=1, in
 <%
         sub_canvas = "<h1> How to create CanvasXpress plots </h1>\n"
         for type_of_plot in chuletario["plots"]:
-                clickable_string = f"\"hide_show_element('{type_of_plot}')\""
+                clickable_string = f"\"hide_show_element_old('{type_of_plot}')\""
                 sub_canvas += f"<h1 style=\"text-align: center; background-color:#d6eaf8\" class=\"py_accordion\" onclick={clickable_string}>{type_of_plot}</h1>"
                 sub_canvas += f"<div id=\"{type_of_plot}\" style=\"display:none;width:100%\">\n"
                 for plot in chuletario["plots"][type_of_plot]:
@@ -358,26 +358,9 @@ ${ plotter.create_title('How to create networks', id='sub_network_from', hlevel=
         sub_network += chuletario["networks"]["cytoscape"] + "\n"
         sub_network += "<p style=\"font-size: 8vw;font-weight: bold;text-align: center;\"> Elgrapho:</p>\n"
         sub_network += chuletario["networks"]["elgrapho"] + "\n"
+        sub_network += "<p style=\"font-size: 8vw;font-weight: bold;text-align: center;\"> Sigma:</p>\n"
+        sub_network += chuletario["networks"]["sigma"] + "\n"
         sub_network += "<p style=\"font-size: 8vw;font-weight: bold;text-align: center;\"> Pyvis:</p>\n"
         sub_network += chuletario["networks"]["pyvis"] + "\n"
-        #sub_network += "<p style=\"font-size: 8vw;font-weight: bold;text-align: center;\"> Sigma:</p>\n"
-        #sub_network += chuletario["networks"]["sigma"] + "\n"
 %>
 ${ plotter.create_collapsable_container('sub_network_to', sub_network) }
-
-
-
-<h2 style="font-size: 8vw;font-weight: bold;text-align: center;">Debugging section</h2>
-<p style="font-size: 2vw; text-align: center;"> These plots (sigma network and mermaid plots) are still not properly shown inside foldable containers, so we will leave it here for reference until fixed</p>
-
-<p style="font-size: 4vw;font-weight: bold;text-align: center;"> Mermaid Flowchart:</p>
-${f"<%text><p><code>${{plotter.mermaid_chart(basic_flowchart)}}</code></p></%text>"}
-${plotter.mermaid_chart(basic_flowchart)}
-
-<p style="font-size: 4vw;font-weight: bold;text-align: center;"> Mermaid Timeline:</p>
-${f"<%text><p><code>${{plotter.mermaid_chart(mermaid_timeline)}}</code></p></%text>"}
-${plotter.mermaid_chart(mermaid_timeline)}
-
-<p style="font-size: 4vw;font-weight: bold;text-align: center;"> Sigma network:</p>
-${f"<%text><p><code>${{plotter.network(id = \"network.txt\", method = \"pyvis\", reference_nodes = [\"a\", \"e\"], group_nodes= {{\"g1\": [\"i\", \"j\"], \"g2\": [\"b\", \"c\"]}}) }}</code></p></%text>"}
-${chuletario["networks"]["sigma"]}
