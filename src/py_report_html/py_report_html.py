@@ -1481,8 +1481,9 @@ class Py_report_html:
             header = f"<h{hlevel} id=\"{id}\">{text}</h{hlevel}>"
         return header
 
-    def create_collapsable_container(self, id, html_code, display='hidden'): #display ='visible'
-        return f"<div style=\"visibility:{display}; height:0px\" id=\"{id}\">\n{html_code}\n</div>"
+    def create_collapsable_container(self, id, html_code, display='hidden'): #display ='visible'        
+        height = 'height:1px' if display == "hidden" else ''
+        return f"<div style=\"visibility:{display}; {height}\" id=\"{id}\">\n{html_code}\n</div>"
 
     def create_autocomplete_box(self, box_id, item_list, js_function_name, button_text = 'Search'):
         string = (

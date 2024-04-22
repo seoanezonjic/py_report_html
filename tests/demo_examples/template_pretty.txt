@@ -302,7 +302,7 @@ ${ plotter.create_title('How to create tables', id='sub_tables_from', hlevel=1, 
 ${ plotter.create_collapsable_container('sub_tables_to', sub_tables) }
 
 
-${ plotter.create_title('Mermaid flowcharts', id='sub_mermaid_from', hlevel=1, indexable=True, clickable=True, t_id='sub_mermaid_to', clickable_text = '(Click me(NOT WORKING YET))') }
+${ plotter.create_title('Mermaid flowcharts', id='sub_mermaid_from', hlevel=1, indexable=True, clickable=True, t_id='sub_mermaid_to', clickable_text = '(Click me)') }
 <% 
         sub_mermaid = (
                 f"<h1>Mermaid charts (flowcharts, timelines and so on)</h1>\n"
@@ -326,6 +326,7 @@ ${ plotter.create_title('CanvasXpress plots', id='sub_canvas_from', hlevel=1, in
         for type_of_plot in chuletario["plots"]:
                 clickable_string = f"\"hide_show_element_old('{type_of_plot}')\""
                 sub_canvas += f"<h1 style=\"text-align: center; background-color:#d6eaf8\" class=\"py_accordion\" onclick={clickable_string}>{type_of_plot}</h1>"
+                sub_canvas += f'<div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center;">'
                 sub_canvas += f"<div id=\"{type_of_plot}\" style=\"display:none;width:100%\">\n"
                 for plot in chuletario["plots"][type_of_plot]:
                         sub_canvas += f"<div style=\"width: 100vw;\">"
@@ -333,7 +334,7 @@ ${ plotter.create_title('CanvasXpress plots', id='sub_canvas_from', hlevel=1, in
                         sub_canvas += eval(plot) + "\n"
                         sub_canvas += "</div>\n"
             
-                sub_canvas += "</div>\n"
+                sub_canvas += "</div></div>\n"
 %>
 ${ plotter.create_collapsable_container('sub_canvas_to', sub_canvas) }
 

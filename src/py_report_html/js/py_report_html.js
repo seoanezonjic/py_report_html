@@ -5,7 +5,7 @@ function hide_show_element(element_id) {
     x.style.height = "auto";
   } else {
     x.style.visibility = "hidden";
-    x.style.height = 1;
+    x.style.height = "1px";
   }
 }
 
