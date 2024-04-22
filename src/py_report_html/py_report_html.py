@@ -1396,42 +1396,42 @@ class Py_report_html:
     #################################################################################
     # EMBED FILES
     ###################################################################################
-    def make_rezisable(self, html_string, height, height_unit, width, width_unit):
-        rezisable = f"<div class=\"resizable_img_regex\" style=\"height: {height}{height_unit}; width: {width}{width_unit};\">{html_string}</div>"
+    def make_rezisable(self, html_string, style):
+        rezisable = f"<div class=\"resizable_img_regex\" {style}>{html_string}</div>"
         return rezisable
     
     def find_height_size_and_units(self, html_string):
-        regex = re.search(r"width='([0-9]+)([a-z%]{0,2})'\s+height='([0-9]+)([a-z%]{0,2})'", html_string)
-        inverse_regex = re.search(r"height='([0-9]+)([a-z%]{0,2})'\s+width='([0-9]+)([a-z%]{0,2})'", html_string)
-        if regex:
-            height, height_unit, width, width_unit = regex.groups()
-            if height_unit == '': height_unit = "px"
-            if width_unit == '': width_unit = "px"            
-        elif inverse_regex:
-            width, width_unit, height, height_unit = inverse_regex.groups()
-            if height_unit == '': height_unit = "px"
+        height_reg = re.search(r"height=['\"]?([0-9]+)([a-z%]{0,2})['\"]?", html_string)
+        width_reg = re.search(r"width=['\"]?([0-9]+)([a-z%]{0,2})['\"]?", html_string)
+        height, width, height_unit, width_unit = "", "", "", ""
+        if height_reg:
+            height, height_unit = height_reg.groups()
+            if height_unit == '': height_unit = "px"          
+        if width_reg:
+            width, width_unit = width_reg.groups()
             if width_unit == '': width_unit = "px"
-        return height, height_unit, width, width_unit         
 
-    def embed_img(self, img_file, img_attribs = "height='600px' width='600px'", bytesIO = False, rezisable = False):
-        height, height_unit, width, width_unit = self.find_height_size_and_units(img_attribs)
-        style = f"\"height: {height}{height_unit}; width: {width}{width_unit}\""
-        if bytesIO:
-            img_base64 = base64.b64encode(img_file.getvalue()).decode('UTF-8')
-            format = "png"
+        if height: height = f"height: {height}{height_unit}; "        
+        if width: width = f"width: {width}{width_unit}; "
+        return height, width         
+
+    def embed_img(self, img_file, img_attribs = '', bytesIO = False, rezisable = False):
+        height, width = self.find_height_size_and_units(img_attribs)
+        style = f'style=\"{height}{width}\"' if (height or width) else ''
+        format = "png"
+
+        if bytesIO: img_base64 = base64.b64encode(img_file.getvalue()).decode('UTF-8')
         else:
             with open(img_file, 'rb') as f:
                 img_base64 = base64.b64encode(f.read()).decode('UTF-8')
             format = os.path.basename(img_file).split('.')[-1]
-        if rezisable: # fitting_img add fitting_img class to img to apply css needed to expand img on drag
-            if img_attribs == None:
-                img_attribs = 'class="fitting_img"'
-            else:
-                img_attribs = img_attribs + ' class="fitting_img"'
+                
+        if rezisable:
+            img_attribs = img_attribs + ' class="fitting_img"' # fitting_img add fitting_img class to img to apply css needed to expand img on drag
+            img_string = f"<img {img_attribs} src=\"data:image/{format};base64,{img_base64}\">" 
+            img_string = self.make_rezisable(img_string, style)
         else:
-            img_attribs = img_attribs + " " + style
-        img_string = f"<img {img_attribs} src=\"data:image/{format};base64,{img_base64}\">"
-        if rezisable: img_string = self.make_rezisable(img_string, height, height_unit, width, width_unit)
+            img_string = f"<img {img_attribs+style} src=\"data:image/{format};base64,{img_base64}\">"
         return img_string
 
     def embed_pdf(self, pdf_file, pdf_attribs = None):
