@@ -144,20 +144,20 @@ class Py_report_html:
 
         if self.features['dt_tables']: # CDN load, this library is difficult to embed in html file
             self.css_cdn.extend([
-                'https://cdn.datatables.net/2.0.0/css/dataTables.dataTables.css',
-                'https://cdn.datatables.net/buttons/3.0.0/css/buttons.dataTables.css'
+                'https://cdn.datatables.net/2.0.5/css/dataTables.dataTables.min.css',
+                'https://cdn.datatables.net/buttons/3.0.2/css/buttons.dataTables.min.css'
             ])
             self.js_cdn.extend([
-                'https://cdn.datatables.net/2.0.0/js/dataTables.js',
-                'https://cdn.datatables.net/buttons/3.0.0/js/dataTables.buttons.js',
-                'https://cdn.datatables.net/buttons/3.0.0/js/buttons.dataTables.js',
+                'https://cdn.datatables.net/2.0.5/js/dataTables.min.js',
+                'https://cdn.datatables.net/buttons/3.0.2/js/dataTables.buttons.min.js',
+                #'https://cdn.datatables.net/buttons/3.0.2/js/buttons.dataTables.js',
                 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
-                'https://cdn.datatables.net/buttons/3.0.0/js/buttons.html5.min.js',
+                'https://cdn.datatables.net/buttons/3.0.2/js/buttons.html5.min.js',
             ])
             if self.features['pdfHtml5']:
                 self.js_cdn.extend([
-                    'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js',
-                    'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js'
+                    'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.20/pdfmake.js',
+                    'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.20/vfs_fonts.js'
                 ])
 
         if self.features['mermaid']: self.js_cdn.append("<script type=\"module\"> import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; </script>")
