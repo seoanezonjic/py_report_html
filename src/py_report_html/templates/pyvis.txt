@@ -8,7 +8,7 @@
             </div>
         </div>
     </div>
-    <div id="mynetwork" class="card-body"></div>
+    <div id="mynetwork_${count_objects}" class="card-body"></div>
 </div>
 
 <script type="text/javascript">
@@ -32,8 +32,8 @@
     
               
     // This method is responsible for drawing the graph, returns the drawn network
-    function drawGraph() {
-        var container = document.getElementById('mynetwork');
+    function drawGraph_${count_objects}() {
+        var container = document.getElementById('mynetwork_${count_objects}');
 
         let model_${count_objects} = ${plotter.decompress_code(network)};
 
@@ -89,5 +89,5 @@
         return network;
     }
 
-    drawGraph();
+    drawGraph_${count_objects}();
 </script>
