@@ -1,9 +1,9 @@
 
 <div class="card" style="width: 90%">     
-    <div id="select-menu" class="card-header">
+    <div id="select-menu_${count_objects}" class="card-header">
         <div class="row no-gutters">
             <div class="col-2 pb-2">
-                ${ plotter.create_autocomplete_box('nodeSearch', node_names, "selectNode([document.getElementById('nodeSearch').value])")}
+                ${ plotter.create_autocomplete_box(f"nodeSearch_{count_objects}", node_names, f"selectNode([document.getElementById('nodeSearch_{count_objects}').value])")}
                 <button type="button" class="btn btn-primary btn-block" onclick="neighbourhoodHighlight({nodes: []});">Reset Selection</button>
             </div>
         </div>
