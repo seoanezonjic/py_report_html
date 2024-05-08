@@ -679,8 +679,8 @@ class Py_report_html:
         if options.get("x_label"): plt.xlabel(options['x_label'])
         if options.get("title"): plt.title(options['title'])
         if options.get("y_label"): plt.ylabel(options['y_label'])
-
         if options['tight']: fig.tight_layout()
+        
         plt.show()
         tmpfile = BytesIO()
         plt.savefig(tmpfile, format='png')
@@ -924,7 +924,9 @@ class Py_report_html:
             else:
                 config['yAxisTitle'] = default_options['y_label']
             if options.get('regressionLine') == True:
-                options['extracode'] = f"C{object_id}.addRegressionLine();"
+                config["showRegressionFit"]= True
+                config["showRegressionFullRange"]= True
+                #options['extracode'] = f"C{object_id}.addRegressionLine();"
             
             if options.get('pointSize') != None:
                 config['sizeBy'] = options['pointSize']

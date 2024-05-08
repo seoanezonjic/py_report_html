@@ -133,7 +133,7 @@ ${ plotter.table(id='table1_header.txt', header=True, styled='dt', attrib =  {'c
 ${ plotter.table(id='table1.txt', header=True, styled='bs', attrib = {'class' : 'table table-striped'}) }
 
 <p>Data table (Header true, text true, style DT):</p>
-${ plotter.table(id='text_number_tab.txt', header=True, text=True, styled='dt', func=convert_col_1_to_numeric, attrib = {'class' : 'table'}, custom_buttons = ['copyHtml5', 'excelHtml5', 'csvHtml5']) }
+${ plotter.table(id='text_number_tab.txt', header=True, text=True, styled='dt', func=convert_col_1_to_numeric, attrib = {'class' : 'table'}, custom_buttons = ['copyHtml5', 'excelHtml5', 'csvHtml5', 'pdfHtml5']) }
 
 <p>descripcion</p>
 
@@ -243,7 +243,7 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
         </tr>
         <tr>
                 <td>
-                        ${ plotter.scatter2D(id= 'x_y.txt', header= True, x_label = 'Num genes', y_label = 'FPKM', alpha = 0.3, theme="tableau"  ) }
+                        ${ plotter.scatter2D(id= 'x_y.txt', header= True, x_label = 'Num genes', y_label = 'FPKM', alpha = 0.3, theme="tableau" , regressionLine=True ) }
                 </td>
                 <td>
                         ${ plotter.scatter2D(id= 'x_y.txt', header= True, x_label = 'Num genes', y_label = 'FPKM', add_densities=True) }
