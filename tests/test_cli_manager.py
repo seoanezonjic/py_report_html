@@ -78,7 +78,8 @@ def user_options():
         "template": os.path.join(DATA_TEST_PATH, "template.txt"),
         "output": os.path.join(OUTPUT_TEST_PATH, "output"),
         "data_files": [os.path.join(DATA_TEST_PATH, "simple_table.txt"), os.path.join(DATA_TEST_PATH, "complex_table.txt")],
-        "uncompressed_data": True
+        "uncompressed_data": True,
+        "javascript_files": [], "css_files": [], "javascript_cdn": [], "css_cdn": []
     }
 
 
@@ -138,3 +139,5 @@ def test_py_report_html(simple_table_formatted, complex_table_formatted):
     
     #remove the output file
     os.remove(os.path.join(OUTPUT_TEST_PATH, "output.html"))
+
+#TODO: ADD in the future tests checking that javascript files are loaded from flags

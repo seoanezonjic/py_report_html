@@ -487,10 +487,10 @@ class Py_report_html:
 
 
     def tree_from_file(self, file):
-            string_tree = []
-            with open(file) as f:
-                string_tree = [line.strip() for line in f.readlines()]
-            return string_tree
+        string_tree = []
+        with open(file) as f:
+            string_tree = f.read().replace("\n", "")
+        return string_tree
 
 
     def set_tree(self, options, config):
