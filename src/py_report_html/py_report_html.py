@@ -296,32 +296,33 @@ class Py_report_html:
         smp_attr = None
         var_attr = None
         ids = options['id']
-        if type(ids) is str and ',' in ids: ids = ids.split(',')  # String syntax
+        if type(ids) is str and ',' in ids: 
+            ids = ids.split(',')  # String syntax
         fields = options['fields']
         if type(ids) is list:
             data = self.merge_tables(options) #TODO: we have to check about this functionallity
         else:   
             if 'smp_attr' in options and len(options['smp_attr']) > 0:
                 if 'var_attr' in options and len(options['var_attr']) > 0:
-                    smp_attr = self.process_attributes(self.extract_rows(ids, options['var_attr']), options['smp_attr'], aggregated = False)
+                    smp_attr = self.process_attributes(self.extract_fields(ids, options['smp_attr']), options['var_attr'], aggregated = True)
                 else:
                     smp_attr = []
                     for idx in options['smp_attr']:
-                        attr =  self.extract_rows(ids, [idx])
+                        attr =  self.extract_fields(ids, [idx])
                         smp_attr.append([item for sublist in attr for item in sublist])
             else:
                 smp_attr = []
             if 'var_attr' in options and len(options['var_attr']) > 0: 
                 if 'smp_attr' in options and len(options['smp_attr']) > 0:                
-                    var_attr = self.process_attributes(self.extract_fields(ids, options['smp_attr']), options['var_attr'], aggregated = True)
+                    var_attr = self.process_attributes(self.extract_rows(ids, options['var_attr']), options['smp_attr'], aggregated = False)
                 else:
                     var_attr = []
                     for idx in options['var_attr']:
-                        attr =  self.extract_fields(ids, [idx])
+                        attr =  self.extract_rows(ids, [idx])
                         var_attr.append([item for sublist in attr for item in sublist])
             else:
                 var_attr = []
-            data = self.extract_fields(ids, options.get('fields'), del_fields = options.get('var_attr'), del_rows = options.get('smp_attr'))
+            data = self.extract_fields(ids, options.get('fields'), del_fields = options.get('smp_attr'), del_rows = options.get('var_attr'))
         return data, smp_attr, var_attr
 
     def extract_fields(self, id, fields, del_fields = [], del_rows = []):
@@ -554,8 +555,8 @@ class Py_report_html:
 
         x = {}
         z = {}
-        if var_attr != None and len(var_attr) > 0: self.add_canvas_attr(z, var_attr) 
-        if smp_attr != None and len(smp_attr) > 0: self.add_canvas_attr(x, smp_attr) 
+        if var_attr != None and len(var_attr) > 0: self.add_canvas_attr(x, var_attr)
+        if smp_attr != None and len(smp_attr) > 0: self.add_canvas_attr(z, smp_attr)
         # Build JSON objects and Javascript code
         #-----------------------------------------------
         self.count_objects += 1

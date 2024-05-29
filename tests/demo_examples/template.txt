@@ -250,7 +250,7 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
                 </td>
                 <td>
                         ${ plotter.scatter3D(id= 'scatter3dsizeAndColor.txt', header= True, row_names = True, x_label = 'Num genes', y_label = 'FPKM', z_label= "3thMetric",
-                                                var_attr=[6], xAxis = "liver", yAxis="brain", zAxis="lung", pointSize="spleen", colorScaleBy="kidney", shapeBy="pathway")}
+                                                smp_attr=[6], xAxis = "liver", yAxis="brain", zAxis="lung", pointSize="spleen", colorScaleBy="kidney", shapeBy="pathway")}
                 </td>
         </tr>
         <tr>
@@ -271,22 +271,22 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
                 </td>
                 <td>
                         ${ plotter.boxplot(id = 'boxplot_factor.txt', header = True, row_names = True, default= False, 
-                                                var_attr = [4], group = 'pathway' )}
+                                                smp_attr = [4], group = 'pathway' )}
                 </td>
         </tr>
         <tr>
                 <td>
                         ${ plotter.boxplot(id = 'boxplot_factor.txt', header = True, row_names = True, default= False, 
-                                                var_attr = [4], group = 'pathway', add_violin=True )}
+                                                smp_attr = [4], group = 'pathway', add_violin=True )}
                 </td>
                 
                 <td>
                         ${ plotter.boxplot(id = 'rank_distribution.txt', header = True, row_names = False, default =  False, 
-                                                var_attr = [0,1,2], group = ["clust_method", "clust_status"], height = 500, width= 900) }
+                                                smp_attr = [0,1,2], group = ["clust_method", "clust_status"], height = 500, width= 900) }
                 </td>
                 <td>
                         ${ plotter.boxplot(id = 'boxplot_grid.txt', header = True, row_names = False, default =  False, 
-                        var_attr = [0,1], group = ["genes", "samples"], height = 700, width= 800, config={"graphOrientation":"vertical"}) }
+                        smp_attr = [0,1], group = ["genes", "samples"], height = 700, width= 800, config={"graphOrientation":"vertical"}) }
                 </td>
 	</tr>
         <tr>
@@ -299,7 +299,7 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
         </tr>
         <tr>
                 <td>
-                        ${plotter.density(id="density_one_serie.txt", row_names = False, header = True, var_attr=[1], group="Group", config={"histogramStat":"density"})}
+                        ${plotter.density(id="density_one_serie.txt", row_names = False, header = True, smp_attr=[1], group="Group", config={"histogramStat":"density"})}
                 </td>
                 <td>
                         ${plotter.density(id="ridgeline.txt",  header = True, row_names = True, fillDensity = True, median = True)}

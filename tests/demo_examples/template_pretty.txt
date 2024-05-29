@@ -86,7 +86,7 @@
                     ],
                     "scatterplots_3D": [
                         """plotter.scatter3D(id= 'scatter3dsizeAndColor.txt', header= True, row_names = True, x_label = 'Num genes', y_label = 'FPKM', z_label= "3thMetric",
-                                                var_attr=[6], xAxis = "liver", yAxis="brain", zAxis="lung", pointSize="spleen", colorScaleBy="kidney", shapeBy="pathway")"""
+                                                smp_attr=[6], xAxis = "liver", yAxis="brain", zAxis="lung", pointSize="spleen", colorScaleBy="kidney", shapeBy="pathway")"""
                     ],
                     "scatterplots_bubble": [
                         """plotter.scatterbubble2D(id = 'haplotipe_array', header = True, row_names = False, upper_limit = 70, lower_limit = 4, ranges = 80,
@@ -98,20 +98,20 @@
                     "boxplots": [
                         """plotter.boxplot(id = 'boxplot.txt', header = True, row_names = True)""",
                         """plotter.boxplot(id = 'boxplot_one_series.txt', header = True, row_names = True)""",
-                        """plotter.boxplot(id = 'boxplot_factor.txt', header = True, row_names = True, default= False, var_attr = [4], group = 'pathway' )""",
-                        """plotter.boxplot(id = 'rank_distribution.txt', header = True, row_names = False, default =  False, var_attr = [0,1,2], 
+                        """plotter.boxplot(id = 'boxplot_factor.txt', header = True, row_names = True, default= False, smp_attr = [4], group = 'pathway' )""",
+                        """plotter.boxplot(id = 'rank_distribution.txt', header = True, row_names = False, default =  False, smp_attr = [0,1,2], 
                                         group = ["clust_method", "clust_status"], height = 500, width= 900)""",
-                        """plotter.boxplot(id = 'boxplot_grid.txt', header = True, row_names = False, default =  False, var_attr = [0,1], 
+                        """plotter.boxplot(id = 'boxplot_grid.txt', header = True, row_names = False, default =  False, smp_attr = [0,1], 
                                         group = ["genes", "samples"], height = 700, width= 800, config={"graphOrientation":"vertical"})"""
 
                     ],
                     "boxplot_violin": [
                         """plotter.boxplot(id = 'boxplot_factor.txt', header = True, row_names = True, default= False, 
-                                                var_attr = [4], group = 'pathway', add_violin=True )"""
+                                                smp_attr = [4], group = 'pathway', add_violin=True )"""
                     ],
                     "density": [
                         """plotter.density(id="density_one_serie.txt", row_names = False, header = True, fields=[0])""",
-                        """plotter.density(id="density_one_serie.txt", row_names = False, header = True, var_attr=[1], group="Group", config={"histogramStat":"density"})""",
+                        """plotter.density(id="density_one_serie.txt", row_names = False, header = True, smp_attr=[1], group="Group", config={"histogramStat":"density"})""",
                         """plotter.density(id="ridgeline.txt",  header = True, row_names = True, fillDensity = True, median = True)"""
                     ],
                     "ridgeline": [
