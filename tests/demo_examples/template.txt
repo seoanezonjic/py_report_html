@@ -326,6 +326,15 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
                         ${ plotter.dotplot(id = 'canvas_table', header = True, row_names = True, connect = True, height = 300) }
                 </td>
 	</tr>
+        <tr>
+                <td>
+                        ${ plotter.heatmap(id = 'heatmap_dendrogram.txt', tree="./file_data/dendrogram.dnd", 
+                                                header = True, row_names = True, 
+                                                transpose=False, smp_attr=[17], treeBy="v",
+                                                config={"varOverlays":["category"]}
+                                        )}
+                </td>
+        </tr>
 </table>
 
 <div>
