@@ -498,10 +498,14 @@ class Py_report_html:
         tree = self.tree_from_file(options["tree"])
         if options["treeBy"] == 's':
             config['smpDendrogramNewick'] = tree
-            config['samplesClustered'] = True
+            #config['samplesClustered'] = True
+            config['smpDendrogramUseHeight'] = True
+            config['smpDendrogramHang'] = False
         elif options["treeBy"] == 'v':
             config['varDendrogramNewick'] = tree
-            config['variablesClustered'] = True
+            #config['variablesClustered'] = True #It seems it is not needed with custom dendrograms, just when you want to use CanvasXpress default dendrogram 
+            config['varDendrogramUseHeight'] = True
+            config['varDendrogramHang'] = False            
 
     def canvasXpress_main(self, user_options):
         # Handle arguments
