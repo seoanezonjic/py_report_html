@@ -649,7 +649,7 @@ class Py_report_html:
             if values == None: return f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO DATA<p></div>"
             
             dataframe = pd.DataFrame(values, columns = samples, index = variables)
-            for attr in var_attr:
+            for attr in smp_attr:
                 dataframe[attr[0]] = attr[1:]
 
             if options.get('melt') != None:
