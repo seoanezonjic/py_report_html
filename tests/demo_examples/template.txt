@@ -243,6 +243,18 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
         </tr>
         <tr>
                 <td>
+                        ${ plotter.scatter2D(id = 'barplot3.txt', 
+                                header= True, row_names=True, add_header_rownames = False,
+	                        smp_attr = [1,2], var_attr = [1,2],
+                                xAxis= ["brain"], yAxis= ["lung"],
+                                x_label= "Brain", y_label= "Lung",
+                                config = {"hoverTemplate": """Type of gen: {type} <br>
+                                Other type of gen: {type2} <br>
+                                Lung Expr: {lung} <br>
+                                Brain Expr: {brain}"""}
+                	)}
+                </td>
+                <td>
                         ${ plotter.scatter2D(id= 'x_y.txt', header= True, x_label = 'Num genes', y_label = 'FPKM', alpha = 0.3, theme="tableau" , regressionLine=True ) }
                 </td>
                 <td>
@@ -334,6 +346,14 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
                                                 config={"varOverlays":["category"]}
                                         )}
                 </td>
+                <td>
+                        ${ plotter.heatmap(id = 'heatmap_dendrogram.txt', tree="./file_data/dendrogram.dnd", 
+                                                header = True, row_names = True, 
+                                                transpose=False, smp_attr=[17], treeBy="v",
+                                                config={"varOverlays":["category"],
+                                                        "varDendrogramHang": True}
+                                        )}
+                </td>                
         </tr>
 </table>
 
