@@ -82,14 +82,14 @@ class ReportHtml(unittest.TestCase):
         self.html_title = "Sample"
 
         ## Defining expected results ##
-        self.expected_smp_attrs = [    #These are variable attributes, not the variables themselves        
+        self.expected_var_attrs = [    #These are variable attributes, not the variables themselves        
             ["nerv", "no", "yes", "yes"],
             ["pcr", "true", "true", "false"]]
-        self.expected_var_attrs = [    #These are sample attributes, not the samples themselves
+        self.expected_smp_attrs = [    #These are sample attributes, not the samples themselves
             ["type" , "miRNA", "miRNA", "mRNA", "mRNA"],
             ["type2", "tRNA" , "tRNA" , "ncRNA", "ncRNA"]]
-        self.x_reshaped_smp_attrs = {"nerv":  ["no", "yes", "yes"], "pcr": ["true", "true", "false"]}
-        self.z_reshaped_var_attrs = {"type": ["miRNA", "miRNA", "mRNA", "mRNA"], "type2": ["tRNA" , "tRNA" , "ncRNA", "ncRNA"]}
+        self.x_attrs = {"nerv":  ["no", "yes", "yes"], "pcr": ["true", "true", "false"]}
+        self.z_attrs = {"type": ["miRNA", "miRNA", "mRNA", "mRNA"], "type2": ["tRNA" , "tRNA" , "ncRNA", "ncRNA"]}
         
         self.expected_data = [
             ["tissue", "liver", "brain", "cerebellum"],
@@ -97,8 +97,8 @@ class ReportHtml(unittest.TestCase):
             ["gen2",    40,      60,        30],
             ["gen3",    100,     85,        12],
             ["gen4",    85,      10,        41]]
-        self.expected_samples = ["liver", "brain", "cerebellum"] #These are the actual samples
-        self.expected_variables = ["gen1", "gen2", "gen3", "gen4"] #These are the actual variables
+        self.expected_variables = ["liver", "brain", "cerebellum"] #These are the actual samples
+        self.expected_samples = ["gen1", "gen2", "gen3", "gen4"] #These are the actual variables
         self.expected_values = [
             [20,      13,     15],
             [40,      60,     30],
@@ -106,19 +106,19 @@ class ReportHtml(unittest.TestCase):
             [85,      10,     41]]
         self.expected_data_json = {
             "y": {
-                "vars": self.expected_variables, 
-                "smps": self.expected_samples,
+                "vars": self.expected_samples, #For CanvasXpress, columns are samples instead of variables, so we flip these two
+                "smps": self.expected_variables,
                 "data": self.expected_values},
-            "x": self.x_reshaped_smp_attrs,
-            "z": self.z_reshaped_var_attrs,
+            "x": self.x_attrs,
+            "z": self.z_attrs,
         }
         self.expected_data_json_transposed = {
             "y": {
-                "vars": self.expected_samples,
-                "smps": self.expected_variables,
+                "vars": self.expected_variables,
+                "smps": self.expected_samples,
                 "data": list(map(list, zip(*self.expected_values)))},
-            "x": self.z_reshaped_var_attrs,
-            "z": self.x_reshaped_smp_attrs,
+            "x": self.z_attrs,
+            "z": self.x_attrs,
         }
     
         self.options = {"id": self.complex_table_id,
@@ -320,11 +320,12 @@ class ReportHtml(unittest.TestCase):
         expected_hashvar = copy.deepcopy(self.html.hash_vars["complex_table"])
 
         #The aggregated attribute apply a transpose operation on the lists so dims[a,b] of sample fields becomes dims[b,a]
-        returned_var_attrs = self.html.process_attributes(self.html.extract_fields(options["id"], options['smp_attr']), options['var_attr'], aggregated = True)
-        returned_smp_attrs = self.html.process_attributes(self.html.extract_rows(options["id"], options['var_attr']), options['smp_attr'], aggregated = False)
+        returned_smp_attrs = self.html.process_attributes(self.html.extract_fields(options["id"], options['smp_attr']), options['var_attr'], aggregated = True)
+        returned_var_attrs = self.html.process_attributes(self.html.extract_rows(options["id"], options['var_attr']), options['smp_attr'], aggregated = False)
                 
         self.assertEqual(self.expected_smp_attrs, returned_smp_attrs)
         self.assertEqual(self.expected_var_attrs, returned_var_attrs)
+
         #Asserting equality of samples length with sample attributes length (checking the first of the two factors)
         self.assertEqual(len(self.expected_samples), len(returned_smp_attrs[0][1:]))
         #Asserting equality of variables length with variable attributes length (checking the first of the two factors)
@@ -351,18 +352,18 @@ class ReportHtml(unittest.TestCase):
 
         #Testing the table with colnames and no rownames with only one variable attribute (and no sample attribute) as this edge case is giving error 
         custom_options = copy.deepcopy(self.options)
-        custom_options["rownames"] = False
+        custom_options["row_names"] = False
         custom_options["header"] = True
         custom_options["add_header_row_names"] = True
         custom_options["transpose"] = False
         custom_options["id"] = "table_no_rownames"
-        custom_options["var_attr"] = [2]
-        custom_options["smp_attr"] = []
+        custom_options["var_attr"] = []
+        custom_options["smp_attr"] = [2]
         
         returned_data_str, returned_smp_attr, returned_var_attr = self.html.extract_data(custom_options)
         self.assertEqual([row[1:] for row in expected_data_str], returned_data_str)
-        self.assertEqual([["type", "miRNA", "miRNA", "mRNA", "mRNA"]], returned_var_attr)
-        self.assertEqual([], returned_smp_attr)
+        self.assertEqual([], returned_var_attr)
+        self.assertEqual([["type", "miRNA", "miRNA", "mRNA", "mRNA"]], returned_smp_attr)
 
     def test_add_header_row_names(self):
         table_alone = [["1","3"],
@@ -552,8 +553,8 @@ class ReportHtml(unittest.TestCase):
         self.assertEqual(self.expected_values, values)
         self.assertEqual(self.expected_var_attrs, var_attr)
         self.assertEqual(self.expected_smp_attrs, smp_attr)
-        self.assertEqual(self.expected_samples, samples)
-        self.assertEqual(self.expected_variables, variables)
+        self.assertEqual(self.expected_samples, variables) #For CanvasXpress, columns are samples instead of variables, so we flip these two
+        self.assertEqual(self.expected_variables, samples)
         self.assertEqual(expected_hashvar, self.html.hash_vars["complex_table"]) #Checking that original table has not been modified as more plot calls will be done to the same table
 
         #Transposing the table
@@ -563,8 +564,8 @@ class ReportHtml(unittest.TestCase):
         self.assertEqual(self.expected_data_json_transposed["y"]["data"], values)
         self.assertEqual(self.expected_smp_attrs, sorted(var_attr))
         self.assertEqual(self.expected_var_attrs, sorted(smp_attr))
-        self.assertEqual(self.expected_variables, samples)
-        self.assertEqual(self.expected_samples, variables)
+        self.assertEqual(self.expected_variables, variables)
+        self.assertEqual(self.expected_samples, samples)
 
         #Giving the table default rownames
         custom_options["row_names"] = False
@@ -572,12 +573,12 @@ class ReportHtml(unittest.TestCase):
         custom_options["add_header_row_names"] = True
         custom_options["transpose"] = False
         custom_options["id"] = "table_no_rownames"
-        custom_options["var_attr"] = [2]
-        custom_options["smp_attr"] = []
+        custom_options["var_attr"] = []
+        custom_options["smp_attr"] = [2]
         
         values, smp_attr, var_attr, samples, variables = self.html.get_data_for_plot(custom_options)
-        self.assertEqual([["type", "miRNA", "miRNA", "mRNA", "mRNA"]], var_attr)
-        self.assertEqual([], smp_attr)
+        self.assertEqual([], var_attr)
+        self.assertEqual([["type", "miRNA", "miRNA", "mRNA", "mRNA"]], smp_attr)
         self.assertEqual(self.expected_data_json["y"]["data"], values)
         self.assertEqual(["liver", "brain", "cerebellum"], samples)
         self.assertEqual([1,2,3,4], variables)
@@ -595,8 +596,8 @@ class ReportHtml(unittest.TestCase):
         return_smp_reshaped = {}
         self.html.add_canvas_attr(return_smp_reshaped, self.expected_smp_attrs) #Modifies return_var_reshaped in place
         self.html.add_canvas_attr(return_var_reshaped, self.expected_var_attrs) #Modifies return_smp_reshaped in place
-        self.assertEqual(self.x_reshaped_smp_attrs, return_smp_reshaped)
-        self.assertEqual(self.z_reshaped_var_attrs, return_var_reshaped)
+        self.assertEqual(self.x_attrs, return_var_reshaped)
+        self.assertEqual(self.z_attrs, return_smp_reshaped)
 
     def test_segregate_data(self):
         variables_to_segregate = {"var": ["nerv", "pcr"], "smp": ["type", "type2"]} 
@@ -614,8 +615,8 @@ class ReportHtml(unittest.TestCase):
         self.assertRaises(Exception, self.html.assign_rgb, link_data=[["pink", "A", "B"],["yellow", "C", "D"]] )
 
     def test_reshape(self):
-        returned_x = copy.deepcopy(self.x_reshaped_smp_attrs)
-        expected_x = {key: value*len(self.expected_variables) for key, value in self.x_reshaped_smp_attrs.items()}
+        returned_x = copy.deepcopy(self.x_attrs)
+        expected_x = {key: value*len(self.expected_variables) for key, value in self.x_attrs.items()}
         expected_x["Factor"] =  [item for pack in [[var] * len(self.expected_samples) for var in self.expected_variables] for item in pack]
         expected_samples = self.expected_samples + [item for pack in #Unpacking results of nested list compreh...
                                                     [[f"{sample}_{times}" for sample in self.expected_samples] for times in range(0,len(self.expected_variables)-1)] 
@@ -679,8 +680,9 @@ class ReportHtml(unittest.TestCase):
         expected_tree2= "(((2:0.000358295,3:0.000358295):0.00654867,(4:0.00350737,((5:0.000716589,6:0.000716589):0.0027152,(7:0.00436671,(8:0.00244088,(9:0.00201541,(10:0.00152275,(11:0.000537442,(12:0.000358295,13:0.000358295):0.000179147):0.00098531):0.000492655):0.000425475):0.00192583):-0.000934925):7.55778e-05):0.0033996):0.000200688,(((14:0.00161233,15:0.00161233):0.00223934,((16:0.00125403,17:0.00125403):0.00232891,((18:0.000716589,19:0.000716589):0.00152275,(20:0.00107488,21:0.00107488):0.00116446):0.0013436):0.000268721):0.00217916,((22:0.00214977,23:0.00214977):0.00181387,(24:0.00295593,(((1:0.000358295,25:0.000358295):0,26:0.000358295):0.00160113,(27:0.00143318,(28:0.000716589,((29:0.000358295,30:0.000358295):0.000179147,31:0.000537442):0.000179147):0.000716589):0.000526245):0.000996507):0.0010077):0.00206719):0.00107683);"
 
         self.html.set_tree(user_options, returned_config)
-        self.assertTrue(returned_config["variablesClustered"])
         self.assertEqual(returned_config["varDendrogramNewick"], expected_tree2)
+        self.assertTrue(returned_config["varDendrogramUseHeight"])
+        self.assertFalse(returned_config["varDendrogramHang"])
 
         #Setting tree as smp to the heatmap
         user_options = copy.deepcopy(self.options)
@@ -689,8 +691,10 @@ class ReportHtml(unittest.TestCase):
         expected_tree= "(HXK4:0.242204,(HXK3:0.235823,(HXK1:0.133043,HXK2:0.133043):0.102781):0.00638098);"
 
         self.html.set_tree(user_options, returned_config)
-        self.assertTrue(returned_config["samplesClustered"])
         self.assertEqual(returned_config["smpDendrogramNewick"], expected_tree)
+        self.assertTrue(returned_config["smpDendrogramUseHeight"])
+        self.assertFalse(returned_config["smpDendrogramHang"])
+
 
     ### TESTS FOR CANVASXPRESS PLOTS ###
 
@@ -817,7 +821,7 @@ class ReportHtml(unittest.TestCase):
         
     def test_pie(self):
         expected_config = copy.deepcopy(self.config)
-        expected_config.update({"graphType": "Pie", "showPieGrid": True, "xAxis": self.expected_samples})
+        expected_config.update({"graphType": "Pie", "showPieGrid": True, "xAxis": self.expected_variables})
         data, conf, events, info, afterRender, obj_0 = get_plot_data(self.html, self.html.pie, **self.options)
         expected_config.update({"layout": f"{math.ceil(len(self.expected_samples)/2)}X2",
                               "showPieSampleLabel": True})
@@ -928,7 +932,7 @@ class ReportHtml(unittest.TestCase):
         #We need to modify these variables after applying the function to get the expected default value we want to check
         custom_options.update({"ring_assignation": [ str(i+1) for i in range(n_variables) ]})
         custom_data_json = copy.deepcopy(self.expected_data_json_transposed)
-        custom_data_json.update({ 'z' : {'Ring' : custom_options['ring_assignation']}})
+        custom_data_json["z"].update({'Ring' : custom_options['ring_assignation']})
         
         self.assertEqual([custom_data_json, expected_config, False, False, []],
                         [data, conf, events, info, afterRender])
@@ -958,10 +962,11 @@ class ReportHtml(unittest.TestCase):
         data, conf, events, info, afterRender, obj_0 = get_plot_data(self.html, self.html.circular, **custom_options)
 
         custom_data_json = copy.deepcopy(self.expected_data_json_transposed)
-        custom_data_json.update({ 'z' : {'Ring' : custom_options['ring_assignation']}})
+        print(custom_data_json)
+        custom_data_json["z"].update({'Ring' : custom_options['ring_assignation']})
         
         self.assertEqual([custom_data_json, expected_config, False, False, []],
-                        [data, conf, events, info, afterRender])  
+                        [data, conf, events, info, afterRender]) 
         #Testing that the function segregateSamplesBy is used
         self.assertIn(f"segregateSamples(['nerv'])", obj_0)
 
@@ -969,15 +974,15 @@ class ReportHtml(unittest.TestCase):
     def test_scatter2D(self):
         custom_options = copy.deepcopy(self.options)
         custom_options.update({"regressionLine": True, "y_label": "custom_y_axis", "add_densities": True,
-                               "pointSize": self.expected_samples[0],
-                               "colorScaleBy": self.expected_samples[1]})
+                               "pointSize": self.expected_variables[0],
+                               "colorScaleBy": self.expected_variables[1]})
 
         expected_config = copy.deepcopy(self.config)
         expected_config.update({ "graphType": "Scatter2D", 
-                              'xAxis': [self.expected_samples[0]], 
-                              'yAxis': self.expected_samples[1:], "yAxisTitle": "custom_y_axis",
-                              "sizeBy": self.expected_samples[0],
-                                "colorBy": self.expected_samples[1],
+                              'xAxis': [self.expected_variables[0]], 
+                              'yAxis': self.expected_variables[1:], "yAxisTitle": "custom_y_axis",
+                              "sizeBy": self.expected_variables[0],
+                                "colorBy": self.expected_variables[1],
                               "hideHistogram":"false",
                             "histogramBins":20,
                             "histogramStat":"count",
@@ -1021,9 +1026,9 @@ class ReportHtml(unittest.TestCase):
 
         expected_config = copy.deepcopy(self.config)
         expected_config.update({"graphType": "ScatterBubble2D",
-                              'xAxis': [self.expected_samples[0]], 
-                              'yAxis': [self.expected_samples[1]], "yAxisTitle": "custom_y_axis",
-                              'zAxis': [self.expected_samples[2]], "zAxisTitle": "custom_z_axis",
+                              'xAxis': [self.expected_variables[0]], 
+                              'yAxis': [self.expected_variables[1]], "yAxisTitle": "custom_y_axis",
+                              'zAxis': [self.expected_variables[2]], "zAxisTitle": "custom_z_axis",
                               'sizes': [ custom_options['lower_limit'] + n * diff for n in range(custom_options["ranges"])] })
         
         #Testing with default options
@@ -1035,16 +1040,16 @@ class ReportHtml(unittest.TestCase):
         custom_options = copy.deepcopy(self.options)
         custom_options.update({"y_label": "custom_y_axis", "z_label": "custom_z_axis",
                                "upper_limit": 10, "lower_limit": 0, "ranges": 2})
-        custom_options.update({"xAxis": [self.expected_samples[2]], 
-                               "yAxis": [self.expected_samples[1]],
-                               "zAxis": [self.expected_samples[0]]})
+        custom_options.update({"xAxis": [self.expected_variables[2]], 
+                               "yAxis": [self.expected_variables[1]],
+                               "zAxis": [self.expected_variables[0]]})
         diff = (custom_options['upper_limit'] - custom_options['lower_limit']) / custom_options['ranges']
 
         expected_config = copy.deepcopy(self.config)
         expected_config.update({"graphType": "ScatterBubble2D",
-                              'xAxis': [self.expected_samples[2]], 
-                              'yAxis': [self.expected_samples[1]], "yAxisTitle": "custom_y_axis",
-                              'zAxis': [self.expected_samples[0]], "zAxisTitle": "custom_z_axis",
+                              'xAxis': [self.expected_variables[2]], 
+                              'yAxis': [self.expected_variables[1]], "yAxisTitle": "custom_y_axis",
+                              'zAxis': [self.expected_variables[0]], "zAxisTitle": "custom_z_axis",
                               'sizes': [ custom_options['lower_limit'] + n * diff for n in range(custom_options["ranges"])] })
         
         #Testing with default options
@@ -1055,21 +1060,21 @@ class ReportHtml(unittest.TestCase):
     def test_scatter3D(self):
         custom_options = copy.deepcopy(self.options)
         custom_options.update({"y_label": "custom_y_axis", "z_label": "custom_z_axis",
-                               "xAxis": [self.expected_samples[2]], 
-                               "yAxis": [self.expected_samples[1]],
-                               "zAxis": [self.expected_samples[0]],
-                               "pointSize": self.expected_samples[0],
-                               "colorScaleBy": self.expected_samples[1],
+                               "xAxis": [self.expected_variables[2]], 
+                               "yAxis": [self.expected_variables[1]],
+                               "zAxis": [self.expected_variables[0]],
+                               "pointSize": self.expected_variables[0],
+                               "colorScaleBy": self.expected_variables[1],
                                "shapeBy": "nerv"})
         
         expected_config = copy.deepcopy(self.config)
         expected_config.update({"graphType": "Scatter3D",
-                                "sizeBy": self.expected_samples[0],
-                                "colorBy": self.expected_samples[1],
+                                "sizeBy": self.expected_variables[0],
+                                "colorBy": self.expected_variables[1],
                                 "shapeBy": "nerv",
-                              'xAxis': [self.expected_samples[2]], 
-                              'yAxis': [self.expected_samples[1]], "yAxisTitle": "custom_y_axis",
-                              'zAxis': [self.expected_samples[0]], "zAxisTitle": "custom_z_axis"})
+                              'xAxis': [self.expected_variables[2]], 
+                              'yAxis': [self.expected_variables[1]], "yAxisTitle": "custom_y_axis",
+                              'zAxis': [self.expected_variables[0]], "zAxisTitle": "custom_z_axis"})
         
         expected_data_json = copy.deepcopy(self.expected_data_json)
         expected_data_json["z"].update({'liver': [20.0, 40.0, 100.0, 85.0], 'brain': [13.0, 60.0, 85.0, 10.0]})
@@ -1083,10 +1088,13 @@ class ReportHtml(unittest.TestCase):
         expected_config = copy.deepcopy(self.config)
         expected_config.update({"graphType": "Scatter2D", "binplotShape": "hexagon", "binplotBins":"50",
                           "scatterType":"bin2d", "showScatterDensity": True,
-                          'xAxis': [self.expected_samples[0]], "xAxisTitle": "custom_x_axis",
-                          'yAxis': [self.expected_samples[1]], "yAxisTitle": "custom_y_axis"})
+                          'xAxis': [self.expected_variables[0]], "xAxisTitle": "custom_x_axis",
+                          'yAxis': [self.expected_variables[1]], "yAxisTitle": "custom_y_axis"})
 
         data, conf, events, info, afterRender, canvas_function_call = get_plot_data(self.html, self.html.hexplot, **custom_options)
+
+        print(conf)
+        print(expected_config)
         self.assertEqual([self.expected_data_json, expected_config, False, False, []],
                         [data, conf, events, info, afterRender])
 
@@ -1119,11 +1127,14 @@ class ReportHtml(unittest.TestCase):
         expected_data_json["y"]["vars"] = [f"s{num}" for num in range(len(self.expected_values)*len(self.expected_values[0]))]
         expected_data_json["y"]["data"] = list(map(list, zip(*self.expected_values)))
         expected_data_json["y"]["data"] = [[float(item)] for row in expected_data_json["y"]["data"] for item in row]
-        expected_data_json["z"] = {"Factor":[ [sample]*len(self.expected_values) for sample in self.expected_samples]}
+        expected_data_json["z"].update({"Factor":[ [variable]*len(self.expected_values) for variable in self.expected_variables]})
         expected_data_json["z"]["Factor"] = [item for pack in expected_data_json["z"]["Factor"] for item in pack]
-        expected_data_json["x"] = self.x_reshaped_smp_attrs
+        expected_data_json["x"] = self.x_attrs
         
         data, conf, events, info, afterRender, canvas_function_call = get_plot_data(self.html, self.html.ridgeline, **custom_options)
+        print(data)
+        print(expected_data_json)
+        
         self.assertEqual([expected_data_json, expected_config, False, False, []],
                         [data, conf, events, info, afterRender])
 
@@ -1134,22 +1145,22 @@ class ReportHtml(unittest.TestCase):
         expected_config = copy.deepcopy(self.config)
         expected_config.update({ "graphType": "Scatter2D", 
                                  "hideHistogram":True,
-                                 "histogramData":"Factor",
+                                 'showHistogram': True,
                                  "showFilledHistogramDensity":False,
                                  "showHistogramDensity":True,
                                  "showHistogramMedian":False})
         
-        expected_data_json = copy.deepcopy(self.expected_data_json_transposed)
-        expected_data_json["y"]["smps"] = ["Sample"]
-        expected_data_json["y"]["vars"] = [f"s{num}" for num in range(len(self.expected_values)*len(self.expected_values[0]))]
-        expected_data_json["y"]["data"] = list(map(list, zip(*self.expected_values)))
-        expected_data_json["y"]["data"] = [[float(item)] for row in expected_data_json["y"]["data"] for item in row]
-        expected_data_json["z"] = {"Factor":[ [sample]*len(self.expected_values) for sample in self.expected_samples]}
-        expected_data_json["z"]["Factor"] = [item for pack in expected_data_json["z"]["Factor"] for item in pack]
-        expected_data_json["x"] = self.x_reshaped_smp_attrs
+        #expected_data_json = copy.deepcopy(self.expected_data_json_transposed)
+        #expected_data_json["y"]["smps"] = ["Sample"]
+        #expected_data_json["y"]["vars"] = [f"s{num}" for num in range(len(self.expected_values)*len(self.expected_values[0]))]
+        #expected_data_json["y"]["data"] = list(map(list, zip(*self.expected_values)))
+        #expected_data_json["y"]["data"] = [[float(item)] for row in expected_data_json["y"]["data"] for item in row]
+        #expected_data_json["z"] = {"Factor":[ [sample]*len(self.expected_values) for sample in self.expected_samples]}
+        #expected_data_json["z"]["Factor"] = [item for pack in expected_data_json["z"]["Factor"] for item in pack]
+        #expected_data_json["x"] = self.x_attrs
         
         data, conf, events, info, afterRender, canvas_function_call = get_plot_data(self.html, self.html.density, **custom_options)
-        self.assertEqual([expected_data_json, expected_config, False, False, []],
+        self.assertEqual([self.expected_data_json, expected_config, False, False, []],
                         [data, conf, events, info, afterRender])
 
     def test_circular_genome(self):
