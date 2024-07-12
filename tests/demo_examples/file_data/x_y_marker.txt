@@ -1,0 +1,6 @@
+n_genes	brain_exp	liver_exp	marker
+1	3	5	patient1
+4	5	7	patient2
+3	8	10	patient3
+7	9	11	patient4
+10	15	17	patient5

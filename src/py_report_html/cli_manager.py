@@ -27,6 +27,8 @@ def py_report_html(args=None):
 						help="URL to css CDNs that must be included. Use ',' as path separator for each file")
 	parser.add_argument("-u", "--uncompressed_data", dest="uncompressed_data", default=True, action='store_false',
 						help="Delete redundant items")
+	parser.add_argument("-m", "--menu", dest="menu", default= 'contents_list', 
+						help="Indicate if indexed content must be a contents list (contents_list) or a menu (menu)")	
 
 	opts =  parser.parse_args(args)
 	main_py_report_html(opts)    
@@ -38,7 +40,7 @@ def main_py_report_html(options):
 	if len(options.data_files) == 0: sys.exit('Data files has not been specified')
 	container = load_files(options.data_files)
 
-	report = Py_report_html(container, os.path.basename(options.output), True, options.uncompressed_data)
+	report = Py_report_html(container, os.path.basename(options.output), True, options.uncompressed_data, options.menu)
 	report.add_js_files(options.javascript_files)
 	report.add_css_files(options.css_files)
 	report.add_js_cdn(options.javascript_cdn)

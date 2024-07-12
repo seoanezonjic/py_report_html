@@ -24,7 +24,7 @@ class Py_report_html:
     #JS_FOLDER = os.path.join(os.path.dirname(__file__), 'js')
     #TEMPLATES = os.path.join(os.path.dirname(__file__), 'templates')
 
-    def __init__(self, hash_vars, title = "report", data_from_files = False, compress = True):
+    def __init__(self, hash_vars, title = "report", data_from_files = False, compress = True, type_index = "contents_list"):
         self.all_report = ""
         self.title = title
         self.hash_vars = hash_vars
@@ -33,6 +33,7 @@ class Py_report_html:
         self.figures = {}
         self.tables = {}
         self.compress = compress
+        self.type_index = type_index
         self.features = { 
             'mermaid': False, 'dt_tables': False, 'pdfHtml5': False, 'canvasXpress': False, 'pako': False,
             'cytoscape': False, 'pyvis': False, 'elgrapho': False, 'sigma': False
@@ -498,7 +499,7 @@ class Py_report_html:
         tree = self.tree_from_file(options["tree"])
         if options["treeBy"] == 's':
             config['smpDendrogramNewick'] = tree
-            #config['samplesClustered'] = True
+            #config['samplesClustered'] = True #It seems it is not needed with custom dendrograms, just when you want to use CanvasXpress default dendrogram 
             config['smpDendrogramUseHeight'] = True
             config['smpDendrogramHang'] = False
         elif options["treeBy"] == 'v':
@@ -1508,7 +1509,17 @@ class Py_report_html:
 
     def create_header_index(self):
         if self.header_index:
-            index = f"<h1>Table of contents</h1>\n<div>\n"
+            max_level = min([level for _, _, level in self.headers])
+            
+            if self.type_index == "contents_list":
+                index = f"<h1>Table of contents</h1>\n"
+                div_id = ""
+            elif self.type_index == "menu":
+                index = "<div id = 'top_skip'></div>"
+                div_id = "id=\"floating-menu\""
+                self.headers = [["top_skip", "Main", max_level]] + [[t_id, text, level] for t_id, text, level in self.headers if level == max_level]
+
+            index += f"<div {div_id} >\n"            
             last_level = 0
             for t_id, text, level in self.headers:
                 if level > last_level: index += "<ul>\n"
@@ -1517,7 +1528,9 @@ class Py_report_html:
                     for i in range(diff): index += "</ul>\n"
                 index += f"<li><a href=#{t_id}>{text}</a></li>\n"
                 last_level = level
-            index += f"</ul>\n</div>\n"
+            diff = last_level - max_level + 1
+            for i in range(diff): index += "</ul>\n"
+            index += f"</div>\n"
         else:
             index=''
         return index

@@ -1,3 +1,21 @@
+document.addEventListener("DOMContentLoaded", function() {
+  const menuLinks = document.querySelectorAll('#floating-menu a');
+  const offset = 80; // Adjust this value to match the height of your fixed menu
+
+  menuLinks.forEach(link => {
+      link.addEventListener('click', function(event) {
+          event.preventDefault();
+          const targetId = this.getAttribute('href').substring(1);
+          const targetElement = document.getElementById(targetId);
+
+          window.scrollTo({
+              top: targetElement.offsetTop - offset,
+              behavior: 'smooth'
+          });
+      });
+  });
+});
+
 function hide_show_element(element_id) {
   var x = document.getElementById(element_id);
   if (x.style.visibility === "hidden") {
