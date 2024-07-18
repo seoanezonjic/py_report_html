@@ -1,7 +1,7 @@
 import warnings
 warnings.filterwarnings(action='ignore', category=FutureWarning, module="seaborn")
 
-import re, os, json, math, zlib, warnings
+import re, os, json, math, zlib, warnings, glob
 import pandas as pd
 import base64
 from io import BytesIO
@@ -21,6 +21,7 @@ class Py_report_html:
     
     JS_FOLDER = "py_report_html.js"
     TEMPLATES = "py_report_html.templates"
+    additional_templates = []
     #JS_FOLDER = os.path.join(os.path.dirname(__file__), 'js')
     #TEMPLATES = os.path.join(os.path.dirname(__file__), 'templates')
 
@@ -46,6 +47,8 @@ class Py_report_html:
         self.dynamic_js = [] # Chunks of js code that are generated in template rendering
         self.headers = []
         self.header_index = False
+        self.internal_templates = {}
+        self.list_templates()
 
     ###################################################################################
     # RENDER TEMPLATE METHODS
@@ -164,8 +167,7 @@ class Py_report_html:
         if self.features['mermaid']: self.js_cdn.append("<script type=\"module\"> import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; </script>")
 
         if self.features['sigma']: # sigma CDN load is HUGE so we read it from file
-            file = str(files(Py_report_html.TEMPLATES).joinpath('sigma_cdn.txt'))
-            with open(os.path.join(file), 'r') as f:
+            with open(self.get_internal_template('sigma_cdn.txt'), 'r') as f:
                 self.js_cdn.extend(f.readlines())
         
         if self.features['pyvis']: 
@@ -206,6 +208,20 @@ class Py_report_html:
     def get_report(self): #return all html string
         templ = Template(self.all_report)
         return templ.render(plotter=self)
+
+    def renderize_child_template(self, template_file, **kwargs):
+        templ = Template(filename=template_file)
+        return templ.render(plotter=self, **kwargs)
+
+    def list_templates(self):
+        for p in glob.glob(str(files(Py_report_html.TEMPLATES).joinpath('*'))):
+            self.internal_templates[os.path.basename(p)] = p
+        for extra_path in Py_report_html.additional_templates:
+            for p in glob.glob(os.path.join(extra_path, '*')):
+                self.internal_templates[os.path.basename(p)] = p
+
+    def get_internal_template(self, template_name):
+        return self.internal_templates[template_name]
 
     def write(self, file):
         with open(file, 'w') as f: f.write(self.get_report())
@@ -409,9 +425,8 @@ class Py_report_html:
             )
 
         self.count_objects += 1
-        template_file = str(files(Py_report_html.TEMPLATES).joinpath('table.txt'))
-        templ = Template(filename=template_file)
-        return templ.render(plotter=self, options=options, array_data=array_data, table_id= table_id, table_attr=table_attr, rowspan = rowspan, colspan=colspan)
+        return self.renderize_child_template(self.get_internal_template('table.txt'), 
+            options=options, array_data=array_data, table_id= table_id, table_attr=table_attr, rowspan = rowspan, colspan=colspan)
 
     def prepare_table_attribs(self, attribs):
         attribs_string = ''
@@ -1325,10 +1340,9 @@ class Py_report_html:
             temp_file = 'pyvis.txt'
             model, node_names = self.pyvis_network(options, graph, layers, reference_nodes, group_nodes)
         
-        template_file = str(files(Py_report_html.TEMPLATES).joinpath(temp_file))
-        templ = Template(filename=template_file) 
         network = base64.b64encode(zlib.compress(json.dumps(model).encode('UTF-8'))).decode('UTF-8')
-        string = templ.render(plotter=self, options=options, network=network, count_objects=self.count_objects, node_names=node_names)
+        string = self.renderize_child_template(self.get_internal_template(temp_file), 
+            options=options, network=network, count_objects=self.count_objects, node_names=node_names)
         self.count_objects += 1
         return string
 
