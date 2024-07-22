@@ -30,19 +30,21 @@ py_report_html
 ==============
 
 
-    Create compressed, interactive HTML reports with embedded Python code, custom JS and CSS, and wrappers for CanvasXpress plots, networks and more, with an R equivalent in https://github.com/AEstebanMar/htmlreportR 
+    Create compressed, interactive HTML reports with embedded Python code, custom JS and CSS, and wrappers for CanvasXpress plots, networks and more.
 
 
- Py_report_html is a Python library designed for generating customizable HTML reports that can include a variety of data visualizations, tables, networks and potentially other types of interactive or static content, with support for data compression and extensibility through additional templates (even nested) and web resources, and with the main advantage that it allows to embed Python code to control the template flow execution and rendering of the content, and data modification on the go.
+ py_report_html is a Python library designed for generating customizable HTML reports that can include a variety of data visualizations, tables, networks and potentially other types of interactive or static content. It supports data compression and extensibility through additional templates and web resources. The key advantage is the ability to embed Python code to control template flow execution, content rendering, and data modification on the go.
 
  Key features and functionalities include:
 
- * Data Visualization Support: It integrates with several popular Python and Javascript libraries for data visualization, such as matplotlib and seaborn for static data visualization, CanvasXpress for dynamic data visualization, and Cytoscape, Elgrapho, Sigma and Pyvis for static and dynamic visualization of graph-based data structures. It also allow the use of MermaidJS for flowcharts and diagram generation.
+ * Data Visualization Support: It integrates with several popular Python and Javascript libraries for data visualization, such as matplotlib and seaborn for static data visualization, CanvasXpress for dynamic data visualization, and Cytoscape, Elgrapho, Sigma and Pyvis for static and dynamic visualization of graph-based data structures. Additionally, it supports MermaidJS for flowcharts and diagrams.
 
- * Template-Based Report Generation: The library supports template-based report generation, allowing users to define custom HTML templates for their reports, with the main advantage for the user .
+ * Template-Based Report Generation: Allows users to define custom HTML templates for their reports, providing flexibility and customization.
 
- * Compression Option: The library can optionally compress the report data to reduce the size of the final report, making it easier to share, store and render it on a web browser.
+ * Compression Option: Optionally compresses report data to reduce the size of the final report, making it easier to share, store, and render in a web browser.
 
- * Flexible Data Handling: The library can generate reports based on tables directly loaded from files, by means of using it from its main binary, "py_report_html". Otherwise, the data can be loaded and transformer according to user needs by means of using Py_report_html loaded as a library, for deeper control.
+ * Flexible Data Handling: Generates reports based on tables directly loaded from files using the main binary, "py_report_html". Alternatively, users can load and transform data using py_report_html as a library for deeper control.
 
- * Extensibility: The library is designed to be highly extensible, allowing users to include additional (user-custom or from other sources) JavaScript libraries, CSS stylesheets, and other nested templates to customize their reports further.
+ * Extensibility: Highly extensible, allowing users to include additional JavaScript libraries, CSS stylesheets, and nested templates to further customize their reports.
+
+For an equivalent R library, please visit htmlreportR on GitHub (https://github.com/AEstebanMar/htmlreportR).
