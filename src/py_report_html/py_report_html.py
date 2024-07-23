@@ -12,6 +12,8 @@ import networkx as nx
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.express as px
+import plotly.graph_objects as go
 import random
 import copy
 from importlib.resources import files
@@ -37,7 +39,7 @@ class Py_report_html:
         self.type_index = type_index
         self.features = { 
             'mermaid': False, 'dt_tables': False, 'pdfHtml5': False, 'canvasXpress': False, 'pako': False,
-            'cytoscape': False, 'pyvis': False, 'elgrapho': False, 'sigma': False
+            'cytoscape': False, 'pyvis': False, 'elgrapho': False, 'sigma': False, 'plotly': False
         }
         self.js_libraries = []
         self.css_files = []
@@ -173,6 +175,8 @@ class Py_report_html:
         if self.features['pyvis']: 
             self.js_cdn.append("https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js")
             self.css_cdn.append("https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css")
+
+        if self.features['plotly']: self.js_cdn.append("https://cdn.plot.ly/plotly-2.18.0.min.js")
 
         self.merge_custom_cdn()
         self.all_report += self.get_css_cdn()
@@ -649,7 +653,8 @@ class Py_report_html:
             'theme': 'ggplot',
             'tight': False,
             'img_properties': None,
-            'rezisable': False
+            'rezisable': False,
+            'dynamic': False
         }
         options.update(user_options)
         measures_to_inches = {'pixels': 1/options["dpi"], 'inches': 1, "cm": 0.3937}
@@ -684,30 +689,36 @@ class Py_report_html:
         object_id = f"obj_{self.count_objects}_"
         self.count_objects += 1
 
-        plotters = {"sns": sns, "plt": plt}
+        plotters = {"sns": sns, "plt": plt, "px": px, "go": go}
         plt.style.use(options["theme"])
-        fig, ax = plt.subplots( figsize=(matplotlib_width, matplot_height), dpi = options['dpi'])
 
-        if options['plotting_function'] != None:               
-            if options["whole"] == True:
-                values = dataframe if options["raw"] == True else pd.DataFrame(values, columns = samples, index = variables)
-                ax = options['plotting_function'](values, plotters)
+        if not options["dynamic"]:
+            fig, ax = plt.subplots( figsize=(matplotlib_width, matplot_height), dpi = options['dpi'])
+
+            if options['plotting_function'] != None:               
+                if options["whole"] == True:
+                    values = dataframe if options["raw"] == True else pd.DataFrame(values, columns = samples, index = variables)
+                    ax = options['plotting_function'](values, plotters)
+                else:
+                    ax = options['plotting_function'](dataframe, plotters)
             else:
-                ax = options['plotting_function'](dataframe, plotters)
+                return f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO PLOTTING FUNCTION<p></div>"
+            
+            if options.get("x_label"): plt.xlabel(options['x_label'])
+            if options.get("title"): plt.title(options['title'])
+            if options.get("y_label"): plt.ylabel(options['y_label'])
+            if options['tight']: fig.tight_layout()
+            
+            plt.show()
+            tmpfile = BytesIO()
+            plt.savefig(tmpfile, format='png')
+            encoded = base64.b64encode(tmpfile.getvalue()).decode('utf-8')
+            html = self.embed_img(tmpfile, img_attribs=f"id=\'{object_id}\' {options['img_properties']}", bytesIO=True, rezisable=options["rezisable"])
+            plt.close('all')
         else:
-            return f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO PLOTTING FUNCTION<p></div>"
-        
-        if options.get("x_label"): plt.xlabel(options['x_label'])
-        if options.get("title"): plt.title(options['title'])
-        if options.get("y_label"): plt.ylabel(options['y_label'])
-        if options['tight']: fig.tight_layout()
-        
-        plt.show()
-        tmpfile = BytesIO()
-        plt.savefig(tmpfile, format='png')
-        encoded = base64.b64encode(tmpfile.getvalue()).decode('utf-8')
-        html = self.embed_img(tmpfile, img_attribs=f"id=\'{object_id}\' {options['img_properties']}", bytesIO=True, rezisable=options["rezisable"])
-        plt.close('all')
+            self.features['plotly'] = True
+            fig = options['plotting_function'](dataframe, plotters)
+            html = fig.to_html(full_html=False, include_plotlyjs=False)
         return html
 
     def initialize_extracode(self, options):
