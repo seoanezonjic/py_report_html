@@ -1340,7 +1340,7 @@ class Py_report_html:
             temp_file = 'pyvis.txt'
             model, node_names = self.pyvis_network(options, graph, layers, reference_nodes, group_nodes)
         
-        network = base64.b64encode(zlib.compress(json.dumps(model).encode('UTF-8'))).decode('UTF-8')
+        network = self.compress_data(model)
         string = self.renderize_child_template(self.get_internal_template(temp_file), 
             options=options, network=network, count_objects=self.count_objects, node_names=node_names)
         self.count_objects += 1
