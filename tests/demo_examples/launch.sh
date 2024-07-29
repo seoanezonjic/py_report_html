@@ -6,15 +6,16 @@
 
 #mkdir -p ~/tests/py_report_venv
 #python -m venv ~/tests/py_report_venv --system-site-packages
-#source ~/tests/py_report_venv/bin/activate
+source ~/tests/py_report_venv/bin/activate
 #pip install -e ~/dev_py/py_report_html
-#export PATH=~/tests/py_report_venv/bin:$PATH
+export PATH=~/tests/py_report_venv/bin:$PATH
 
 paths=`echo -e "
 file_data/barplot1.txt,
 file_data/barplot2.txt,
 file_data/barplot3.txt,
 file_data/barplot4.txt,
+file_data/barplot5.txt,
 file_data/x_y.txt,
 file_data/x_y_crowded.txt,
 file_data/table1.txt,
@@ -23,7 +24,11 @@ file_data/text_number_tab.txt,
 file_data/pie_uniq.txt,
 file_data/boxplot.txt,
 file_data/boxplot_one_series.txt,
+file_data/boxplot_one_series_nonames.txt,
+file_data/boxplot_two_series_nonames.txt,
 file_data/boxplot_factor.txt,
+file_data/boxplot_3factor.txt,
+file_data/boxplot_wide_2factor.txt,
 file_data/rank_distribution.txt,
 file_data/ridgeline.txt,
 file_data/circular.txt,

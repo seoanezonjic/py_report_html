@@ -292,9 +292,9 @@ class Py_report_html:
     def add_header_row_names(self, data, options):
         if options['add_header_row_names']: # This check if html object needs a default header/row_names or not
             if not options['header']:
-                data.insert(0, [n for n in range(len(data[0]))])
+                data.insert(0, [f'var{n}' for n in range(len(data[0]))])
             if not options['row_names']:
-                for i, row in enumerate(data): row.insert(0, i) 
+                for i, row in enumerate(data): row.insert(0, f'smp{i}') 
 
     #TODO: we have to check about this functionallity. Still needed to test
     def merge_tables(self, options):
@@ -1183,40 +1183,42 @@ class Py_report_html:
         html_string = self.canvasXpress_main(default_options)
         return html_string
 
+    #Wide vs Long format https://en.wikipedia.org/wiki/Wide_and_narrow_data
     def boxplot(self, **user_options):
-        default_options = { 'row_names' : True, 'header' : True }
+        default_options = { 'row_names' : True, 'header' : True, 'format': 'long' }
         default_options.update(user_options)
         def config_chart(options, config, data_structure, object_id):
             samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Boxplot'
-            if default_options.get('group') == None:
-                data_structure['y']['smps'] = None
-                data_structure.update({ 'x' : {'Factor' : samples}})
-            else:
-                #This option is used when your table in shaped in wide format https://en.wikipedia.org/wiki/Wide_and_narrow_data
-                # In this case, variable names are used as series (the levels of the factor or the diferent boxes inside a plot) and the group option (a string) is used to segregate the plots
-                #The function performs a reshape of the data to long format before plotting.
-                if type(default_options.get('group')) is str:
+            series, group, segregate = None, None, None        
+            if default_options['format'] == "wide":
+                self.reshape(samples, variables, x, values)
+                series = 'Factor'
+                if not default_options.get('group'):
+                    pass
+                elif len(default_options.get('group')) == 2:
+                    group, segregate = default_options.get('group')
+                elif len(default_options.get('group')) == 1:
+                    group = default_options['group']
+            elif default_options['format'] == "long":
+                if not default_options.get('group'):
                     self.reshape(samples, variables, x, values)
-                    group = default_options.get('group')
                     series = 'Factor'
-                #This option is used when your table in shaped in long format https://en.wikipedia.org/wiki/Wide_and_narrow_data
-                # In this case a list is provided. If only one variable is provided in the list, it is used as series.
-                # If two variables are provided, the first one is used as series and the second one as group to segregate the plots
-                elif type(default_options.get('group')) is list:
-                    if len(default_options.get('group')) == 2:
-                        series, group = default_options.get('group')
-                    if len(default_options.get('group')) == 1:
-                        series = default_options['group']
-                        group = None
+                elif len(default_options.get('group')) == 3:
+                    series, group, segregate = default_options.get('group')
+                elif len(default_options.get('group')) == 2:
+                    series, group = default_options.get('group')
+                elif len(default_options.get('group')) == 1:
+                    series = default_options['group']
+                    group = None
 
-                if config.get("groupingFactors") == None: # if config is defined, we assume that the user set this property to the value that he/she desires
-                    if group == None:
-                        config["groupingFactors"] = [series]
-                    else:
-                        config["groupingFactors"] = [series, group]
-                if config.get("colorBy") == None: config["colorBy"] = series 
-                if group != None and config.get("segregateSamplesBy") == None: config["segregateSamplesBy"] = [group] 
+            if config.get("colorBy") == None: config["colorBy"] = series 
+            if config.get("groupingFactors") == None: # if config is defined, we assume that the user set this property to the value that he/she desires
+                if group == None: config["groupingFactors"] = [series]
+                else: config["groupingFactors"] = [series, group]
+            if group != None and config.get("segregateSamplesBy") == None: 
+                if segregate: config["segregateSamplesBy"] = [segregate]
+                elif group: config["segregateSamplesBy"] = [group] 
             if options.get('extracode') == None and default_options.get('group') == None:
                 options['extracode'] = f"C{object_id}.groupSamples([\"Factor\"]);"
                 #config["groupingFactors"] = ["Factor"] Both options are valid, altough not the same behaviour is achieved with segregateSamplesBy...
