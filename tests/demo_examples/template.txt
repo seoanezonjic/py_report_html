@@ -420,6 +420,17 @@ ${ plotter.network(id = 'network.txt', method = 'elgrapho', group = 'layer', lay
 	${ plotter.embed_img('file_data/example.png', rezisable=True, img_attribs='height="600px" width="600px"')}
 </div>
 
+${ plotter.prettify_div("<h3> Showing the use of prettify_div method</h3>")}
+<%
+        image = plotter.embed_img('file_data/example.png', img_attribs='width=400 height=400')
+        images2 = image + image
+        images3 = image + image + image
+%>
+${ plotter.prettify_div(images2, user_def_params={"class": "MyDivClass"})}
+${ plotter.prettify_div(images3, user_def_params={}, user_def_style_params={"overflow":"hidden", "display": "flex", "flex-direction": "row", "justify-content": "center"})}
+${ plotter.prettify_div("<h3>prettify_div without no 'user_def_params' or 'user_def_style_params' defined </h3>", user_def_params={}, user_def_style_params={})}
+${ plotter.prettify_div(image, user_def_params={}, user_def_style_params={})}
+
 <br><br><br>
 
 <div style="overflow: hidden">

@@ -1565,6 +1565,14 @@ class Py_report_html:
     def set_header(self):
         self.header_index = True
 
+    ##################################################################################
+    # METHODS FOR BETTER ARRANGEMENT OF ELEMENTS
+    ###################################################################################
+
+    def prettify_div(self, content, user_def_params={}, user_def_style_params={"overflow":"hidden", "display": "flex", "flex-direction": "row", "justify-content": "center"}):
+        user_def_params = " ".join( [ key + "=\""+ value + "\"" for key,value in user_def_params.items()] ) if user_def_params else ""
+        user_def_style_params = "style=\"" + "; ".join([":".join(pair) for pair in user_def_style_params.items()]) + "\"" if user_def_style_params else ""
+        return f"<div {user_def_params} {user_def_style_params}>{content}</div>"
         
     ##################################################################################
     # UTILS
