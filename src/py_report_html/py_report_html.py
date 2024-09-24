@@ -424,7 +424,7 @@ class Py_report_html:
             self.features['dt_tables'] = True
             self.dynamic_js.append(
                 (f"        $(document).ready(function () {{\n"
-                f"            $('#{table_id}').DataTable({{ dom:'Bfrtip', buttons: [{embedded_buttons}] }});\n"
+                f"            $('#{table_id}').DataTable({{ dom:'Bfrtip', buttons: [{embedded_buttons}], order: [] }});\n"
                 f"        }});\n")
             )
 
