@@ -13,6 +13,8 @@ def py_report_html(args=None):
 	parser = argparse.ArgumentParser(description='Perform Network analysis from NetAnalyzer package')
 	parser.add_argument("-t", "--template", dest="template", default= None, 
 						help="Input template file")
+	parser.add_argument("-s", "--subtemplates_paths", dest="subtemplates_paths", default= [], type=parse_paths,
+						help="Comma-separated paths to check for subtemplates that will be use in the main template")	
 	parser.add_argument("-o", "--report", dest="output", default= 'Report', 
 						help="Path to generated html file (without extension)")
 	parser.add_argument("-d", "--data_files", dest="data_files", default= [], type=parse_paths,
@@ -40,6 +42,7 @@ def main_py_report_html(options):
 	if len(options.data_files) == 0: sys.exit('Data files has not been specified')
 	container = load_files(options.data_files)
 
+	Py_report_html.additional_templates.extend(options.subtemplates_paths)
 	report = Py_report_html(container, os.path.basename(options.output), True, options.uncompressed_data, options.menu)
 	report.add_js_files(options.javascript_files)
 	report.add_css_files(options.css_files)
