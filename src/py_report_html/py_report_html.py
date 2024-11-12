@@ -166,7 +166,16 @@ class Py_report_html:
                     'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.20/vfs_fonts.js'
                 ])
 
-        if self.features['mermaid']: self.js_cdn.append("<script type=\"module\"> import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; </script>")
+        if self.features['mermaid']: #https://icones.js.org/ for more icons.
+            icons_packs = [['med', 'https://unpkg.com/@iconify-json/medical-icon@1.2.0/icons.json'],
+                           ['cov', 'https://cdn.jsdelivr.net/npm/@iconify-json/covid/icons.json'],
+                           ['hea', 'https://cdn.jsdelivr.net/npm/@iconify-json/healthicons/icons.json'],
+                           ['aca', 'https://cdn.jsdelivr.net/npm/@iconify-json/academicons/icons.json'],
+                           ['fas', 'https://cdn.jsdelivr.net/npm/@iconify-json/fa6-solid/icons.json'],
+                           ['luc', 'https://cdn.jsdelivr.net/npm/@iconify-json/lucide/icons.json']]
+            
+            load_string = "mermaid.registerIconPacks([" + ",".join([f"{{ name: '{name}', loader: () => fetch('{file}').then((res) => res.json())}}" for name, file in icons_packs]) + "]);"
+            self.js_cdn.append(f"<script type=\"module\"> import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs'; {load_string};</script>")
 
         if self.features['sigma']: # sigma CDN load is HUGE so we read it from file
             with open(self.get_internal_template('sigma_cdn.txt'), 'r') as f:
@@ -489,7 +498,7 @@ class Py_report_html:
         data_array, smp_attr, var_attr = self.get_data(options)
         if len(data_array) > 0:  
             if options.get('func') != None: options['func'](data_array)
-            if data_array == None: raise Exception(f"ID {options['id']} has not data") 
+            if data_array == None: raise Exception(f"ID {options['id']} has no data") 
             samples = data_array.pop(0)
             samples.pop(0) # We obtain sample names with first pop, the second remove vars title
             if len(data_array) > 0:
