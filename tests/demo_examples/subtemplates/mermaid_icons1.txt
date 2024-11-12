@@ -1,0 +1,109 @@
+<style>
+.iconifyNode {
+    width:50px;
+    height:50px;
+    background-repeat: no-repeat; 
+    background-size: contain; 
+    display: flex; 
+    flex-direction: row;  
+    align-items: center; 
+    justify-content: center; 
+    color:white;  
+    border-radius: 25px;
+}
+</style>
+
+<%
+def title(text, em=True, u=True, h=6):
+    final_text = text
+    if em: final_text = f"<em>{final_text}</em>"
+    if u: final_text = f"<u>{final_text}</u>"
+    return f"<h{h}>{final_text}</h{h}>" if h!=0 else final_text
+
+def title_sub(tit, subtitle, H=6):
+    return f"<h{H}>{title(tit, h=0)}<br>{title(subtitle, h=0, u=False)}</h{H}>"
+
+def style_files(nodelist):
+    return "\n".join([f"style {node} color:#000000, stroke:#2962FF, fill:#AFCFEE" for node in nodelist])
+
+
+omims1 = f"""
+            O1@{{ icon: "fas:tag", label: "<h6>OMIM:1</h6>"}}
+            O2@{{ icon: "fas:tag", label: "<h6>OMIM:2</h6>"}}
+            O3@{{ icon: "fas:tag", label: "<h6>OMIM:3</h6>"}}
+"""
+omims2 = f"""
+            O4@{{ icon: "fas:tag", label: "<h6>OMIM:1</h6>"}}
+            O5@{{ icon: "fas:tag", label: "<h6>OMIM:2</h6>"}}
+            O6@{{ icon: "fas:tag", label: "<h6>OMIM:3</h6>"}}
+"""
+pmids1 = f"""
+            P1@{{ icon: "aca:pubmed", label: "<h6>PMID:44</h6>"}}
+            P2@{{ icon: "aca:pubmed", label: "<h6>PMID:23</h6>"}}
+            P3@{{ icon: "aca:pubmed", label: "<h6>PMID:53</h6>"}}
+"""
+diseases=f"""
+            N1@{{ icon: "cov:symptoms-nausea", label: "<h6>Disease 1</h6>"}}
+            N2@{{ icon: "hea:deaf-outline", label: "<h6>Disease 2</h6>"}}
+            N3@{{ icon: "hea:tb", label: "<h6>Disease 3</h6>"}}
+"""
+
+#FOR MERMAID 2
+omims_pmids = omims1 + pmids1 + f"""
+            O1 --> P1
+            O2 --> P2
+            O3 --> P3
+"""
+
+omims_diseases = omims2 + diseases + f"""
+            O4 --> N1
+            O5 --> N2
+            O6 --> N3
+"""
+
+ddp=f"""
+---
+title: Direct Disease Prediction (DDP)
+config:
+    theme: base
+    themeVariables:
+    primaryColor: "#00ff00"
+    securityLevel: 'loose'
+---
+flowchart LR
+    subgraph Gold Standard
+        subgraph A["{title_sub('Queries','(Disease ID - Name)')}"]
+            {omims_diseases}
+        end
+        subgraph B["{title_sub('Diseases evidences','(Disease ID - PMID)')}"]
+            {omims_pmids}
+        end
+    end
+          
+    %%FILES
+    C@{{ shape: doc, label: "{title('Embedded queries')}<br>Disease ID - vector"}}
+    D@{{ shape: doc, label: "{title('Embedded corpus')}<br>PMID - vector"}}
+    %%PROCESSES
+    X@{{ shape: rect, label: "{title('stEngine')}<br>Embedd"}}
+    Y@{{ shape: rect, label: "{title('stEngine')}<br>Calculate<br>similarities"}}
+    
+    A --> X
+    X --> C
+    C -->|"for each disease"| Y
+    D -->|"all the documents"| Y
+    
+    subgraph Results["Textual-based<br>Semantic Similarity<br>Rankings"]
+        %%FILES
+        E@{{ shape: doc, label: "{title('Disease ID - PMID - Similarity')}<br><ol><li><h6>OMIM:3 -- PMID:34 -- 0.89</h6></li><li>OMIM:3 -- PMID:53 -- 0.83</li><li><h6>OMIM:3 -- PMID:67 -- 0.78</h6></li></ol>"}}
+    end
+    Y --> Results
+    B -->|"Get the PMID ranking<br>for the Disease ID"| E
+    
+    %% NODES STYLES
+    {style_files(['A', 'B', 'C', 'D', 'E'])}
+"""
+%>
+
+${ plotter.prettify_div("<h1>Workflow for Direct Disease Prediction (DDP)</h1>")}
+${ plotter.mermaid_chart(ddp)}
+

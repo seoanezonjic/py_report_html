@@ -246,8 +246,11 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
                                 def mod_data(data):
                                         data[1][1] = 1000
                         %>
-                        ${ plotter.line(id= 'barplot1.txt', header = True, func=mod_data ) }
+                        ${ plotter.line(id= 'barplot1.txt', header = True, func=mod_data, transpose=False ) }
                 </td>
+                <td>
+                        ${ plotter.line(id= 'lineplot.txt', fields = [5,2,3,4], smp_attr=[1], header = True, config = {'graphOrientation' : 'vertical'} ) }
+                </td>                
                 <td>
 			${ plotter.stacked(id = 'barplot1.txt', header = True, config = {'graphOrientation' : 'vertical'}, theme="stata") }
                 </td>
@@ -475,3 +478,11 @@ ${ plotter.prettify_div(image, user_def_params={}, user_def_style_params={})}
         ${ plotter.create_autocomplete_box('hpoSearch', ['hola', 'hello', 'halo'], 'go2userNode')}
 	<input id="output" type="text" placeholder="test">
 </div>
+
+
+<h1> Mermaid with icons and renderize_child_template examples </h1>
+<h3> Mermaid with icons example 1 </h3>
+${ plotter.renderize_child_template(plotter.get_internal_template('mermaid_icons1.txt'))}
+
+<h3> Mermaid with icons example 2 </h3>
+${ plotter.renderize_child_template(plotter.get_internal_template('mermaid_icons2.txt'))}
