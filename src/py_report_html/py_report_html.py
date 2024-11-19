@@ -713,9 +713,9 @@ class Py_report_html:
             else:
                 return f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO PLOTTING FUNCTION<p></div>"
             
-            if options.get("x_label"): plt.xlabel(options['x_label'])
-            if options.get("title"): plt.title(options['title'])
-            if options.get("y_label"): plt.ylabel(options['y_label'])
+            if options.get("title"): plt.title(options['title']) 
+            plt.xlabel(options['x_label']) if options.get("x_label") else ax.set(xlabel=None)
+            plt.ylabel(options['y_label']) if options.get("y_label") else ax.set(ylabel=None)
             if options['tight']: fig.tight_layout()
             
             plt.show()
