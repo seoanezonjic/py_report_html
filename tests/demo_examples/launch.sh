@@ -11,11 +11,7 @@ source ~/py_venvs/py_report_venv/bin/activate
 export PATH=~/tests/py_report_venv/bin:$PATH
 
 paths=`echo -e "
-file_data/barplot1.txt,
-file_data/barplot2.txt,
-file_data/barplot3.txt,
-file_data/barplot4.txt,
-file_data/barplot5.txt,
+file_data/barplot*.txt,
 file_data/lineplot.txt,
 file_data/x_y.txt,
 file_data/x_y_crowded.txt,

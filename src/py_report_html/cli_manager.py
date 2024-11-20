@@ -6,7 +6,12 @@ import re
 
 from py_report_html import Py_report_html
 
-def parse_paths(string): return re.sub(r"\s+", '', string).split(',')
+def parse_paths(string): 
+	expanded_paths = []
+	for path in re.sub(r"\s+", '', string).split(','):
+		if '*' in path: expanded_paths.extend(glob.glob(path))
+		else: expanded_paths.append(path)
+	return expanded_paths
 
 def py_report_html(args=None):
 	if args == None: args = sys.argv[1:]
