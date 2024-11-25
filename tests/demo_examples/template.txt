@@ -390,6 +390,17 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
         </tr>
 </table>
 
+
+<%
+	plotter.hash_vars.update({"ref_data" : 5})
+
+	def generate_table(num):
+		return [ [i] for i in range(0,num) ]
+%>
+<h2> GEnerate table data using a custom object </h2>
+
+${ plotter.table(id="ref_data", get_table_meth=generate_table ) }
+
 <div>
 <%
         num=5
