@@ -326,39 +326,41 @@ class Py_report_html:
         smp_attr = None
         var_attr = None
         ids = options['id']
-        if type(ids) is str and ',' in ids: 
-            ids = ids.split(',')  # String syntax
+        if type(ids) is str and ',' in ids: ids = ids.split(',')  # String syntax
         fields = options['fields']
+        get_table_meth = options.get('get_table_meth')
         if type(ids) is list:
             data = self.merge_tables(options) #TODO: we have to check about this functionallity
-        else:   
-            if 'smp_attr' in options and len(options['smp_attr']) > 0:
-                if 'var_attr' in options and len(options['var_attr']) > 0:
-                    smp_attr = self.process_attributes(self.extract_fields(ids, options['smp_attr']), options['var_attr'], aggregated = True)
-                else:
-                    smp_attr = []
-                    for idx in options['smp_attr']:
-                        attr =  self.extract_fields(ids, [idx])
-                        smp_attr.append([item for sublist in attr for item in sublist])
-            else:
-                smp_attr = []
-            if 'var_attr' in options and len(options['var_attr']) > 0: 
-                if 'smp_attr' in options and len(options['smp_attr']) > 0:                
-                    var_attr = self.process_attributes(self.extract_rows(ids, options['var_attr']), options['smp_attr'], aggregated = False)
-                else:
-                    var_attr = []
-                    for idx in options['var_attr']:
-                        attr =  self.extract_rows(ids, [idx])
-                        var_attr.append([item for sublist in attr for item in sublist])
-            else:
-                var_attr = []
-            data = self.extract_fields(ids, options.get('fields'), del_fields = options.get('smp_attr'), del_rows = options.get('var_attr'))
+        else:
+            source_table = self.hash_vars[ids]
+            if get_table_meth != None: source_table = get_table_meth(source_table) # Source_table isn't a table is a custom object so we need a method to build the table
+
+            smp_attr = self.get_table_attr(source_table, options, 'smp_attr', 'var_attr')
+            var_attr = self.get_table_attr(source_table, options, 'var_attr', 'smp_attr')
+            data = self.extract_fields(source_table, options.get('fields'), del_fields = options.get('smp_attr'), del_rows = options.get('var_attr'))
         return data, smp_attr, var_attr
 
-    def extract_fields(self, id, fields, del_fields = [], del_rows = []):
+    def get_table_attr(self, source_table, options, main_attr, supp_attr):
+        if main_attr == 'smp_attr':
+            extract_method = self.extract_fields
+            aggregated = True
+        elif main_attr == 'var_attr':
+            extract_method = self.extract_rows
+            aggregated = False
+        attrs = []
+        if main_attr in options and len(options[main_attr]) > 0:
+            if supp_attr in options and len(options[supp_attr]) > 0:
+                attrs = self.process_attributes(extract_method(source_table, options[main_attr]),
+                    options[supp_attr], aggregated = aggregated)
+            else:
+                for idx in options[main_attr]:
+                    attr = extract_method(source_table, [idx])
+                    attrs.append([item for sublist in attr for item in sublist])
+        return attrs
+
+    def extract_fields(self, table, fields, del_fields = [], del_rows = []):
         data = []
-        
-        for i, row in enumerate(self.hash_vars[id]):
+        for i, row in enumerate(table):
             if del_rows != None and i in del_rows: continue 
             if len(fields) == 0:
                 row = copy.deepcopy(row) # Copy generates a array copy that avoids to modify original objects on data manipulation creating graphs
@@ -375,8 +377,7 @@ class Py_report_html:
         for j in indexes: returned_list.pop(j)
         return returned_list        
 
-    def extract_rows(self, id, rows):
-        table = self.hash_vars[id]
+    def extract_rows(self, table, rows):
         data = [ table[field] for field in rows ]
         return data
 
