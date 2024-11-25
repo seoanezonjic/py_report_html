@@ -663,7 +663,9 @@ class Py_report_html:
             'tight': False,
             'img_properties': None,
             'rezisable': False,
-            'dynamic': False
+            'dynamic': False,
+            'x_label': '',
+            'y_label': ''
         }
         options.update(user_options)
         measures_to_inches = {'pixels': 1/options["dpi"], 'inches': 1, "cm": 0.3937}
@@ -713,9 +715,9 @@ class Py_report_html:
             else:
                 return f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO PLOTTING FUNCTION<p></div>"
             
-            if options.get("title"): plt.title(options['title']) 
-            plt.xlabel(options['x_label']) if options.get("x_label") else ax.set(xlabel=None)
-            plt.ylabel(options['y_label']) if options.get("y_label") else ax.set(ylabel=None)
+            if options.get("title"): plt.title(options['title'])
+            if options["x_label"] != None: plt.xlabel(options['x_label'])
+            if options["y_label"] != None: plt.ylabel(options['y_label'])
             if options['tight']: fig.tight_layout()
             
             plt.show()
