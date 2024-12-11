@@ -665,8 +665,8 @@ class Py_report_html:
             'img_properties': None,
             'rezisable': False,
             'dynamic': False,
-            'x_label': '',
-            'y_label': ''
+            'x_label': None,
+            'y_label': None
         }
         options.update(user_options)
         measures_to_inches = {'pixels': 1/options["dpi"], 'inches': 1, "cm": 0.3937}
