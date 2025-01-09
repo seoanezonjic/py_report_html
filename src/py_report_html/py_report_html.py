@@ -1559,16 +1559,11 @@ class Py_report_html:
                 self.headers = [["top_skip", "Main", max_level]] + [[t_id, text, level] for t_id, text, level in self.headers if level == max_level]
 
             index += f"<div {div_id} >\n"            
-            last_level = 0
+            contents, levels = [], []
             for t_id, text, level in self.headers:
-                if level > last_level: index += "<ul>\n"
-                if level < last_level: 
-                    diff = last_level - level
-                    for i in range(diff): index += "</ul>\n"
-                index += f"<li><a href=#{t_id}>{text}</a></li>\n"
-                last_level = level
-            diff = last_level - max_level + 1
-            for i in range(diff): index += "</ul>\n"
+                contents.append(f"<a href=#{t_id}>{text}</a>")
+                levels.append(level)
+            index += self.make_html_list(contents, list_levels=levels)
             index += f"</div>\n"
         else:
             index=''
@@ -1598,3 +1593,41 @@ class Py_report_html:
             color = cm(1.*i/num)  # color will now be an RGBA tuple
             colors.append(color)
         return colors
+    
+    @staticmethod
+    def make_html_list(list_content, list_levels=[], list_types=[], default_type="ul"):
+        triplets_list = Py_report_html._prepare_standard_triplet_list(list_content, list_levels, list_types, default_type)
+        html_list = ""
+
+        max_level = min([level for _, level, _ in triplets_list])
+        last_level = 0
+        stacked_list_types = []
+        for content, level, list_type in triplets_list:
+            if level > last_level:
+                diff = level - last_level
+                for i in range(diff): 
+                    html_list += f"<{list_type}>\n"
+                    stacked_list_types.append(list_type)
+            
+            if level < last_level: 
+                diff = last_level - level
+                for i in range(diff): 
+                    last_list_type = stacked_list_types.pop()
+                    html_list += f"</{last_list_type}>\n"
+            
+            html_list += f"<li>{content}</li>\n"
+            last_level = level
+        
+        diff = last_level - max_level + 1
+        for i in range(diff): 
+            last_list_type = stacked_list_types.pop()
+            html_list += f"</{last_list_type}>\n"
+        
+        return html_list
+    
+    @staticmethod
+    def _prepare_standard_triplet_list(list_content, list_levels=[], list_types=[], default_type="ul"):
+        list_levels = list_levels if list_levels else [1] * len(list_content)
+        list_types = list_types if list_types else [default_type] * len(list_content)
+        final_list = list(zip(list_content, list_levels, list_types))
+        return final_list

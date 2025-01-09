@@ -79,7 +79,9 @@ def user_options():
         "output": os.path.join(OUTPUT_TEST_PATH, "output"),
         "data_files": [os.path.join(DATA_TEST_PATH, "simple_table.txt"), os.path.join(DATA_TEST_PATH, "complex_table.txt")],
         "uncompressed_data": True,
-        "javascript_files": [], "css_files": [], "javascript_cdn": [], "css_cdn": []
+        "javascript_files": [], "css_files": [], "javascript_cdn": [], "css_cdn": [],
+        "subtemplates_paths": [],
+        "menu": "contents_list"
     }
 
 

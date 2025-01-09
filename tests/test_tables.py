@@ -295,33 +295,34 @@ class ReportHtml(unittest.TestCase):
 
     def test_extract_rows(self):
         expected = [["1", "3"], ["5", "10"]]
-        returned = self.html.extract_rows(self.simple_table_id, [0, 5])
+        returned = self.html.extract_rows(self.simple_table, [0, 5])
         self.assertEqual(expected, returned)
 
     def test_extract_fields(self):
         expected = [["true", "true", "false"], #Columns 3, 4, 5, row 2, complex table
-                   ["100", "85", "12"]] #Columns 3, 4, 5, row 5, complex table
+                   ["100",      "85",   "12"]] #Columns 3, 4, 5, row 5, complex table
         expected2 = [["tissue"], ["nerv"], ["pcr"], ["gen1"], ["gen2"], ["gen3"], ["gen4"]] #Column 0, all rows, complex table
         
         #Examples of positive fields selection
-        returned = self.html.extract_fields(self.complex_table_id, fields=[3,4,5], del_rows=[0,1,3,4,6])
-        returned2 = self.html.extract_fields(self.complex_table_id, fields=[0])
+        returned = self.html.extract_fields(self.complex_table, fields=[3,4,5], del_rows=[0,1,3,4,6])
+        returned2 = self.html.extract_fields(self.complex_table, fields=[0])
         self.assertEqual(expected, returned)
         self.assertEqual(expected2, returned2)
 
         #Examples of negative fields selection
-        returned = self.html.extract_fields(self.complex_table_id, fields=[], del_fields=[0,1,2], del_rows=[0,1,3,4,6])
-        returned2 = self.html.extract_fields(self.complex_table_id, fields=[], del_fields=[1,2,3,4,5])
+        returned = self.html.extract_fields(self.complex_table, fields=[], del_fields=[0,1,2], del_rows=[0,1,3,4,6])
+        returned2 = self.html.extract_fields(self.complex_table, fields=[], del_fields=[1,2,3,4,5])
         self.assertEqual(expected, returned)
         self.assertEqual(expected2, returned2)
 
     def test_process_attributes(self):
         options = copy.deepcopy(self.options)
         expected_hashvar = copy.deepcopy(self.html.hash_vars["complex_table"])
-
+        
+        table_to_treat = self.html.hash_vars["complex_table"]
         #The aggregated attribute apply a transpose operation on the lists so dims[a,b] of sample fields becomes dims[b,a]
-        returned_smp_attrs = self.html.process_attributes(self.html.extract_fields(options["id"], options['smp_attr']), options['var_attr'], aggregated = True)
-        returned_var_attrs = self.html.process_attributes(self.html.extract_rows(options["id"], options['var_attr']), options['smp_attr'], aggregated = False)
+        returned_smp_attrs = self.html.process_attributes(self.html.extract_fields(table_to_treat, options['smp_attr']), options['var_attr'], aggregated = True)
+        returned_var_attrs = self.html.process_attributes(self.html.extract_rows(table_to_treat, options['var_attr']), options['smp_attr'], aggregated = False)
                 
         self.assertEqual(self.expected_smp_attrs, returned_smp_attrs)
         self.assertEqual(self.expected_var_attrs, returned_var_attrs)
@@ -374,15 +375,15 @@ class ReportHtml(unittest.TestCase):
                                 ["1","3"], 
                                 ["2","4"]]
         
-        expected_default = [[0, 0, 1],
-                          [1, "1","3"],
-                          [2, "2","4"]]
-        expected_custom_rowname_table = [[0, 1,  2], 
-                                       ["r1", "1","3"], 
-                                       ["r2", "2","4"]]
-        expected_custom_header_table = [[0, "h1", "h2"], 
-                                      [1, "1", "3"], 
-                                      [2, "2", "4"]]
+        expected_default = [['smp0', 'var0', 'var1'],
+                            ["smp1", "1",   "3"],
+                            ["smp2", "2",   "4"]]
+        expected_custom_rowname_table = [['var0', 'var1', 'var2'], 
+                                        ["r1",      "1",    "3"], 
+                                        ["r2",      "2",    "4"]]
+        expected_custom_header_table = [["smp0", "h1", "h2"], 
+                                        ["smp1", "1",   "3"], 
+                                        ["smp2", "2",   "4"]]
 
         user_options = {"add_header_row_names": True, "header": False, "row_names": False, "id":"mock"}
         user_options_with_header_names = {"add_header_row_names": True, "header": True, "row_names": False, "id":"mock"}
@@ -581,7 +582,7 @@ class ReportHtml(unittest.TestCase):
         self.assertEqual([["type", "miRNA", "miRNA", "mRNA", "mRNA"]], smp_attr)
         self.assertEqual(self.expected_data_json["y"]["data"], values)
         self.assertEqual(["liver", "brain", "cerebellum"], samples)
-        self.assertEqual([1,2,3,4], variables)
+        self.assertEqual(['smp1', 'smp2', 'smp3', 'smp4'], variables)
 
     def test_initialize_extracode(self):
         #without options defined
@@ -1316,3 +1317,53 @@ class ReportHtml(unittest.TestCase):
         
         self.assertEqual(obj_result, expected)
         self.assertEqual(cls_result, expected)
+
+
+    def test_make_html_list(self):
+        content = ["A", "B", "C", "D", "E"]
+        levels = [1, 2, 3, 3, 2]
+        types = ["ul", "ol", "ul", "ul", "ol"]
+
+        #Testing when no list_type nor depth level are defined. Default is 'ul' and only depth level 1
+        returned = self.html.make_html_list(content)
+        expected = '<ul>\n<li>A</li>\n<li>B</li>\n<li>C</li>\n<li>D</li>\n<li>E</li>\n</ul>\n'
+        self.assertEqual(returned, expected)
+        #Changing the default list_type to 'ol'
+        returned = self.html.make_html_list(content, default_type="ol")
+        expected = '<ol>\n<li>A</li>\n<li>B</li>\n<li>C</li>\n<li>D</li>\n<li>E</li>\n</ol>\n'
+        self.assertEqual(returned, expected)
+
+        #Testing when no list_type is defined. Default is 'ul'
+        returned = self.html.make_html_list(content, levels)
+        expected = '<ul>\n<li>A</li>\n<ul>\n<li>B</li>\n<ul>\n<li>C</li>\n<li>D</li>\n</ul>\n<li>E</li>\n</ul>\n</ul>\n'
+        self.assertEqual(returned, expected)
+        #Changing the default list_type to 'ol'
+        returned = self.html.make_html_list(content, levels, default_type="ol")
+        expected = '<ol>\n<li>A</li>\n<ol>\n<li>B</li>\n<ol>\n<li>C</li>\n<li>D</li>\n</ol>\n<li>E</li>\n</ol>\n</ol>\n'
+        self.assertEqual(returned, expected)
+
+        #Testing when depth level and list type are defined for each element
+        returned = self.html.make_html_list(content, levels, types)
+        expected = '<ul>\n<li>A</li>\n<ol>\n<li>B</li>\n<ul>\n<li>C</li>\n<li>D</li>\n</ul>\n<li>E</li>\n</ol>\n</ul>\n'
+        self.assertEqual(returned, expected)
+
+
+    def test_prepare_standard_triplet_list(self):
+        content = ["A", "B"]
+        levels = [1, 2]
+        types = ["ul", "ol"]
+        
+        #Testing when no list_type nor depth level are defined. Default is 'ul' and only depth level 1
+        returned = self.html._prepare_standard_triplet_list(content)
+        expected = [("A", 1, "ul"), ("B", 1, "ul")]
+        self.assertEqual(returned, expected)
+
+        #Testing when no list_type is defined. Default is 'ul'
+        returned = self.html._prepare_standard_triplet_list(content, levels)
+        expected = [("A", 1, "ul"), ("B", 2, "ul")]
+        self.assertEqual(returned, expected)
+
+        #Testing when depth level and list type are defined for each element
+        returned = self.html._prepare_standard_triplet_list(content, levels, types)
+        expected = [("A", 1, "ul"), ("B", 2, "ol")]
+        self.assertEqual(returned, expected)
