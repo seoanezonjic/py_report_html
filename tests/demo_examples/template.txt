@@ -362,6 +362,7 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
                 </td>
                 <td>
                         ${ plotter.heatmap(id = 'hap_sample', header = True, row_names = True ) }
+                        ${ plotter.heatmap(id = 'hap_sample', header = True, row_names = True, extra_data={'id': 'hap_sample', 'header': True, 'row_names':  True} ) }                        
                 </td>
 		<td>
                         ${ plotter.scatterbubble2D(id = 'haplotipe_array', header = True, row_names = False, upper_limit = 70, lower_limit = 4, ranges = 80,

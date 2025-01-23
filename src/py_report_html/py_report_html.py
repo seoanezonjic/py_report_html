@@ -553,7 +553,6 @@ class Py_report_html:
             'var_attr': [],
             'segregate': [],
             'show_factors': [],
-            'data_format': 'one_axis',
             'responsive': True,
             'height': '600px',
             'width': '600px',
@@ -1194,7 +1193,29 @@ class Py_report_html:
     def heatmap(self, **user_options):
         def config_chart(options, config, data_structure, object_id):
             samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
-            config['graphType'] = 'Heatmap' 
+            config['graphType'] = 'Heatmap'
+            extra_data = options.get('extra_data')
+            if extra_data != None:
+                extra_opts = {
+                    'id': None,
+                    'func': None,
+                    'fields': [],
+                    'smp_attr': [],
+                    'var_attr': [],
+                    'segregate': [],
+                    'show_factors': [],
+                    'header': False,
+                    'row_names': False,
+                    'add_header_row_names': True,
+                    'transpose': True
+                }
+                extra_opts.update(extra_data)
+                values2, _, _, _, _ = self.get_data_for_plot(extra_opts)
+                data_structure['y']['data2'] = values2
+                config["guidesShow"] = True
+                config["heatmapIndicatorPosition"] = "top"
+                config["sizeBy"] = "Size"
+                config["sizeByData"] = "data2"
         default_options = { 'row_names' : True, 'config_chart' : config_chart }
         default_options.update(user_options)
         html_string = self.canvasXpress_main(default_options)
