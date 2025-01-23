@@ -263,6 +263,7 @@ class Py_report_html:
     # DATA MANIPULATION METHODS
     #-------------------------------------------------------------------------------------  
     def get_data(self, options):
+        if options.get('sanity_check'): self.check_dimensions(self.hash_vars[options['id']])
         data, smp_attr, var_attr = self.extract_data(options)
         if len(data) > 0:
             if self.data_from_files: # If data on container is loaded using html_report as lib, we don't care about data format
@@ -270,6 +271,7 @@ class Py_report_html:
                 rows = len(data)
                 cols = len(data[0])
                 text = options.get('text')
+                if options.get('prefill'): self.fill(data, options['prefill'])
                 if text == None or not text: #TODO: ask Pedro about the text option
                     for r in range(rows):
                         for c in range(cols):
@@ -416,7 +418,8 @@ class Py_report_html:
             'func': None,
             'renamed_samples': [],
             'renamed_variables': [],
-            'custom_buttons': ['copyHtml5', 'excelHtml5', 'csvHtml5']
+            'custom_buttons': ['copyHtml5', 'excelHtml5', 'csvHtml5'],
+            'prefill': None,
         }
         options.update(user_options)
         
@@ -541,6 +544,7 @@ class Py_report_html:
         # Handle arguments
         #------------------------------------------
         options = {
+            'sanity_check': False,
             'id': None,
             'func': None,
             'config_chart': None,
@@ -566,7 +570,8 @@ class Py_report_html:
             'renamed_variables': [],
             'alpha': 1,
             'theme': 'cx',
-            'color_scheme': 'CanvasXpress'
+            'color_scheme': 'CanvasXpress',
+            'prefill': None
         }
         options.update(user_options)
         config = {
@@ -1584,6 +1589,20 @@ class Py_report_html:
     ##################################################################################
     # UTILS
     ###################################################################################
+
+    def check_dimensions(self, data):
+        all_row_items = []
+        for row in data:
+            all_row_items.append(len(row))
+        most_common_value = max(all_row_items, key=all_row_items.count)
+        different_sizes = list(filter(lambda value: value != most_common_value, all_row_items))
+        if len(different_sizes) == 0: print("Every row has the same number of items")
+        else: print(f"Not every row has the same number of items. The most common row length was {most_common_value} and conflicted rows had {different_sizes} items")
+
+    def fill(self, data, filler_func):
+        for row_idx in range(len(data)):
+            for col_idx in range(len(data[row_idx])):
+                data[row_idx][col_idx] = filler_func(data[row_idx][col_idx])
 
     @staticmethod
     def get_color_palette(num, cmap="gist_rainbow"):
