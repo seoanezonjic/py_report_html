@@ -1,9 +1,6 @@
-import argparse
-import sys
-import os
-import glob
-import re
+import argparse, sys, os, glob, re
 
+from py_cmdtabs import CmdTabs
 from py_report_html import Py_report_html
 
 def parse_paths(string): 
@@ -45,7 +42,7 @@ def main_py_report_html(options):
 	template = open(options.template).read()
 
 	if len(options.data_files) == 0: sys.exit('Data files has not been specified')
-	container = load_files(options.data_files)
+	container = CmdTabs.load_several_files(options.data_files, dict_keys_mapper=os.path.basename)
 
 	Py_report_html.additional_templates.extend(options.subtemplates_paths)
 	report = Py_report_html(container, os.path.basename(options.output), True, options.uncompressed_data, options.menu)
@@ -55,17 +52,3 @@ def main_py_report_html(options):
 	report.add_css_cdn(options.css_cdn)
 	report.build(template)
 	report.write(options.output + '.html')
-
-def load_files(data_files):
-	container = {}
-	for file_path in data_files:
-		if not os.path.exists(file_path): sys.exit(f"File path {file_path} not exists") 
-		data_id = os.path.basename(file_path)
-		data = parse_tabular_file(file_path)
-		container[data_id] = data
-	return container
-
-def parse_tabular_file(file_path):
-	with open(file_path) as f:
-		data = [line.rstrip().split("\t") for line in f]
-	return data

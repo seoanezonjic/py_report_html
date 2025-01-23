@@ -4,20 +4,8 @@
 # Load necessary packages
 #########################################################
 
-#import json
-from collections import defaultdict
-from io import BytesIO
-import math
-import random
-import json
-import unittest
-import os
-import re
-import copy
-import networkx as nx
-import matplotlib
-import matplotlib.pyplot as plt
-from py_report_html import py_report_html, parse_paths, main_py_report_html, load_files, parse_tabular_file
+import os, re
+from py_report_html import py_report_html, parse_paths, main_py_report_html
 import pytest
 from argparse import Namespace
 
@@ -84,15 +72,8 @@ def user_options():
         "menu": "contents_list"
     }
 
-
-def test_parse_tabular_file(simple_table, complex_table):
-    assert parse_tabular_file(os.path.join(DATA_TEST_PATH, "simple_table.txt")) == simple_table
-    assert parse_tabular_file(os.path.join(DATA_TEST_PATH, "complex_table.txt")) == complex_table
-
-def test_load_files(simple_table, complex_table):
-    files = [os.path.join(DATA_TEST_PATH, "simple_table.txt"), os.path.join(DATA_TEST_PATH, "complex_table.txt")]
-    container = load_files(files)
-    assert container == {'simple_table.txt': simple_table, 'complex_table.txt': complex_table}
+def test_parse_path(paths):
+    assert False, "Implement test for parse_paths opt parse typer"
 
 def test_main_py_report_html(user_options, simple_table_formatted, complex_table_formatted):
     user_options_namespace = Namespace(**user_options)
