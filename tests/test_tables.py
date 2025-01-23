@@ -1347,6 +1347,12 @@ class ReportHtml(unittest.TestCase):
         expected = '<ul>\n<li>A</li>\n<ol>\n<li>B</li>\n<ul>\n<li>C</li>\n<li>D</li>\n</ul>\n<li>E</li>\n</ol>\n</ul>\n'
         self.assertEqual(returned, expected)
 
+        #EDGE CASE BY AEM
+        content = ["A", "B", "C", "D", "E", "F", "G", "H"]
+        levels = [1, 2, 3, 1, 2, 3, 1, 3]
+        returned = self.html.make_html_list(content, levels)
+        expected = ("<ul>\n<li>A</li>\n<ul>\n<li>B</li>\n<ul>\n<li>C</li>\n</ul>\n</ul>\n<li>D</li>\n<ul>\n<li>E</li>\n<ul>\n"+
+                    "<li>F</li>\n</ul>\n</ul>\n<li>G</li>\n<ul>\n<ul>\n<li>H</li>\n</ul>\n</ul>\n</ul>\n")
 
     def test_prepare_standard_triplet_list(self):
         content = ["A", "B"]
@@ -1367,3 +1373,29 @@ class ReportHtml(unittest.TestCase):
         returned = self.html._prepare_standard_triplet_list(content, levels, types)
         expected = [("A", 1, "ul"), ("B", 2, "ol")]
         self.assertEqual(returned, expected)
+
+    ################################################################################
+    # TESTS FOR MENU, CLICKABLE ITEMS AND HEADER INDEX METHODS
+    ################################################################################
+
+    def test_create_header_index(self):
+        ids =     [ 1,   2,   3,   4,   5 ]
+        texts =   ["a", "b", "c", "d", "e"]
+        hlevels = [ 1,   2,   3,   1,   3 ]
+        headers = [list(sublist) for sublist in zip(ids, texts, hlevels)]
+
+        self.html.header_index = True
+        self.html.headers = headers
+
+        #Testing as contents list
+        self.html.type_index = "contents_list"
+        returned = self.html.create_header_index()
+        expected = ("<h1>Table of contents</h1>\n<div  >\n<ul>\n<li><a href=#1>a</a></li>\n<ul>\n<li><a href=#2>"+
+					   "b</a></li>\n<ul>\n<li><a href=#3>c</a></li>\n</ul>\n</ul>\n<li><a href=#4>d</a></li>\n<ul>\n<ul>\n<li>"+
+					   "<a href=#5>e</a></li>\n</ul>\n</ul>\n</ul>\n</div>\n")
+        self.assertEqual(returned, expected)
+
+        #Testing as menu
+        self.html.type_index = "menu"
+        returned = self.html.create_header_index()
+        expected = ("\n<div id=\"floating-menu\" >\n<ul>\n<li><a href=#1>a</a></li>\n<li><a href=#4>d</a></li>\n</ul>\n</ul>\n</div>\n")
