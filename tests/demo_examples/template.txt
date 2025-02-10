@@ -452,6 +452,10 @@ ${ plotter.prettify_div(image, user_def_params={}, user_def_style_params={})}
         ${ plotter.network(id = 'network.txt', method = 'pyvis', reference_nodes = ["a", "e"], group_nodes= {"g1": ["i", "j"], "g2": ["b", "c"]}) }
 </div>
 
+<div style="overflow: hidden">
+        ${ plotter.network(id = 'network.txt', method = 'sigma2', reference_nodes = ["a", "e"], group_nodes= {"g1": ["i", "j"], "g2": ["b", "c"]}) }
+</div>
+
 <div>
 <%
         graph2=f"""

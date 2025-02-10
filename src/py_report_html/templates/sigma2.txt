@@ -1,0 +1,14 @@
+<div id="container_${count_objects}" style="width: ${options['width']}; height: ${options['height']}; margin: 10px; border:2px solid black; background-color:#E1E1E1">
+</div>
+<script>
+
+	let model_${count_objects} = ${plotter.decompress_code(network)};
+	const graph = new graphology.Graph();
+	graph.import(model_${count_objects});
+	graphologyLibrary.layout.random.assign(graph); // assign initial coordinates to start iterative layout of force atlas2
+	const sensibleSettings = graphologyLibrary.layoutForceAtlas2.inferSettings(graph);
+	graphologyLibrary.layoutForceAtlas2.assign(graph, {iterations: 50, settings: sensibleSettings});
+    // Instantiate sigma.js and render the graph
+    const sigmaInstance = new Sigma(graph, document.getElementById('container_${count_objects}'));
+
+</script>

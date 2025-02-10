@@ -39,7 +39,7 @@ class Py_report_html:
         self.type_index = type_index
         self.features = { 
             'mermaid': False, 'dt_tables': False, 'pdfHtml5': False, 'canvasXpress': False, 'pako': False,
-            'cytoscape': False, 'pyvis': False, 'elgrapho': False, 'sigma': False, 'plotly': False
+            'cytoscape': False, 'pyvis': False, 'elgrapho': False, 'sigma': False, 'sigma2': False, 'plotly': False
         }
         self.js_libraries = []
         self.css_files = []
@@ -204,6 +204,11 @@ class Py_report_html:
         if self.features['canvasXpress']:
             self.js_libraries.append('canvasXpress.min.js')
             self.css_files.append('canvasXpress.css')
+
+        if self.features['sigma2']:
+            self.js_libraries.append("graphology.min.js")
+            self.js_libraries.append("graphology-library.min.js")
+            self.js_libraries.append("sigma.min.js")
 
         self.merge_custom_files()
         for css in self.load_css(self.css_files):
@@ -1397,6 +1402,9 @@ class Py_report_html:
         elif options['method'] == 'sigma':
             temp_file = 'sigma.txt'
             model = self.sigma_network(options, graph, layers, reference_nodes, group_nodes)
+        elif options['method'] == 'sigma2':
+            temp_file = 'sigma2.txt'
+            model = self.sigma2_network(options, graph, layers, reference_nodes, group_nodes)
         elif options['method'] == 'pyvis':
             temp_file = 'pyvis.txt'
             model, node_names = self.pyvis_network(options, graph, layers, reference_nodes, group_nodes)
@@ -1453,6 +1461,16 @@ class Py_report_html:
             model['nodes'].append({'id': nodeID, 'color': get_colors(color), 'x': random.randrange(1000),  'y': random.randrange(1000), 'size': 1})
         for i, e in enumerate(graph.edges): 
             model['edges'].append({'id': i, 'source': e[0], 'target': e[1], 'color': '#202020', 'size': 0.1})
+        return model
+
+    def sigma2_network(self, options, graph, layers, reference_nodes, group_nodes):
+        model = {'nodes': [], 'edges': []} 
+        groups_index, get_colors = self.get_nodes_colors(options, graph, layers, reference_nodes, group_nodes)
+        for nodeID in graph.nodes:
+            color = 1 if nodeID in reference_nodes else groups_index[nodeID]
+            model['nodes'].append({'key': nodeID, 'attributes':{'color': get_colors(color), 'size': 1}})
+        for i, e in enumerate(graph.edges): 
+            model['edges'].append({'source': e[0], 'target': e[1], 'attributes': {'size': 0.1}})
         return model
 
     def pyvis_network(self, options, graph, layers, reference_nodes, group_nodes):
