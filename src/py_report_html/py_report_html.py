@@ -1468,9 +1468,9 @@ class Py_report_html:
         groups_index, get_colors = self.get_nodes_colors(options, graph, layers, reference_nodes, group_nodes)
         for nodeID in graph.nodes:
             color = 1 if nodeID in reference_nodes else groups_index[nodeID]
-            model['nodes'].append({'key': nodeID, 'attributes':{'color': get_colors(color), 'size': 1}})
+            model['nodes'].append({'key': nodeID, 'attributes':{'color': get_colors(color), 'size': 2}})
         for i, e in enumerate(graph.edges): 
-            model['edges'].append({'source': e[0], 'target': e[1], 'attributes': {'size': 0.1}})
+            model['edges'].append({'source': e[0], 'target': e[1], 'attributes': {'size': 0.05}})
         return model
 
     def pyvis_network(self, options, graph, layers, reference_nodes, group_nodes):
