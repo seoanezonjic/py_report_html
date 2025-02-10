@@ -271,7 +271,9 @@ class Py_report_html:
                 rows = len(data)
                 cols = len(data[0])
                 text = options.get('text')
-                if options.get('prefill'): self.fill(data, options['prefill'])
+                if options.get('prefill'): 
+                    print(f"Prefilling data for table {options['id']}")
+                    self.fill(data, options['prefill'])
                 if text == None or not text: #TODO: ask Pedro about the text option
                     for r in range(rows):
                         for c in range(cols):
@@ -660,8 +662,11 @@ class Py_report_html:
             'transpose': False,
             'height': 600,
             'width': 600,
+            'matplot_height': 6,
+            'matplot_width': 6,
             'units': 'pixels' or ["pixels", "inches", "cm"],
             'dpi': 100,
+            'dynamic_units_calc': True,
             'whole': False,
             'raw': False,
             'theme': 'ggplot',
@@ -670,18 +675,20 @@ class Py_report_html:
             'rezisable': False,
             'dynamic': False,
             'x_label': None,
-            'y_label': None
+            'y_label': None,
+            'prefill': None
         }
         options.update(user_options)
-        measures_to_inches = {'pixels': 1/options["dpi"], 'inches': 1, "cm": 0.3937}
-        chosen_matplot_factor = measures_to_inches[options['units']]
-        matplot_height = chosen_matplot_factor * options["height"]
-        matplotlib_width = chosen_matplot_factor * options["width"]
-        inches_to_pixels_factor = options["dpi"]
 
-        if options.get('img_properties') == None: 
-            options['img_properties'] = f"width=\'{int(inches_to_pixels_factor*matplotlib_width)}px\' height=\'{int(inches_to_pixels_factor*matplot_height)}px\'"
-
+        if options['dynamic_units_calc']:
+            matplot_height, matplot_width, inches_to_pixels_factor = self.get_matplotlib_units(options['units'], options["height"], options["width"], options["dpi"])
+            if options.get('img_properties') == None: 
+                options['img_properties'] = f"width=\'{int(inches_to_pixels_factor*matplot_width)}px\' height=\'{int(inches_to_pixels_factor*matplot_height)}px\'"
+        else:
+            matplot_height = options['matplot_height']
+            matplot_width = options['matplot_width']
+            if options.get('img_properties') == None:
+                options['img_properties'] = f' width=\"{options["width"]}\" height=\"{options["height"]}\" '
         
         # Data manipulation
         #------------------------------------------
@@ -709,7 +716,7 @@ class Py_report_html:
         plt.style.use(options["theme"])
 
         if not options["dynamic"]:
-            fig, ax = plt.subplots( figsize=(matplotlib_width, matplot_height), dpi = options['dpi'])
+            fig, ax = plt.subplots( figsize=(matplot_width, matplot_height), dpi = options['dpi'])
 
             if options['plotting_function'] != None:               
                 if options["whole"] == True:
@@ -729,7 +736,8 @@ class Py_report_html:
             tmpfile = BytesIO()
             plt.savefig(tmpfile, format='png')
             encoded = base64.b64encode(tmpfile.getvalue()).decode('utf-8')
-            html = self.embed_img(tmpfile, img_attribs=f"id=\'{object_id}\' {options['img_properties']}", bytesIO=True, rezisable=options["rezisable"])
+            size_in = "css" if options['dynamic_units_calc'] else "html"
+            html = self.embed_img(tmpfile, img_attribs=f"id=\'{object_id}\' {options['img_properties']}", bytesIO=True, rezisable=options["rezisable"], size_in=size_in)
             plt.close('all')
         else:
             self.features['plotly'] = True
@@ -1229,6 +1237,7 @@ class Py_report_html:
             samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Boxplot'
             series, group, segregate = None, None, None        
+            
             if default_options['format'] == "wide":
                 self.reshape(samples, variables, x, values)
                 series = 'Factor'
@@ -1238,6 +1247,7 @@ class Py_report_html:
                     group, segregate = default_options.get('group')
                 elif len(default_options.get('group')) == 1:
                     group = default_options['group']
+            
             elif default_options['format'] == "long":
                 if not default_options.get('group'):
                     self.reshape(samples, variables, x, values)
@@ -1488,11 +1498,17 @@ class Py_report_html:
         if width: width = f"width: {width}{width_unit}; "
         return height, width         
 
-    def embed_img(self, img_file, img_attribs = '', bytesIO = False, rezisable = False):
-        height, width = self.find_height_size_and_units(img_attribs)
-        style = f'style=\"{height}{width}\"' if (height or width) else ''
+    def embed_img(self, img_file, img_attribs = '', bytesIO = False, rezisable = False, size_in="css", height=0, width=0):
         format = "png"
-
+        style = ''
+        if not img_attribs and (height > 0 or width > 0):
+            height = width if height == 0 else height
+            width = height if width == 0 else width
+            img_attribs = f' width=\"{width}\" height=\"{height}\" '
+        if size_in == "css":
+            height, width = self.find_height_size_and_units(img_attribs)
+            style = f'style=\"{height}{width}\"' if (height or width) else ''
+        
         if bytesIO: img_base64 = base64.b64encode(img_file.getvalue()).decode('UTF-8')
         else:
             with open(img_file, 'rb') as f:
@@ -1610,6 +1626,14 @@ class Py_report_html:
     ##################################################################################
     # UTILS
     ###################################################################################
+
+    def get_matplotlib_units(self, source_unit, height, width, dpi):
+        measures_to_inches = {'pixels': 1/dpi, 'inches': 1, "cm": 0.3937}
+        chosen_matplot_factor = measures_to_inches[source_unit]
+        matplot_height = chosen_matplot_factor * height
+        matplot_width = chosen_matplot_factor * width
+        inches_to_pixels_factor = dpi
+        return matplot_height, matplot_width, inches_to_pixels_factor
 
     def check_dimensions(self, data):
         all_row_items = []
