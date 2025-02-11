@@ -739,7 +739,7 @@ class Py_report_html:
             
             plt.show()
             tmpfile = BytesIO()
-            plt.savefig(tmpfile, format='png')
+            plt.savefig(tmpfile, format='png', dpi=options["dpi"])
             encoded = base64.b64encode(tmpfile.getvalue()).decode('utf-8')
             size_in = "css" if options['dynamic_units_calc'] else "html"
             html = self.embed_img(tmpfile, img_attribs=f"id=\'{object_id}\' {options['img_properties']}", bytesIO=True, rezisable=options["rezisable"], size_in=size_in)
