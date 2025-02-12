@@ -1365,6 +1365,7 @@ class Py_report_html:
             'fields': [],
             'height': '600px',
             'width': '600px',
+            'iterations': 50,
             'header': False,
             'row_names': False,
             'text' : True,
@@ -1467,8 +1468,19 @@ class Py_report_html:
         model = {'nodes': [], 'edges': []} 
         groups_index, get_colors = self.get_nodes_colors(options, graph, layers, reference_nodes, group_nodes)
         for nodeID in graph.nodes:
-            color = 1 if nodeID in reference_nodes else groups_index[nodeID]
-            model['nodes'].append({'key': nodeID, 'attributes':{'color': get_colors(color), 'size': 2}})
+            if nodeID in reference_nodes:
+                color = 1
+                size = 8
+                zindex= 3
+            else:
+                color = groups_index[nodeID]
+                if color == 0: # is a non group node
+                    size = 2
+                    zindex= 1
+                else: # is a group node
+                    size = 4
+                    zindex= 2
+            model['nodes'].append({'key': nodeID, 'attributes':{ 'label': nodeID, 'color': get_colors(color), 'size': size, 'zIndex': zindex}})
         for i, e in enumerate(graph.edges): 
             model['edges'].append({'source': e[0], 'target': e[1], 'attributes': {'size': 0.05}})
         return model
