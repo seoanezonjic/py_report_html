@@ -536,16 +536,23 @@ class Py_report_html:
 
     def set_tree(self, options, config):
         tree = self.tree_from_file(options["tree"])
-        if options["treeBy"] == 's':
+        if options["treeBy"] in ['s', 'samples']:
             config['smpDendrogramNewick'] = tree
             #config['samplesClustered'] = True #It seems it is not needed with custom dendrograms, just when you want to use CanvasXpress default dendrogram 
             config['smpDendrogramUseHeight'] = True
             config['smpDendrogramHang'] = False
-        elif options["treeBy"] == 'v':
+        elif options["treeBy"] in ['v', 'variables']:
             config['varDendrogramNewick'] = tree
             #config['variablesClustered'] = True #It seems it is not needed with custom dendrograms, just when you want to use CanvasXpress default dendrogram 
             config['varDendrogramUseHeight'] = True
-            config['varDendrogramHang'] = False            
+            config['varDendrogramHang'] = False
+        elif options["treeBy"] in ['b', 'both']:
+            config['varDendrogramNewick'] = tree
+            config['smpDendrogramNewick'] = tree
+            config['varDendrogramUseHeight'] = True
+            config['smpDendrogramUseHeight'] = True
+            config['varDendrogramHang'] = False
+            config['smpDendrogramHang'] = False          
 
     def canvasXpress_main(self, user_options):
         # Handle arguments
