@@ -1496,13 +1496,26 @@ class Py_report_html:
         model = {'nodes': [], 'edges': []}
         groups_index, get_colors = self.get_nodes_colors(options, graph, layers, reference_nodes, group_nodes)
         node_names = []
-        for nodeID in graph.nodes:
+        shapes = ['dot',  'hexagon', 'square', 'triangle', 'triangleDown', 'diamond', 'star',  'circle', 'ellipse', 'box',]
+
+        for nodeID, attr in graph.nodes(data=True):
             color_group = 1 if nodeID in reference_nodes else groups_index[nodeID]
-            model['nodes'].append({'id': nodeID, 'label': nodeID, 'group': color_group, 'color': get_colors(color_group), 'size': 10, 'shape': 'dot'})
+            node = {'id': nodeID, 'label': nodeID, 'group': color_group, 'color': get_colors(color_group), 'size': 10}
+            if options.get('shape') != None:
+                if options.get('shape') == 'layer':
+                    node['shape'] = shapes[layers.index(attr['layer'])]
+                else:
+                    if len(group_nodes) > 0: 
+                        for i, gr in enumerate(group_nodes.values()):
+                            for gr_node in gr: node['shape'] = i
+            else:
+                node['shape'] = 'dot'
+            if options.get('size') != None: node['size'] = options['size']
+            model['nodes'].append(node)
             node_names.append(nodeID)
 
-        for i, e in enumerate(graph.edges): 
-            model['edges'].append({'from': e[0], 'to': e[1], 'width': 1})
+        for i, e in enumerate(graph.edges(data=True)):
+            model['edges'].append({'from': e[0], 'to': e[1], 'width': e[2]['weight']})
         return model, node_names
 
     ##################################################################################
