@@ -362,7 +362,10 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
                 </td>
                 <td>
                         ${ plotter.heatmap(id = 'hap_sample', header = True, row_names = True ) }
-                        ${ plotter.heatmap(id = 'hap_sample', header = True, row_names = True, extra_data={'id': 'hap_sample', 'header': True, 'row_names':  True} ) }                        
+                        ${ plotter.heatmap(id = 'heatmap_colors.txt', header = False, row_names = False, 
+                                        extra_data={'id': 'heatmap_sizes.txt', 'header': False, 'row_names':  False},
+                                        config = {'sizeLegendTitle': 'Textual Similarity',
+                                                'sizes': [3,11,15,40]} ) }                        
                 </td>
 		<td>
                         ${ plotter.scatterbubble2D(id = 'haplotipe_array', header = True, row_names = False, upper_limit = 70, lower_limit = 4, ranges = 80,
