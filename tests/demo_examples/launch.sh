@@ -6,7 +6,7 @@
 
 #mkdir -p ~/py_venvs/py_report_venv
 #python -m venv ~/py_venvs/py_report_venv --system-site-packages
-source ~/py_venvs/py_report_venv/bin/activate
+#source ~/py_venvs/py_report_venv/bin/activate
 #pip install -e ~/dev_py/py_report_html
 export PATH=~/tests/py_report_venv/bin:$PATH
 
@@ -38,7 +38,9 @@ file_data/network.txt,
 file_data/scatter3dsizeAndColor.txt,
 file_data/boxplot_grid.txt,
 file_data/density_one_serie.txt,
-file_data/heatmap_dendrogram.txt
+file_data/heatmap_dendrogram.txt,
+file_data/heatmap_colors.txt,
+file_data/heatmap_sizes.txt
 " | tr -d [:space:]` 
 
 report_html -t template.txt -d $paths -c file_data/custom_css -j file_data/custom_js -u -s ./subtemplates #-m menu
