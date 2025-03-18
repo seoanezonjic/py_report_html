@@ -362,10 +362,14 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
                 </td>
                 <td>
                         ${ plotter.heatmap(id = 'hap_sample', header = True, row_names = True ) }
-                        ${ plotter.heatmap(id = 'heatmap_colors.txt', header = False, row_names = False, 
+                        ${ plotter.heatmap(id = 'heatmap_colors.txt', header = False, row_names = False, x_label = "-log P value",
                                         extra_data={'id': 'heatmap_sizes.txt', 'header': False, 'row_names':  False},
-                                        config = {'sizeLegendTitle': 'Textual Similarity',
-                                                'sizes': [3,11,15,40]} ) }                        
+                                        inject_smp_attr = {"gen": ["A", "B", "A", "B", "C"], "type":["mRNA","mRNA", "miRNA", "tRNA", "miRNA"]},
+                                        inject_var_attr = {"sample": ["brain", "brain", "liver", "liver", "kidney"], "neural": ["yes", "yes", "no", "no", "no"]},
+                                        config = {'sizeLegendTitle': 'Log2 fold change',
+                                                'sizes': [3,11,15,40],
+                                                "smpOverlays" : ["gen","type"],
+                                                "varOverlays" : ["sample", "-", "neural"]} ) }                        
                 </td>
 		<td>
                         ${ plotter.scatterbubble2D(id = 'haplotipe_array', header = True, row_names = False, upper_limit = 70, lower_limit = 4, ranges = 80,

@@ -522,9 +522,9 @@ class Py_report_html:
     def inject_attributes(self, data_structure, options, slot):
         attributes = {}
         attributes_options = {"x": "inject_smp_attr", "z": "inject_var_attr"}
-        chosed_option = options.get(attributes_options[slot])
-        if chosed_option != None:
-            data_structure[slot].update(chosed_option)
+        chosen_option = options.get(attributes_options[slot])
+        if chosen_option != None:
+            data_structure[slot].update(chosen_option)
 
 
     def tree_from_file(self, file):
