@@ -999,12 +999,14 @@ class Py_report_html:
             if options.get('pointSize') != None:
                 config['sizeBy'] = options['pointSize']
                 sampleIndex = samples.index(options['pointSize'])
+                #sampleIndex = variables.index(options['pointSize']) if options['transpose'] else samples.index(options['pointSize'])
                 #samples.pop(sampleIndex)
                 z[options['pointSize']] = [row[sampleIndex] for row in values]
 
             if options.get('colorScaleBy') != None:
                 config['colorBy'] = options['colorScaleBy']
                 sampleIndex = samples.index(options['colorScaleBy'])
+                #sampleIndex = variables.index(options['colorScaleBy']) if options['transpose'] else samples.index(options['colorScaleBy'])
                 #samples.pop(sampleIndex)
                 z[options['colorScaleBy']] = [row[sampleIndex] for row in values]
 
@@ -1064,12 +1066,14 @@ class Py_report_html:
             if options.get('pointSize') != None:
                 config['sizeBy'] = options['pointSize']
                 sampleIndex = samples.index(options['pointSize'])
+                #sampleIndex = variables.index(options['pointSize']) if options['transpose'] else samples.index(options['pointSize'])
                 #samples.pop(sampleIndex)
                 z[options['pointSize']] = [row[sampleIndex] for row in values]
 
             if options.get('colorScaleBy') != None:
                 config['colorBy'] = options['colorScaleBy']
                 sampleIndex = samples.index(options['colorScaleBy'])
+                #sampleIndex = variables.index(options['colorScaleBy']) if options['transpose'] else samples.index(options['colorScaleBy'])
                 #samples.pop(sampleIndex)
                 z[options['colorScaleBy']] = [row[sampleIndex] for row in values]
 
@@ -1361,6 +1365,46 @@ class Py_report_html:
         html_string = self.canvasXpress_main(default_options) 
 
         return html_string
+    
+    def scatter_polar(self, **user_options):
+        default_options = {"subtype": ["line"]}
+        default_options.update(user_options)
+        def config_chart(options, config, data_structure, object_id):
+            print(data_structure)
+            samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
+            config.update({'graphType': 'Circular', "circularType": "radar", "ringGraphType": ["scatter"], "transpose": True,
+                            "rAxisShow": True, "setMinR": 0, "setMaxR": 6.283185307179586,
+                            'showLegend': True, "showSampleNames": False, "rAxisPercentShow": False,
+                            "setMinY": 0, "setMaxY": 5
+                        })
+
+            if options.get('radialAxis') == None: 
+                config['yAxis'] = [variables[0]]
+            else:
+                config['yAxis'] = [options['radialAxis']]    
+
+            if options.get('circularAxis') == None: 
+                config['rAxis'] = variables[1]
+            else:
+                config['rAxis'] = options['circularAxis']
+
+            #config['setMinY'] = min([val[variables.index(config['yAxis'][0])] for val in values])
+            #config['setMaxY'] = max([val[variables.index(config['yAxis'][0])] for val in values])
+
+            if options.get('pointSize') != None:
+                config['sizeBy'] = options['pointSize']
+                varIndex = variables.index(options['pointSize'])
+                z[options['pointSize']] = [row[varIndex] for row in values]
+
+            if options.get('colorScaleBy') != None:
+                config['colorBy'] = options['colorScaleBy']
+                varIndex = variables.index(options['colorScaleBy'])
+                z[options['colorScaleBy']] = [row[varIndex] for row in values]
+
+        default_options['config_chart'] = config_chart
+        html_string = self.canvasXpress_main(default_options)
+        return html_string
+
 
     #-------------------------------------------------------------------------------------
     # CANVASXPRESS METHODS
