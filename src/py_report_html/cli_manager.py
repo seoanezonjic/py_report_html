@@ -17,8 +17,6 @@ def py_report_html(args=None):
 						help="Input template file")
 	parser.add_argument("-s", "--subtemplates_paths", dest="subtemplates_paths", default= [], type=parse_paths,
 						help="Comma-separated paths to check for subtemplates that will be use in the main template")
-	parser.add_argument("-l", "--lib_templates", dest="lib_templates", default= [], type=parse_paths,
-						help="Comma-separated paths for mako templates acting as libraries or helper modules to be preprend to the main template")	
 	parser.add_argument("-o", "--report", dest="output", default= 'Report', 
 						help="Path to generated html file (without extension)")
 	parser.add_argument("-d", "--data_files", dest="data_files", default= [], type=parse_paths,
@@ -46,14 +44,11 @@ def main_py_report_html(options):
 	if len(options.data_files) == 0: sys.exit('Data files has not been specified')
 	container = CmdTabs.load_several_files(options.data_files, dict_keys_mapper=os.path.basename)
 
-	lib_templates = ""
-	for lib_temp in options.lib_templates: lib_templates += open(lib_temp).read()
-
 	Py_report_html.additional_templates.extend(options.subtemplates_paths)
 	report = Py_report_html(container, os.path.basename(options.output), True, options.uncompressed_data, options.menu)
 	report.add_js_files(options.javascript_files)
 	report.add_css_files(options.css_files)
 	report.add_js_cdn(options.javascript_cdn)
 	report.add_css_cdn(options.css_cdn)
-	report.build(lib_templates+template)
+	report.build(template)
 	report.write(options.output + '.html')
