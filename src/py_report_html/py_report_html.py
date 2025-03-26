@@ -1559,7 +1559,8 @@ class Py_report_html:
             node_names.append(nodeID)
 
         for i, e in enumerate(graph.edges(data=True)):
-            model['edges'].append({'from': e[0], 'to': e[1], 'width': e[2]['weight']})
+            weight = e[2].get('weight', 1)
+            model['edges'].append({'from': e[0], 'to': e[1], 'width': weight})
         return model, node_names
 
     ##################################################################################
