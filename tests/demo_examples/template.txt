@@ -396,6 +396,27 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
                                         )}
                 </td>                
         </tr>
+        <tr>
+                <td>
+                        ${ plotter.scatter_polar(id = 'polar.txt', header=True, row_names=True, transpose=True,
+                                                radialAxis="radius", circularAxis="angles",
+                                                smp_attr = [3,4,5],
+                                                config={
+                                                   "colorBy": "genes", 
+                                                   "sizeBy": "sizes",
+                                                   "colorKey" : {
+                                                                "genes": {
+                                                                        "GEN1": "#FFFF00",
+                                                                        "GEN2": "#00FFFF",
+                                                                        "GEN3": "#0AFFA0",
+                                                                        "GEN4": "#05AFDA"
+                                                                }},
+                                                    "hoverTemplate": """Type of gen: {genes} <br>
+                                                                        Frequency: {alphas} <br>"""
+                                                }
+                                        )}
+                </td>
+        </tr>
 </table>
 
 

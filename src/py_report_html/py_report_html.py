@@ -277,7 +277,6 @@ class Py_report_html:
                 cols = len(data[0])
                 text = options.get('text')
                 if options.get('prefill'): 
-                    print(f"Prefilling data for table {options['id']}")
                     self.fill(data, options['prefill'])
                 if text == None or not text: #TODO: ask Pedro about the text option
                     for r in range(rows):
@@ -582,8 +581,8 @@ class Py_report_html:
             'renamed_samples': [],
             'renamed_variables': [],
             'alpha': 1,
-            'theme': 'cx',
-            'color_scheme': 'CanvasXpress',
+            'theme': 'cx2',
+            #'color_scheme': 'CanvasXpress',
             'prefill': None
         }
         options.update(user_options)
@@ -593,7 +592,7 @@ class Py_report_html:
             'title' : options['title'],
             "objectColorTransparency": options["alpha"],
             "theme": options["theme"],
-            "colorScheme": options["color_scheme"]
+            #"colorScheme": options["color_scheme"]
         }
         if  options.get('tree') != None : self.set_tree(options, config)
 
@@ -1370,12 +1369,11 @@ class Py_report_html:
         default_options = {"subtype": ["line"]}
         default_options.update(user_options)
         def config_chart(options, config, data_structure, object_id):
-            print(data_structure)
             samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config.update({'graphType': 'Circular', "circularType": "radar", "ringGraphType": ["scatter"], "transpose": True,
                             "rAxisShow": True, "setMinR": 0, "setMaxR": 6.283185307179586,
                             'showLegend': True, "showSampleNames": False, "rAxisPercentShow": False,
-                            "setMinY": 0, "setMaxY": 5
+                            "setMinY": 0, #"setMaxY": 5
                         })
 
             if options.get('radialAxis') == None: 

@@ -1,4 +1,4 @@
-smps	radius	angles	sizes	alphas	colors
+smps	radius	angles	sizes	alphas	genes
 smp0	2	0.25	93	0.44	GEN1
 smp1	1	1.07	55	0.5	GEN1
 smp2	5	1.17	57	0.41	GEN1

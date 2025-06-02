@@ -4,11 +4,9 @@
 #### Uncomment the following lines to create a virtual environment and install the package 
 #### if you want to check changes in the package done by yourself
 
-#mkdir -p ~/py_venvs/py_report_venv
-#python -m venv ~/py_venvs/py_report_venv --system-site-packages
-#source ~/py_venvs/py_report_venv/bin/activate
-#pip install -e ~/dev_py/py_report_html
-export PATH=~/tests/py_report_venv/bin:$PATH
+#python -m venv venv --system-site-packages
+#source venv/bin/activate
+#pip install -e ~/dev_py/futures/py_report_html/
 
 paths=`echo -e "
 file_data/barplot*.txt,
@@ -40,7 +38,8 @@ file_data/boxplot_grid.txt,
 file_data/density_one_serie.txt,
 file_data/heatmap_dendrogram.txt,
 file_data/heatmap_colors.txt,
-file_data/heatmap_sizes.txt
+file_data/heatmap_sizes.txt,
+file_data/polar.txt
 " | tr -d [:space:]` 
 
 report_html -t template.txt -d $paths -c file_data/custom_css -j file_data/custom_js -u -s ./subtemplates #-m menu
