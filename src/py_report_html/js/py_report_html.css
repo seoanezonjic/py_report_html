@@ -87,3 +87,15 @@
 #top_skip {
     margin-top: 100px; 
 }
+
+details {
+  display: block;
+}
+
+details::before {
+  display: none;
+}
+
+details summary {
+  display: none;
+}

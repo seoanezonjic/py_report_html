@@ -27,6 +27,16 @@ function hide_show_element(element_id) {
   }
 }
 
+function hide_show_element2(element_id) {
+  var detailsElement = document.getElementById(element_id);
+
+  if (detailsElement.hasAttribute("open")) {
+    detailsElement.removeAttribute("open");
+  } else {
+    detailsElement.setAttribute("open", "");
+  }
+}
+
 function hide_show_element_old(element_id) {
   var x = document.getElementById(element_id);
   if (x.style.display === "none") {
