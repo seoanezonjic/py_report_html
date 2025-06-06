@@ -5,7 +5,11 @@
 	let model_${count_objects} = ${plotter.decompress_code(network)};
 	const graph = new graphology.Graph();
 	graph.import(model_${count_objects});
-	graphologyLibrary.layout.random.assign(graph); // assign initial coordinates to start iterative layout of force atlas2
+	
+	// assign initial coordinates to start iterative layout of force atlas2
+	// graphologyLibrary.layout.random.assign(graph); 
+	// We change to circular initial layout because the parameter to set a fixed seed{rng: Math.random} cannot be given to random method using the assign method. assign is needed to avoid the storage of one copy of the node coordinates
+	graphologyLibrary.layout.circular.assign(graph); 
 	const sensibleSettings = graphologyLibrary.layoutForceAtlas2.inferSettings(graph);
 	graphologyLibrary.layoutForceAtlas2.assign(graph, {iterations: ${options['iterations']}, settings: sensibleSettings});
     // Instantiate sigma.js and render the graph
