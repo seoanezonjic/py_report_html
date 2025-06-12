@@ -1658,14 +1658,14 @@ class Py_report_html:
     def create_title(self, text, id=None, hlevel=1, indexable=True, clickable=False, t_id=None, clickable_text = '(Click me)'):
         if indexable: self.headers.append([id, text, hlevel])
         if clickable:
-            header = f"<h{hlevel} id=\"{id}\" class=\"py_accordion\" onclick=\"hide_show_element2('{t_id}')\">{text} {clickable_text}</h{hlevel}>"
+            header = f"<h{hlevel} id=\"{id}\" class=\"py_accordion\" onclick=\"hide_show_element('{t_id}')\">{text} {clickable_text}</h{hlevel}>"
         else:
             header = f"<h{hlevel} id=\"{id}\">{text}</h{hlevel}>"
         return header
 
     def create_collapsable_container(self, id, html_code, display='hidden'): #display ='visible'        
         visibility = "" if display == "hidden" else "open=''"
-        return f"<details {visibility} id=\"{id}\">\n<summary style=\"display: none;\"></summary>{html_code}\n</details>"
+        return f"<details class='rep_html_det' {visibility} id=\"{id}\">\n<summary style=\"display: none;\"></summary>{html_code}\n</details>"
 
     def create_autocomplete_box(self, box_id, item_list, js_function_name, button_text = 'Search'):
         string = (
