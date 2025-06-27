@@ -136,16 +136,14 @@ class ReportHtml(unittest.TestCase):
             "x_label": "x_axis", #Testing plots layout
             'title': 'Title',
             'alpha': 1,
-            'theme': 'cx',
-            'color_scheme': 'CanvasXpress'
+            'theme': 'cx2'
             }
         self.config = {
             'toolbarType' : 'under',
             'xAxisTitle' : self.options['x_label'],
             'title' : self.options['title'],
             "objectColorTransparency": self.options["alpha"],
-            "theme": self.options["theme"],
-            "colorScheme": self.options["color_scheme"]
+            "theme": self.options["theme"]
         }
         
         ### GRAPH/NETWORK RELATED DATA FOR TESTING ###
