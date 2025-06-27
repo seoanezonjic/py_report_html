@@ -185,7 +185,7 @@ class Py_report_html:
             self.js_cdn.append("https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js")
             self.css_cdn.append("https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css")
 
-        if self.features['plotly']: self.js_cdn.append("https://cdn.plot.ly/plotly-2.18.0.min.js")
+        if self.features['plotly']: self.js_cdn.append("https://cdn.plot.ly/plotly-3.0.1.min.js")
 
         self.merge_custom_cdn()
         self.all_report += self.get_css_cdn()
@@ -687,7 +687,8 @@ class Py_report_html:
             'dynamic': False,
             'x_label': None,
             'y_label': None,
-            'prefill': None
+            'prefill': None,
+            'plotly_conf': {'toImageButtonOptions': {'format': 'svg', 'height': 1800, 'width': 2400, 'scale': 5}},
         }
         options.update(user_options)
 
@@ -753,7 +754,7 @@ class Py_report_html:
         else:
             self.features['plotly'] = True
             fig = options['plotting_function'](dataframe, plotters)
-            html = fig.to_html(full_html=False, include_plotlyjs=False)
+            html = fig.to_html(full_html=False, include_plotlyjs=False, config=options['plotly_conf'])
         return html
 
     def initialize_extracode(self, options):
