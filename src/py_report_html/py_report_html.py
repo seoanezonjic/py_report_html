@@ -688,7 +688,7 @@ class Py_report_html:
             'x_label': None,
             'y_label': None,
             'prefill': None,
-            'plotly_conf': {'toImageButtonOptions': {'format': 'svg', 'height': 1800, 'width': 2400, 'scale': 5}},
+            'config': {},
         }
         options.update(user_options)
 
@@ -754,7 +754,7 @@ class Py_report_html:
         else:
             self.features['plotly'] = True
             fig = options['plotting_function'](dataframe, plotters)
-            html = fig.to_html(full_html=False, include_plotlyjs=False, config=options['plotly_conf'])
+            html = fig.to_html(full_html=False, include_plotlyjs=False, config=options['config'])
         return html
 
     def initialize_extracode(self, options):
@@ -1623,12 +1623,15 @@ class Py_report_html:
         pdf_string = f"<embed {pdf_attribs} src=\"data:application/pdf;base64,{pdf_base64}\" type=\"application/pdf\"></embed>"
         return pdf_string
 
-    def embed_html(self, html_file, html_attribs = None):
-        #with open(html_file, 'rb') as f:
-        #        html_base64 = base64.b64encode(f.read()).decode('UTF-8')
-        #html_string = f"<embed {html_attribs} src=\"data:text/html;base64,{html_base64}\" type=\"text/html\" height=\"100%\" width=\"100%\" ></embed>"
-        html_string = f"<iframe {html_attribs} src=\"{html_file}\" height=\"100%\" width=\"100%\"></iframe>"
-        return html_string
+    def embed_html(self, html_file, width=600, height=600, border=True, html_attribs = ""):
+        if not border and "style" in html_attribs: 
+            html_attribs.replace("style=\"", "style=\"border:none;") 
+        elif not border: 
+            html_attribs += " style=\"border:none;\""
+            
+        html_content = open(html_file, 'r').read().replace("\"", "'") # Replace double quotes with single quotes to avoid problems with HTML attributes
+        iframed_html = f"<iframe width={width} height={height} {html_attribs} srcdoc=\"{html_content}\"></iframe>"
+        return iframed_html
 
     #################################################################################
     # FIGURE AND TABLE NUMBERING
@@ -1656,10 +1659,11 @@ class Py_report_html:
     #################################################################################
     # CLICKABLE ELEMENTS
     ###################################################################################
-    def create_title(self, text, id=None, hlevel=1, indexable=True, clickable=False, t_id=None, clickable_text = '(Click me)'):
+    def create_title(self, text, id=None, hlevel=1, indexable=True, clickable=False, t_id=None, clickable_text = '(Click me)', style=""):
+        if style: style = f"style=\"{style}\""
         if indexable: self.headers.append([id, text, hlevel])
         if clickable:
-            header = f"<h{hlevel} id=\"{id}\" class=\"py_accordion\" onclick=\"hide_show_element('{t_id}')\">{text} {clickable_text}</h{hlevel}>"
+            header = f"<h{hlevel} id=\"{id}\" {style} class=\"py_accordion\" onclick=\"hide_show_element('{t_id}')\">{text} {clickable_text}</h{hlevel}>"
         else:
             header = f"<h{hlevel} id=\"{id}\">{text}</h{hlevel}>"
         return header
