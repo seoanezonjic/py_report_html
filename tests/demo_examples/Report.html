@@ -8235,6 +8235,13 @@ autocomplete(document.getElementById("hpoSearch"), ["hola", "hello", "halo"]);
 </ul>
 </div>
 
+ <!-- I had to add this because CanvasXpress is injecting by using javascript an style to the body tag onload, causing a narrowed document -->
+ <script>
+    window.addEventListener('load', function() {
+      document.body.removeAttribute('style');
+    });
+</script>
+
 
 <h3> There are plenty of themes and color schemes than can be uses with options["theme"] and options["color_scheme"] </h3>
 
@@ -8866,7 +8873,7 @@ autocomplete(document.getElementById("hpoSearch"), ["hola", "hello", "halo"]);
 <div id="container_56" style="width: 600px; height: 600px; margin: 10px; border:2px solid black; background-color:#E1E1E1">
 </div>
 <script>
-	let model_56 = {"nodes": [{"id": "a", "color": "#ff7f0e", "x": 560, "y": 271, "size": 1}, {"id": "b", "color": "#1f77b4", "x": 637, "y": 28, "size": 1}, {"id": "c", "color": "#1f77b4", "x": 944, "y": 512, "size": 1}, {"id": "d", "color": "#1f77b4", "x": 159, "y": 190, "size": 1}, {"id": "e", "color": "#ff7f0e", "x": 712, "y": 807, "size": 1}, {"id": "i", "color": "#1f77b4", "x": 149, "y": 637, "size": 1}, {"id": "j", "color": "#1f77b4", "x": 279, "y": 284, "size": 1}], "edges": [{"id": 0, "source": "a", "target": "b", "color": "#202020", "size": 0.1}, {"id": 1, "source": "a", "target": "c", "color": "#202020", "size": 0.1}, {"id": 2, "source": "b", "target": "c", "color": "#202020", "size": 0.1}, {"id": 3, "source": "c", "target": "d", "color": "#202020", "size": 0.1}, {"id": 4, "source": "d", "target": "e", "color": "#202020", "size": 0.1}, {"id": 5, "source": "e", "target": "i", "color": "#202020", "size": 0.1}, {"id": 6, "source": "i", "target": "j", "color": "#202020", "size": 0.1}]};
+	let model_56 = {"nodes": [{"id": "a", "color": "#ff7f0e", "x": 138, "y": 905, "size": 1}, {"id": "b", "color": "#1f77b4", "x": 916, "y": 51, "size": 1}, {"id": "c", "color": "#1f77b4", "x": 714, "y": 988, "size": 1}, {"id": "d", "color": "#1f77b4", "x": 665, "y": 576, "size": 1}, {"id": "e", "color": "#ff7f0e", "x": 747, "y": 703, "size": 1}, {"id": "i", "color": "#1f77b4", "x": 588, "y": 656, "size": 1}, {"id": "j", "color": "#1f77b4", "x": 303, "y": 550, "size": 1}], "edges": [{"id": 0, "source": "a", "target": "b", "color": "#202020", "size": 0.1}, {"id": 1, "source": "a", "target": "c", "color": "#202020", "size": 0.1}, {"id": 2, "source": "b", "target": "c", "color": "#202020", "size": 0.1}, {"id": 3, "source": "c", "target": "d", "color": "#202020", "size": 0.1}, {"id": 4, "source": "d", "target": "e", "color": "#202020", "size": 0.1}, {"id": 5, "source": "e", "target": "i", "color": "#202020", "size": 0.1}, {"id": 6, "source": "i", "target": "j", "color": "#202020", "size": 0.1}]};
 
 	 // Initialise sigma:
 	var s = new sigma(
@@ -9080,9 +9087,11 @@ autocomplete(document.getElementById("hpoSearch"), ["hola", "hello", "halo"]);
 
 
 
-<h3> Iframe embedded html </h3>
+<h3> Iframe embedded html (required first argument: path to the html file to embed (not loaded in hash_vars))</h3>
+<div  style="overflow:hidden; display:flex; flex-direction:row; justify-content:center"><code> plotter.embed_html('hello.html') </code></div>
 <iframe width=600 height=600  srcdoc="<html><body>Hello, <b>world</b>.</body></html>"></iframe>
-<iframe width=600 height=600 style="width: 100vw; height: 100vh;" srcdoc="<HTML>
+<div  style="overflow:hidden; display:flex; flex-direction:row; justify-content:center"><code> plotter.embed_html('html_to_embed.html', border=False, html_attribs='style="width: 100vw; height: 100vh;"') </code></div>
+<iframe width=600 height=600 style="border:none;width: 100vw; height: 100vh;" srcdoc="<HTML>
 	<title>html_to_embed</title>
 <head>
 <meta charset='utf-8'>
@@ -16888,8 +16897,9 @@ Copyright (c) 2018 Christian Pucci
 </script>
 </head>
 <body>
-
+<div>
 <canvas  id='obj_0_' width='600px' height='600px' aspectRatio='1:1' responsive='true'></canvas>
+</div>
 </body>
 
 </HTML>"></iframe>

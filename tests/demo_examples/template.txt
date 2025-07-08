@@ -1,3 +1,10 @@
+ <!-- I had to add this because CanvasXpress is injecting by using javascript an style to the body tag onload, causing a narrowed document -->
+ <script>
+    window.addEventListener('load', function() {
+      document.body.removeAttribute('style');
+    });
+</script>
+
 <% plotter.set_header() %>
 <h3> There are plenty of themes and color schemes than can be uses with options["theme"] and options["color_scheme"] </h3>
 
@@ -527,9 +534,11 @@ ${ plotter.prettify_div(image, user_def_params={}, user_def_style_params={})}
 
 
 
-<h3> Iframe embedded html </h3>
+<h3> Iframe embedded html (required first argument: path to the html file to embed (not loaded in hash_vars))</h3>
+${plotter.prettify_div("<code> plotter.embed_html('hello.html') </code>")}
 ${ plotter.embed_html('hello.html')}
-${ plotter.embed_html('html_to_embed.html', border=True, html_attribs='style="width: 100vw; height: 100vh;"') }
+${plotter.prettify_div("""<code> plotter.embed_html('html_to_embed.html', border=False, html_attribs='style="width: 100vw; height: 100vh;"') </code>""")}
+${ plotter.embed_html('html_to_embed.html', border=False, html_attribs='style="width: 100vw; height: 100vh;"') }
 
 <h1> Mermaid with icons and renderize_child_template examples </h1>
 <h3> Mermaid with icons example 1 </h3>

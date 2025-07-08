@@ -1625,10 +1625,10 @@ class Py_report_html:
 
     def embed_html(self, html_file, width=600, height=600, border=True, html_attribs = ""):
         if not border and "style" in html_attribs: 
-            html_attribs.replace("style=\"", "style=\"border:none;") 
+            html_attribs = html_attribs.replace("style=\"", "style=\"border:none;")
         elif not border: 
             html_attribs += " style=\"border:none;\""
-            
+
         html_content = open(html_file, 'r').read().replace("\"", "'") # Replace double quotes with single quotes to avoid problems with HTML attributes
         iframed_html = f"<iframe width={width} height={height} {html_attribs} srcdoc=\"{html_content}\"></iframe>"
         return iframed_html
