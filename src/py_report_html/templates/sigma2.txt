@@ -1,4 +1,11 @@
-<div id="container_${count_objects}" style="width: ${options['width']}; height: ${options['height']}; margin: 10px; border:2px solid black;">
+<%
+	if options.get('style') == 'safe':
+		background = 'background-color:black;'
+	else:
+		background = ''
+
+%>
+<div id="container_${count_objects}" style="width: ${options['width']}; height: ${options['height']}; margin: 10px; border:2px solid black; ${background}">
 </div>
 <script>
 
@@ -11,6 +18,9 @@
 	// We change to circular initial layout because the parameter to set a fixed seed{rng: Math.random} cannot be given to random method using the assign method. assign is needed to avoid the storage of one copy of the node coordinates
 	graphologyLibrary.layout.circular.assign(graph); 
 	const sensibleSettings = graphologyLibrary.layoutForceAtlas2.inferSettings(graph);
+	//sensibleSettings.scalingRatio *= 100
+	//sensibleSettings.strongGravityMode = false
+	console.log(sensibleSettings);
 	graphologyLibrary.layoutForceAtlas2.assign(graph, {iterations: ${options['iterations']}, settings: sensibleSettings});
     // Instantiate sigma.js and render the graph
     const sigmaInstance = new Sigma(graph, 

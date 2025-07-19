@@ -1519,20 +1519,29 @@ class Py_report_html:
         groups_index, get_colors = self.get_nodes_colors(options, graph, layers, reference_nodes, group_nodes)
         for nodeID in graph.nodes:
             if nodeID in reference_nodes:
-                color = 1
+                color_ind = 1
                 size = 8
                 zindex= 3
             else:
-                color = groups_index[nodeID]
-                if color == 0: # is a non group node
+                color_ind = groups_index[nodeID]
+                if color_ind == 0: # is a non group node
+                    if options.get('style') == 'safe': color_ind = '#FFFFFF'
                     size = 2
                     zindex= 1
                 else: # is a group node
                     size = 4
                     zindex= 2
-            model['nodes'].append({'key': nodeID, 'attributes':{ 'label': nodeID, 'color': get_colors(color), 'size': size, 'zIndex': zindex}})
+            if isinstance(color_ind, int):
+                hex_color = get_colors(color_ind)
+            else: # For some reason, the color is set in hex (string) so there is no need to find the color code
+                hex_color = color_ind
+            model['nodes'].append({'key': nodeID, 'attributes':{ 'label': nodeID, 'color': hex_color, 'size': size, 'zIndex': zindex}})
+        if options.get('style') == 'safe':
+            edge_attributes = {'size': 0.05, 'color': '#FFFFFF'}
+        else:
+            edge_attributes = {'size': 0.05}
         for i, e in enumerate(graph.edges): 
-            model['edges'].append({'source': e[0], 'target': e[1], 'attributes': {'size': 0.05}})
+            model['edges'].append({'source': e[0], 'target': e[1], 'attributes': edge_attributes})
         return model
 
     def pyvis_network(self, options, graph, layers, reference_nodes, group_nodes):
