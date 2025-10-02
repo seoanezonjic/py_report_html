@@ -42,7 +42,7 @@ def main_py_report_html(options):
 	template = open(options.template).read()
 
 	if len(options.data_files) == 0: sys.exit('Data files has not been specified')
-	container = CmdTabs.load_several_files(options.data_files, dict_keys_mapper=os.path.basename)
+	container = CmdTabs.load_several_files(options.data_files, dict_keys_mapper=os.path.basename, autodetect_compression=True)
 
 	Py_report_html.additional_templates.extend(options.subtemplates_paths)
 	report = Py_report_html(container, os.path.basename(options.output), True, options.uncompressed_data, options.menu)
