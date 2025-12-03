@@ -158,6 +158,37 @@ def plot_coverage(data, plotter_list):
 
 <div style="width: 100vw; height: 20vh; background-color: grey"></div>
 <div>
+<h1>Using functions with additional arguments and keyword arguments</h1>
+
+<% 
+import matplotlib.pyplot as plt
+def scatter_with_labels(data, plotter_list, **kwargs):
+    ax =  plotter_list["sns"].scatterplot(data=data, x='liver', y='brain', hue='pathway')
+    plt.xlabel(kwargs["x_label"])
+    plt.ylabel(kwargs["y_label"])
+    return ax
+
+text_to_show = """
+def scatter_with_labels(data, plotter_list, **kwargs): <br>
+&nbsp;&nbsp;&nbsp;&nbsp;ax =  plotter_list["sns"].scatterplot(data=data, x='liver', y='brain', hue='pathway', ) <br>
+&nbsp;&nbsp;&nbsp;&nbsp;plt.xlabel(kwargs["x_label"]) <br>
+&nbsp;&nbsp;&nbsp;&nbsp;plt.ylabel(kwargs["y_label"]) <br>
+&nbsp;&nbsp;&nbsp;&nbsp;return ax
+"""
+%>
+
+${text_to_show}
+<br><br>
+${"""plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, smp_attr=[4], plotting_function= scatter_with_labels, kwargs={"x_label": "Liver Expression", "y_label": "Brain Expression"} )"""}
+
+${ plotter.static_plot_main( id="boxplot_factor_long.txt", header=True, row_names=True, smp_attr=[4], plotting_function= scatter_with_labels, kwargs={"x_label": "Liver Expression", "y_label": "Brain Expression"} ) }
+
+</div>
+
+
+
+<div style="width: 100vw; height: 20vh; background-color: grey"></div>
+<div>
 <h1>Playing with size images</h1>
 <h3>All default parameters</h3>
 

@@ -689,6 +689,8 @@ class Py_report_html:
             'y_label': None,
             'prefill': None,
             'config': {},
+            'args': [],
+            'kwargs': {},
         }
         options.update(user_options)
 
@@ -733,9 +735,9 @@ class Py_report_html:
             if options['plotting_function'] != None:               
                 if options["whole"] == True:
                     values = dataframe if options["raw"] == True else pd.DataFrame(values, columns = samples, index = variables)
-                    ax = options['plotting_function'](values, plotters)
+                    ax = options['plotting_function'](values, plotters, *options['args'], **options['kwargs'])
                 else:
-                    ax = options['plotting_function'](dataframe, plotters)
+                    ax = options['plotting_function'](dataframe, plotters, *options['args'], **options['kwargs'])
             else:
                 return f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO PLOTTING FUNCTION<p></div>"
             
