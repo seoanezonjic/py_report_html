@@ -76,9 +76,19 @@ class ReportHtml(unittest.TestCase):
             "100     85     mRNA     12",
             "85      10     mRNA     41"
         ]))
+        self.table_pair_long = list(map(lambda x: re.split(r"\s+", x),[
+                "Phenotype  disease var_attr    smp_attr    val", 
+                "Phenotype4    disease1    A  a    0.16",
+                "Phenotype4    disease3    B  a  0.77",
+                "Phenotype4    disease4    C  a  0",
+                "Phenotype4    disease5    D  a  0.990",
+                "Phenotype1    disease3    B  b  0.7",
+                "Phenotype2    disease4    C  c  0.4",
+                "Phenotype3    disease5    D  d  0.5"
+        ]))
         self.container = {"simple_table": self.simple_table, "complex_table": self.complex_table,
                            "table_no_rownames": self.table_no_rownames, "links": self.links,
-                           "empty_table_id": self.empty_table_id}
+                           "empty_table_id": self.empty_table_id, "table_pair_long": self.table_pair_long}
         self.html_title = "Sample"
 
         ## Defining expected results ##
@@ -119,6 +129,14 @@ class ReportHtml(unittest.TestCase):
                 "data": list(map(list, zip(*self.expected_values)))},
             "x": self.z_attrs,
             "z": self.x_attrs,
+        }
+        self.expected_heatmap = {
+        'y': 
+            {'vars': ['disease1', 'disease3', 'disease4', 'disease5'], 
+            'smps': ['Phenotype4', 'Phenotype1', 'Phenotype2', 'Phenotype3'], 
+            'data': [[0.16, 0.77, 0.0, 0.99], [0.0, 0.7, 0.0, 0.0], [0.0, 0.0, 0.4, 0.0], [0.0, 0.0, 0.0, 0.5]]}, 
+        'x': {'smp_attr': ['a', 'b', 'c', 'd']}, 
+        'z': {'var_attr': ['A', 'B', 'C', 'D']}
         }
     
         self.options = {"id": self.complex_table_id,
@@ -624,9 +642,10 @@ class ReportHtml(unittest.TestCase):
         expected_values = [[20, 13, 15, 40 , 60, 30, 100, 85, 12, 85, 10, 41]]
 
         returned_samples, returned_variables, returned_values = copy.deepcopy(self.expected_samples), copy.deepcopy(self.expected_variables), copy.deepcopy(self.expected_values)
-        self.html.reshape(returned_samples, returned_variables, returned_x, returned_values) #Modifies samples, variables, x and values in place
+        self.html.reshape_to_long(returned_samples, returned_variables, returned_x, {}, returned_values, var_idx="Factor", 
+                        attr_smp_idxs=list(returned_x.keys())) #Modifies samples, variables, x and values in place
 
-        #print("-----------------------TESTING RESHAPE-----------------------")
+        #print("-----------------------TESTING reshape_to_long-----------------------")
         #print("\n\n samples:\n", returned_samples, "\n\n variables:\n", returned_variables, "\n\n values: \n", returned_values, "\n\n")
         #for key, value in returned_x.items(): print(f"attr {key}: \n", value, "\n\n")
 
@@ -846,6 +865,18 @@ class ReportHtml(unittest.TestCase):
         self.assertEqual([self.expected_data_json_transposed, expected_config, False, False, []],
                         [data, conf, events, info, afterRender])
 
+    def test_heatmap_long(self):
+        expected_config = copy.deepcopy(self.config)
+        expected_config.update({"graphType": "Heatmap"})
+        self.options.update({'format':"long", "id": "table_pair_long",
+            "var_idx":"disease", 
+            "attr_smp_idxs": ["smp_attr"], 
+            "attr_var_idxs": ["var_attr"], "var_attr": [], "smp_attr": [1,2,3], "header": True,
+            'row_names' : True})
+        data, conf, events, info, afterRender, obj_0 = get_plot_data(self.html, self.html.heatmap, **self.options)
+        self.assertEqual([self.expected_heatmap, expected_config, False, False, []],
+                        [data, conf, events, info, afterRender])
+
     def test_boxplot_without_factor(self):
         expected_config = copy.deepcopy(self.config)
         expected_config.update({"graphType": "Boxplot",
@@ -878,9 +909,10 @@ class ReportHtml(unittest.TestCase):
         expected_variables = copy.deepcopy(self.expected_data_json_transposed["y"]["vars"])
         expected_values = copy.deepcopy(self.expected_data_json_transposed["y"]["data"])
         expected_x = copy.deepcopy(self.expected_data_json_transposed["x"])
+        expected_z = copy.deepcopy(self.expected_data_json_transposed["z"])
 
         #We have to reshape the data, variables and samples to be able to use the boxplot method if only one factor is defined
-        self.html.reshape(expected_samples, expected_variables, expected_x, expected_values)
+        self.html.reshape_to_long(expected_samples, expected_variables, expected_x, expected_z, expected_values)
 
         expected_data_json = {          
             'y' : {
@@ -889,7 +921,7 @@ class ReportHtml(unittest.TestCase):
                 'data' : expected_values
             },
             'x' : expected_x,
-            'z' : self.expected_data_json_transposed["z"]
+            'z' : expected_z
         } 
 
         expected_config = copy.deepcopy(self.config)
@@ -897,6 +929,7 @@ class ReportHtml(unittest.TestCase):
         expected_config["groupingFactors"] = ["Factor", "type"]
         expected_config["colorBy"] = "Factor"
         expected_config["segregateSamplesBy"] = ["type"]
+
 
         data, conf, events, info, afterRender, obj_0 = get_plot_data(self.html, self.html.boxplot, **user_options)
         self.assertEqual([expected_data_json, expected_config, False, False, []],

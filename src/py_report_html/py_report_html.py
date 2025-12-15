@@ -18,6 +18,7 @@ import random
 import copy
 from importlib.resources import files
 import pylab
+import py_exp_calc.exp_calc as pxc
 
 class Py_report_html:
     
@@ -782,19 +783,58 @@ class Py_report_html:
                 string += f"{obj_id}.segregateSamples([{names_string}]);\n"
         return string
 
-    def reshape(self, samples, variables, x, values):
+    def reshape_to_wide(self, samples, variables, x, z, values, var_idx="Factor", 
+        attr_smp_idxs=[], attr_var_idxs=[]):
+        pairs = {}
+        sample_attributes = {}
+        var_attributes = {}
+        for idx, value in enumerate(values[0]):
+            if not pairs.get(samples[idx]):
+                pairs[samples[idx]] = {}
+            pairs[samples[idx]][x[var_idx][idx]] = value
+        values_new, samples_new, variables_new = pxc.to_wmatrix_rectangular(pairs)
+        if attr_smp_idxs:
+            for smp_attr_name in attr_smp_idxs:
+                sample2smpattr = pxc.list2dic(list(zip(samples, x[smp_attr_name])))
+                sample_attributes[smp_attr_name] = [ sample2smpattr[sample] for sample in samples_new ]
+        if attr_var_idxs:
+            for var_attr_name in attr_var_idxs:
+                variables2varattr = pxc.list2dic(list(zip(x[var_idx], x[var_attr_name])))
+                var_attributes[var_attr_name] = [ variables2varattr[variable] for variable in variables_new ]
+        values_new = values_new.tolist()
+        values.clear()
+        values.extend(values_new)
+        samples.clear()
+        samples.extend(samples_new)
+        variables.clear()
+        variables.extend(variables_new)
+        x.clear()
+        x.update(sample_attributes)
+        z.clear()
+        z.update(var_attributes)
+
+    def reshape_to_long(self, samples, variables, x, z, values, var_idx="Factor", 
+        attr_smp_idxs=[], attr_var_idxs=[]):
+        # TODO: use the matrix 2 pairs from pxc
         sample_names_copy = samples.copy()
         for n in range(len(variables) -1 ):
             samples.extend([ f"{sample_name}_{n}" for sample_name in sample_names_copy ])
-        for factor, annotations in x.items():
-            current_annotations = annotations.copy()
+        
+        for attr_smp_idx in attr_smp_idxs:
+            current_annotations = x[attr_smp_idx].copy()
             for times in range(len(variables) -1): 
-                annotations.extend(current_annotations)
+                x[attr_smp_idx].extend(current_annotations)
+
+        for attr_var_idx in attr_var_idxs:
+            x[attr_var_idx] = z[attr_var_idx]
+        z.clear()
+
         series_annot = []
         for var in variables:
             for times in sample_names_copy:
                 series_annot.append(var)
-        x['Factor'] = series_annot
+        x[var_idx] = series_annot
+
         variables.clear()
         variables.append('vals')
         vals = [item for sublist in values for item in sublist]
@@ -1219,6 +1259,12 @@ class Py_report_html:
     def heatmap(self, **user_options):
         def config_chart(options, config, data_structure, object_id):
             samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
+            if default_options['format'] == "long":
+                self.reshape_to_wide(samples, variables, x, z, values, 
+                    var_idx=default_options["var_idx"], 
+                    attr_smp_idxs=default_options["attr_smp_idxs"], 
+                    attr_var_idxs=default_options["attr_var_idxs"])
+                # TODO: ask yisas for smp_attr if name or number?
             config['graphType'] = 'Heatmap'
             extra_data = options.get('extra_data')
             if extra_data != None:
@@ -1242,7 +1288,9 @@ class Py_report_html:
                 config["heatmapIndicatorPosition"] = "top"
                 config["sizeBy"] = "Size"
                 config["sizeByData"] = "data2"
-        default_options = { 'row_names' : True, 'config_chart' : config_chart }
+        default_options = {'format': 'wide', "var_idx":"Factor", 
+                        "attr_smp_idxs": [], "attr_var_idxs": [],
+                        'row_names' : True, 'config_chart' : config_chart}
         default_options.update(user_options)
         html_string = self.canvasXpress_main(default_options)
         return html_string
@@ -1257,7 +1305,9 @@ class Py_report_html:
             series, group, segregate = None, None, None        
             
             if default_options['format'] == "wide":
-                self.reshape(samples, variables, x, values)
+                self.reshape_to_long(samples, variables, x, z, values, var_idx="Factor", 
+                        attr_smp_idxs=list(x.keys()), attr_var_idxs=[])
+                #self.reshape(samples, variables, x, values)
                 series = 'Factor'
                 if not default_options.get('group'):
                     pass
@@ -1268,7 +1318,9 @@ class Py_report_html:
             
             elif default_options['format'] == "long":
                 if not default_options.get('group'):
-                    self.reshape(samples, variables, x, values)
+                    #self.reshape(samples, variables, x, values)
+                    self.reshape_to_long(samples, variables, x, z, values, var_idx="Factor", 
+                        attr_smp_idxs=list(x.keys()), attr_var_idxs=[])
                     series = 'Factor'
                 elif len(default_options.get('group')) == 3:
                     series, group, segregate = default_options.get('group')
