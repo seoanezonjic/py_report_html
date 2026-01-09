@@ -144,9 +144,9 @@ class Py_report_html:
 
         # CDN LOAD
         #UPDATED: Now bootstrap is loaded by default
-        self.css_cdn.append('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css')
+        self.css_cdn.append('https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css')
         #self.css_cdn.append('https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css')
-        self.js_cdn.extend(["https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js",
+        self.js_cdn.extend(["https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js",
                             "https://code.jquery.com/jquery-3.7.1.js"])
 
         if self.features['dt_tables']: # CDN load, this library is difficult to embed in html file
