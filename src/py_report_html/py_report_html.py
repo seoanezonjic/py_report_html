@@ -1,10 +1,13 @@
+import sys
 import warnings
 warnings.filterwarnings(action='ignore', category=FutureWarning, module="seaborn")
 
 import re, os, json, math, zlib, warnings, glob
 import pandas as pd
 import base64
-from io import BytesIO
+import io 
+from io import StringIO, BytesIO
+
 from collections import defaultdict
 from mako.template import Template
 import networkx as nx
@@ -1722,11 +1725,11 @@ class Py_report_html:
     #################################################################################
     # CLICKABLE ELEMENTS
     ###################################################################################
-    def create_title(self, text, id=None, hlevel=1, indexable=True, clickable=False, t_id=None, clickable_text = '(Click me)', style=""):
+    def create_title(self, text, id=None, hlevel=1, indexable=True, clickable=False, t_id=None, clickable_text = '(Click me)', style="", css_class="py_accordion"):
         if style: style = f"style=\"{style}\""
         if indexable: self.headers.append([id, text, hlevel])
         if clickable:
-            header = f"<h{hlevel} id=\"{id}\" {style} class=\"py_accordion\" onclick=\"hide_show_element('{t_id}')\">{text} {clickable_text}</h{hlevel}>"
+            header = f"<h{hlevel} id=\"{id}\" {style} class=\"{css_class}\" onclick=\"hide_show_element('{t_id}')\">{text} {clickable_text}</h{hlevel}>"
         else:
             header = f"<h{hlevel} id=\"{id}\">{text}</h{hlevel}>"
         return header
@@ -1787,6 +1790,33 @@ class Py_report_html:
     ##################################################################################
     # UTILS
     ###################################################################################
+
+    # Methods to capture other method ouput and inject in hash_vars
+    # ----------------------------------------------------------------------------------
+    def script2test(self, args, module=None, func_name = None):
+        original_stdout = sys.stdout
+        tmpfile = StringIO()
+        sys.stdout = tmpfile
+        func = getattr(module, func_name)      
+        print(f"=> Exec {module} {func_name} {args}", file=sys.stderr)
+        returned = func(args)
+        printed = sys.stdout.getvalue()
+        sys.stdout = original_stdout
+        return returned, printed
+
+    def strng2table(self, strng, fs="\t", rs="\n"):
+        table = [row.split(fs) for row in strng.split(rs)][0:-1]
+        return table
+
+    def execute_command(self, args, script, module=None, func_name=None, out='std', name='results', string2table=True):
+        output, stdout = self.script2test(re.sub("'", '', args).split(" "), module=module, func_name=func_name)
+        if out == 'std':
+            res = stdout
+        elif out == 'out':
+            res = output
+        if string2table: res = self.strng2table(res)
+        self.hash_vars[name] = res
+    #-------------------------------------------------------------------------------------
 
     def get_matplotlib_units(self, source_unit, height, width, dpi):
         measures_to_inches = {'pixels': 1/dpi, 'inches': 1, "cm": 0.3937}
