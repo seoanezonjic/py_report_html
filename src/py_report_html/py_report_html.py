@@ -21,6 +21,7 @@ import random
 import copy
 from importlib.resources import files
 import pylab
+from py_cmdtabs import CmdTabs
 import py_exp_calc.exp_calc as pxc
 
 class Py_report_html:
@@ -233,7 +234,8 @@ class Py_report_html:
 
     def renderize_child_template(self, template_file, **kwargs):
         templ = Template(filename=template_file)
-        return templ.render(plotter=self, **kwargs)
+        content = templ.render(plotter=self, **kwargs)
+        return content
 
     def list_templates(self):
         for p in glob.glob(str(files(Py_report_html.TEMPLATES).joinpath('*'))):
@@ -1808,14 +1810,17 @@ class Py_report_html:
         table = [row.split(fs) for row in strng.split(rs)][0:-1]
         return table
 
-    def execute_command(self, args, func_name, module=None, out='std', name='results', string2table=True):
+    def execute_command(self, args, func_name, module=None, out='std', name=['results'], string2table=True):
         output, stdout = self.script2test(re.sub("'", '', args).split(" "), module=module, func_name=func_name)
         if out == 'std':
-            res = stdout
+            res = [stdout]
         elif out == 'out':
-            res = output
-        if string2table: res = self.strng2table(res)
-        self.hash_vars[name] = res
+            res = [output]
+        elif isinstance(out, list):
+            res = [ CmdTabs.load_input_data(outpath) for outpath in out ]
+            string2table = False # The data is a table so we no need to format the data
+        if string2table: res = [ self.strng2table(r) for r in res ]
+        for i, r in enumerate(res): self.hash_vars[name[i]] = r
     #-------------------------------------------------------------------------------------
 
     def get_matplotlib_units(self, source_unit, height, width, dpi):
