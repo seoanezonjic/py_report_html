@@ -1808,7 +1808,7 @@ class Py_report_html:
         table = [row.split(fs) for row in strng.split(rs)][0:-1]
         return table
 
-    def execute_command(self, args, script, module=None, func_name=None, out='std', name='results', string2table=True):
+    def execute_command(self, args, func_name, module=None, out='std', name='results', string2table=True):
         output, stdout = self.script2test(re.sub("'", '', args).split(" "), module=module, func_name=func_name)
         if out == 'std':
             res = stdout
