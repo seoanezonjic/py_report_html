@@ -4,10 +4,9 @@
 # Load necessary packages
 #########################################################
 
-import os, re
-from py_report_html import py_report_html, parse_paths, main_py_report_html
-import pytest
+import os, re, pytest
 from argparse import Namespace
+from py_report_html.cli_manager import parse_paths, main_py_report_html, py_report_html
 
 ROOT_PATH= os.path.dirname(__file__)
 DATA_TEST_PATH = os.path.join(ROOT_PATH, 'data')
@@ -72,8 +71,21 @@ def user_options():
         "menu": "contents_list"
     }
 
-def test_parse_path(paths):
-    assert False, "Implement test for parse_paths opt parse typer"
+@pytest.fixture
+def input_data_paths():
+    return [os.path.join(DATA_TEST_PATH, ppath) for ppath in ['*.txt', 'mock_image.png']]
+
+@pytest.fixture
+def expected_parsed_paths():
+    return [os.path.join(DATA_TEST_PATH, ppath) for ppath in ['complex_table.txt', 'mock_image.png', 'simple_table.txt', 'template.txt', 'tree.txt', 'tree2.txt']]
+
+def test_parse_path(input_data_paths, expected_parsed_paths):
+    print("Input data paths:", input_data_paths)
+    print("Expected parsed paths:", expected_parsed_paths)
+    #parsed_paths = sorted(parse_paths(input_data_paths))
+    assert False, "This test is not implemented yet"
+    #print(parsed_paths)
+    #assert parsed_paths == expected_parsed_paths, f"Expected {expected_parsed_paths}, but got {parsed_paths}"
 
 def test_main_py_report_html(user_options, simple_table_formatted, complex_table_formatted):
     user_options_namespace = Namespace(**user_options)

@@ -1,14 +1,9 @@
-import sys
-import warnings
+import sys, re, os, json, math, zlib, warnings, glob, base64, random, copy
 warnings.filterwarnings(action='ignore', category=FutureWarning, module="seaborn")
-
-import re, os, json, math, zlib, warnings, glob
-import pandas as pd
-import base64
-import io 
 from io import StringIO, BytesIO
-
 from collections import defaultdict
+from importlib.resources import files
+
 from mako.template import Template
 import networkx as nx
 #from pyvis.network import Network
@@ -17,11 +12,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 import plotly.graph_objects as go
-import random
-import copy
-from importlib.resources import files
-import pylab
-from py_cmdtabs import CmdTabs
+
+from py_cmdtabs.cmdtabs import CmdTabs
 import py_exp_calc.exp_calc as pxc
 
 class Py_report_html:
@@ -661,6 +653,7 @@ class Py_report_html:
         return html
     
     def static_plot_main(self, **user_options):
+        import pandas as pd
         # Handle arguments
         #------------------------------------------
         options = {
@@ -1847,6 +1840,7 @@ class Py_report_html:
 
     @staticmethod
     def get_color_palette(num, cmap="gist_rainbow"):
+        import pylab
         cm = pylab.get_cmap(cmap)
         colors = []
         for i in range(num):

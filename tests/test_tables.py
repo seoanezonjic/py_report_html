@@ -5,21 +5,14 @@
 #########################################################
 
 #import json
+import math, random, json, unittest, os, re, copy
 from collections import defaultdict
 from io import BytesIO
-import math
-import random
-import json
-import unittest
-import os
-import re
-import copy
 import networkx as nx
 import matplotlib
 import matplotlib.pyplot as plt
-from py_report_html import Py_report_html
 
-from importlib.resources import files
+from py_report_html.py_report_html import Py_report_html
 
 ROOT_PATH= os.path.dirname(__file__)
 DATA_TEST_PATH = os.path.join(ROOT_PATH, 'data')

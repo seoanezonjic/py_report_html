@@ -1,7 +1,6 @@
 import argparse, sys, os, glob, re
 
-from py_cmdtabs import CmdTabs
-from py_report_html import Py_report_html
+from py_report_html.py_report_html import Py_report_html
 
 def parse_paths(string): 
 	expanded_paths = []
@@ -38,6 +37,7 @@ def py_report_html(args=None):
 	main_py_report_html(opts)    
 
 def main_py_report_html(options):
+	from py_cmdtabs.cmdtabs import CmdTabs
 	if not os.path.exists(options.template): sys.exit('Template file not exists')
 	template = open(options.template).read()
 
