@@ -5,13 +5,7 @@ from collections import defaultdict
 from importlib.resources import files
 
 from mako.template import Template
-import networkx as nx
 #from pyvis.network import Network
-import matplotlib
-import matplotlib.pyplot as plt
-import seaborn as sns
-import plotly.express as px
-import plotly.graph_objects as go
 
 from py_cmdtabs.cmdtabs import CmdTabs
 import py_exp_calc.exp_calc as pxc
@@ -654,6 +648,10 @@ class Py_report_html:
     
     def static_plot_main(self, **user_options):
         import pandas as pd
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        import plotly.express as px
+        import plotly.graph_objects as go
         # Handle arguments
         #------------------------------------------
         options = {
@@ -1461,6 +1459,7 @@ class Py_report_html:
     # CANVASXPRESS METHODS
     #-------------------------------------------------------------------------------------
     def network(self, **user_options):
+        import networkx as nx
         options = {
             'id': None,
             'func': None,
@@ -1520,6 +1519,8 @@ class Py_report_html:
 
     #TODO: test this method
     def get_nodes_colors(self, options, graph, layers, reference_nodes, group_nodes):
+        import matplotlib
+        import matplotlib.pyplot as plt
         colors = plt.get_cmap("tab10")
         groups_nodes_index = defaultdict(lambda: 0)
         add = 1 if len(reference_nodes) == 0 else 2 # If there are ref nodes, reserve group index 1 for them
