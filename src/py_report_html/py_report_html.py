@@ -255,11 +255,28 @@ class Py_report_html:
     ###################################################################################
     # REPORT SYNTAX METHODS
     ###################################################################################
+    def transform_names_to_idx(self, options, slotname):
+        ids = options['id']
+        source_table = self.hash_vars[ids]
+        list_to_convert = [str(value) for value in options[slotname]]
+
+        if slotname in ['fields', 'smp_attr']:
+            reference = source_table[0]
+
+        if slotname in ['var_attr']:
+            rownames_col = 0 if not options.get("fields") else options["fields"][0]
+            reference = [row[rownames_col] for row in source_table]      
+        
+        converted = CmdTabs.get_name_to_index_equivalences(list_to_convert, reference, idx_offset=0)
+        options[slotname] = [int(value) for value in converted]
 
     #-------------------------------------------------------------------------------------
     # DATA MANIPULATION METHODS
     #-------------------------------------------------------------------------------------  
     def get_data(self, options):
+        #for slotname in ['fields', 'smp_attr', 'var_attr']:
+        #    if options.get(slotname): self.transform_names_to_idx(options, slotname) 
+
         if options.get('sanity_check'): self.check_dimensions(self.hash_vars[options['id']])
         data, smp_attr, var_attr = self.extract_data(options)
         if len(data) > 0:
