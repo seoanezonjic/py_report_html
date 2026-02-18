@@ -1371,26 +1371,27 @@ class Py_report_html:
             config['graphType'] = 'Circular'
             config['segregateVariablesBy'] = ['Ring']
             if len(default_options['ringsType']) == 0:
-                config['ringGraphType'] = ['heatmap'] * len(variables)
+                config['circularTrackGraphType'] = ['heatmap'] * len(variables)
             else:
-                config['ringGraphType'] = default_options['ringsType']
+                config['circularTrackGraphType'] = default_options['ringsType']
             if len(default_options['ringsWeight']) == 0:
                 size = math.trunc(100/len(variables))
-                config['ringGraphWeight'] = [size] * len(variables)
+                config['circularTrackGraphWeight'] = [size] * len(variables)
             else:
-                config['ringGraphWeight'] = default_options['ringsWeight']
+                config['circularTrackGraphWeight'] = default_options['ringsWeight']
             if len(default_options['ring_assignation']) == 0:
-                ring_assignation = [ str(i+1) for i in range(len(variables)) ]
+                ring_assignation = [ i+1 for i in range(len(variables)) ]
             else:
-                ring_assignation = [ str(i) for i in default_options['ring_assignation'] ]
+                ring_assignation = [ i for i in default_options['ring_assignation'] ]
             z['Ring'] = ring_assignation
+            config['circularTrackName'] = [ str(ring) for ring in ring_assignation ]
             links_id = default_options.get('links')
             if links_id != None:
                 link_data = self.hash_vars.get(links_id)
                 if link_data != None and len(link_data) > 0:
                     link_data, _, _ = self.get_data({'id' : links_id, 'fields' : [], 'add_header_row_names' : False, 'text' : True, 'transpose': False}) 
                     self.assign_rgb(link_data)
-                    config['connections'] = link_data
+                    config['circularConnections'] = link_data
         default_options['config_chart'] = config_chart
         html_string = self.canvasXpress_main(default_options) 
         return html_string
