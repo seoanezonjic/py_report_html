@@ -434,6 +434,8 @@ class Py_report_html:
             'renamed_samples': [],
             'renamed_variables': [],
             'custom_buttons': ['copyHtml5', 'excelHtml5', 'csvHtml5'],
+            'filt_cols': [],
+            'filt_col_names': [],
             'prefill': None,
         }
         options.update(user_options)
@@ -450,10 +452,43 @@ class Py_report_html:
             if 'pdfHtml5' in options['custom_buttons']: self.features['pdfHtml5'] = True
 
             self.features['dt_tables'] = True
+            numeric_filtering = ""
+            if len(options['filt_cols']) > 0:
+                numeric_filtering = f"            const table_{table_id} = new DataTable('#{table_id}');\n"
+                for field in options['filt_cols']:
+                  field_tag = f"{table_id}_{field}"
+                  num_filt = (
+                  f"            const minEl_{field_tag} = document.querySelector('#min_{field_tag}');\n"
+                  f"            const maxEl_{field_tag} = document.querySelector('#max_{field_tag}');\n"
+                  f"            $.fn.dataTable.ext.search.push(function( settings, data, dataIndex ) {{\n"
+                  f"              if ( settings.nTable.id !== '{table_id}'){{return true;}}\n" #apply filtering only to current table, this filterin is global
+                  f"              var min = parseInt(minEl_{field_tag}.value, 10);\n"
+                  f"              var max = parseInt(maxEl_{field_tag}.value, 10);\n"
+                  f"              var age = parseFloat(data[{field}]) || 0;\n" # use data for the age column
+                  f"              if (\n"
+                  f"                (isNaN(min) && isNaN(max)) ||\n"
+                  f"                (isNaN(min) && age <= max) ||\n"
+                  f"                (min <= age && isNaN(max)) ||\n"
+                  f"                (min <= age && age <= max)\n"
+                  f"              ) {{\n"
+                  f"                return true;\n"
+                  f"              }}\n"
+                  f"              return false;\n"
+                  f"            }});\n"
+                  f"            minEl_{field_tag}.addEventListener('input', function () {{\n" # Changes to the inputs will trigger a redraw to update the table
+                  f"              table_{table_id}.draw();\n"
+                  f"            }});\n"
+                  f"            maxEl_{field_tag}.addEventListener('input', function () {{\n"
+                  f"              table_{table_id}.draw();\n"
+                  f"            }});\n"
+                  )
+                  numeric_filtering = numeric_filtering + num_filt
+
             self.dynamic_js.append(
-                (f"        $(document).ready(function () {{\n"
-                f"            $('#{table_id}').DataTable({{ dom:'Bfrtip', buttons: [{embedded_buttons}], order: [] }});\n"
-                f"        }});\n")
+                "".join([f"        $(document).ready(function () {{\n",
+                f"            $('#{table_id}').DataTable({{ dom:'Bfrtip', buttons: [{embedded_buttons}], order: [] }});\n",
+                numeric_filtering,
+                f"        }});\n"])
             )
 
         self.count_objects += 1

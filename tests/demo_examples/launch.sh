@@ -6,7 +6,7 @@
 
 #python -m venv venv --system-site-packages
 #source venv/bin/activate
-#pip install -e ~/dev_py/futures/py_report_html/
+#pip install -e ~/dev_py/py_report_html
 
 paths=`echo -e "
 file_data/barplot*.txt,

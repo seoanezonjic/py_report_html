@@ -1,3 +1,22 @@
+% if len(options['filt_cols']) > 0:
+  <table>
+    % for field in options['filt_cols']:
+      <%
+	field_name = field
+	if len(options['filt_col_names']) > 0:
+          field_name = options['filt_col_names'][field]
+      %>
+      <tr>
+        <td>
+          ${field_name}-min: <input type="text" id="min_${table_id}_${field}" name="min_${table_id}_${field}">
+        </td>
+        <td>
+	  ${field_name}-max: <input type="text" id="max_${table_id}_${field}" name="max_${table_id}_${field}">
+        </td>
+    % endfor
+  </table>
+%endif
+
 <table id="${table_id}" border="${options['border']}" ${table_attr}>
 % if options['header']:
     <thead>

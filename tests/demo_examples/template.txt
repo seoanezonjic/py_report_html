@@ -138,6 +138,10 @@ ${ plotter.table(id='table1.txt')}
 <p>Data table (Header true, text false, style DT):</p>
 ${ plotter.table(id='table1_header.txt', header=True, styled='dt', attrib =  {'class' : 'table'}, func=mod_data, custom_buttons = ['copyHtml5', 'excelHtml5', 'csvHtml5', 'pdfHtml5'])}
 
+<p>Data table (Header true, text false, style DT, filtering numbered cols):</p>
+${ plotter.table(id='table1_header.txt', header=True, styled='dt', attrib =  {'class' : 'table'}, func=mod_data, custom_buttons = ['copyHtml5', 'excelHtml5', 'csvHtml5', 'pdfHtml5'], filt_cols = [0,1], filt_col_names = ['Log_FC', 'Patients'])}
+
+
 <p>Data table (Header true, text false, style BS):</p>
 ${ plotter.table(id='table1.txt', header=True, styled='bs', attrib = {'class' : 'table table-striped'}) }
 
