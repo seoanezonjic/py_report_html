@@ -430,6 +430,19 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
                                         )}
                 </td>
         </tr>
+        <tr>
+                <td>
+                        ${ plotter.barplot(id = 'barplot1.txt', header= True, row_names= False, add_header_row_names = True, 
+                                fields = ["liver", "lung"],
+                                config = { "layoutCollapse" : "false", "layoutType" : "rows", 'graphOrientation' : 'vertical'}) }
+                </td>
+                <td>
+                        ${ plotter.circular(id = 'barplot3.txt', header = True, row_names = True, 
+                                ringsType = ['dot', 'bar', 'heatmap', 'dot'],
+                                smp_attr = ["type","type2"], var_attr = ["nerv","pcr"],
+                                config = {"smpOverlays" : ["type", "type2"]} 
+                        )}
+                </td>
 </table>
 
 

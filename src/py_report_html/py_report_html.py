@@ -274,8 +274,8 @@ class Py_report_html:
     # DATA MANIPULATION METHODS
     #-------------------------------------------------------------------------------------  
     def get_data(self, options):
-        #for slotname in ['fields', 'smp_attr', 'var_attr']:
-        #    if options.get(slotname): self.transform_names_to_idx(options, slotname) 
+        for slotname in ['fields', 'smp_attr', 'var_attr']:
+            if options.get(slotname): self.transform_names_to_idx(options, slotname) 
 
         if options.get('sanity_check'): self.check_dimensions(self.hash_vars[options['id']])
         data, smp_attr, var_attr = self.extract_data(options)
@@ -462,14 +462,14 @@ class Py_report_html:
                   f"            const maxEl_{field_tag} = document.querySelector('#max_{field_tag}');\n"
                   f"            $.fn.dataTable.ext.search.push(function( settings, data, dataIndex ) {{\n"
                   f"              if ( settings.nTable.id !== '{table_id}'){{return true;}}\n" #apply filtering only to current table, this filterin is global
-                  f"              var min = parseInt(minEl_{field_tag}.value, 10);\n"
-                  f"              var max = parseInt(maxEl_{field_tag}.value, 10);\n"
-                  f"              var age = parseFloat(data[{field}]) || 0;\n" # use data for the age column
+                  f"              var min = parseFloat(minEl_{field_tag}.value);\n"
+                  f"              var max = parseFloat(maxEl_{field_tag}.value);\n"
+                  f"              var column = parseFloat(data[{field}]) || 0;\n" # use data for the age column
                   f"              if (\n"
                   f"                (isNaN(min) && isNaN(max)) ||\n"
-                  f"                (isNaN(min) && age <= max) ||\n"
-                  f"                (min <= age && isNaN(max)) ||\n"
-                  f"                (min <= age && age <= max)\n"
+                  f"                (isNaN(min) && column <= max) ||\n"
+                  f"                (min <= column && isNaN(max)) ||\n"
+                  f"                (min <= column && column <= max)\n"
                   f"              ) {{\n"
                   f"                return true;\n"
                   f"              }}\n"

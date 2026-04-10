@@ -410,6 +410,30 @@ class ReportHtml(unittest.TestCase):
         self.html.add_header_row_names(table_custom_headers, options=user_options_with_header_names)
         self.assertEqual(expected_custom_header_table, table_custom_headers)
 
+    def test_transform_names_to_idx(self):
+        #Testing that when the slots are numeric, the keep the same
+        options_copy = copy.deepcopy(self.options)
+        
+        for slotname in ['fields', 'smp_attr', 'var_attr']:
+            if options_copy.get(slotname): self.html.transform_names_to_idx(options_copy, slotname) 
+
+        self.assertEqual(self.options['fields'], options_copy['fields'])
+        self.assertEqual(self.options['smp_attr'], options_copy['smp_attr'])
+        self.assertEqual(self.options['var_attr'], options_copy['var_attr'])
+
+        #Testing that when the slots are names, they are transformed to the correct indexes
+        options_copy = copy.deepcopy(self.options)
+        options_copy['fields'] =  ["tissue", "liver", "brain", "cerebellum"]
+        options_copy['smp_attr'] = ["type", "type2"]
+        options_copy['var_attr'] = ["nerv", "pcr"]
+
+        for slotname in ['fields', 'smp_attr', 'var_attr']:
+            if options_copy.get(slotname): self.html.transform_names_to_idx(options_copy, slotname)
+
+        self.assertEqual([0,3,4,5], options_copy['fields'])
+        self.assertEqual([1,2], options_copy['smp_attr'])
+        self.assertEqual([1,2], options_copy['var_attr'])
+
     def test_get_data(self): #TODO: The emtpy case is returning an error in extract_data, so why is there a len(data) > 0 condition
         expected_hashvar = copy.deepcopy(self.html.hash_vars["complex_table"])
         custom_options = copy.deepcopy(self.options)
@@ -442,7 +466,20 @@ class ReportHtml(unittest.TestCase):
         self.assertEqual(self.expected_var_attrs, returned_smp_attrs)
         self.assertEqual(expected_hashvar, self.html.hash_vars["complex_table"]) #Checking that original table has not been modified as more plot calls will be done to the same table
 
-
+    def test_get_data_with_names_instead_of_indexes(self):
+        expected_hashvar = copy.deepcopy(self.html.hash_vars["complex_table"])
+        custom_options = copy.deepcopy(self.options)
+        custom_options["transpose"] = False
+        custom_options["fields"] = ["tissue", "liver", "brain", "cerebellum"]
+        custom_options["smp_attr"] = ["type", "type2"]
+        custom_options["var_attr"] = ["nerv", "pcr"]
+        
+        returned_data, returned_smp_attrs, returned_var_attrs = self.html.get_data(custom_options)
+        
+        self.assertEqual(self.expected_data, returned_data)
+        self.assertEqual(self.expected_var_attrs, returned_var_attrs)
+        self.assertEqual(self.expected_smp_attrs, returned_smp_attrs)
+        self.assertEqual(expected_hashvar, self.html.hash_vars["complex_table"])
 
     #---------------------------------------------------------------------------------------------
     # TABLE METHODS
@@ -611,8 +648,8 @@ class ReportHtml(unittest.TestCase):
 
     def test_segregate_data(self):
         variables_to_segregate = {"var": ["nerv", "pcr"], "smp": ["type", "type2"]} 
-        expected = "table1.segregateVariables(['nerv','pcr']);\n" + "table1.segregateSamples(['type','type2']);\n"
-        returned = self.html.segregate_data("table1", variables_to_segregate)
+        expected = {"segregateVariablesBy": ["nerv", "pcr"], "segregateSamplesBy": ["type", "type2"]}
+        returned = self.html.segregate_data(variables_to_segregate)
         self.assertEqual(expected, returned)
 
     def test_assign_rgb(self):
