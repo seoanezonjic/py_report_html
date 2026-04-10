@@ -858,7 +858,7 @@ class Py_report_html:
         z.clear()
         z.update(var_attributes)
 
-    def reshape_to_long(self, samples, variables, x, z, values, var_idx="Factor", 
+    def reshape_to_long(self, samples, variables, x, z, values, var_idx="Factor", smp_idx="Sample",
         attr_smp_idxs=[], attr_var_idxs=[]):
         # TODO: use the matrix 2 pairs from pxc
         sample_names_copy = samples.copy()
@@ -879,6 +879,7 @@ class Py_report_html:
             for times in sample_names_copy:
                 series_annot.append(var)
         x[var_idx] = series_annot
+        x[smp_idx] = sample_names_copy * len(variables)
 
         variables.clear()
         variables.append('vals')
@@ -1349,22 +1350,22 @@ class Py_report_html:
             config['graphType'] = 'Boxplot'
             series, group, segregate = None, None, None        
             
-            if default_options['format'] == "wide":
-                self.reshape_to_long(samples, variables, x, z, values, var_idx="Factor", 
+            if default_options['format'] == "wide": #USE THIS BLOCK WHEN THE INPUT TABLE IS IN WIDE FORMAT
+                self.reshape_to_long(samples, variables, x, z, values, var_idx="Factor", smp_idx="Sample",
                         attr_smp_idxs=list(x.keys()), attr_var_idxs=[])
                 #self.reshape(samples, variables, x, values)
                 series = 'Factor'
                 if not default_options.get('group'):
-                    pass
+                    group = "Sample"
                 elif len(default_options.get('group')) == 2:
                     group, segregate = default_options.get('group')
                 elif len(default_options.get('group')) == 1:
                     group = default_options['group']
             
-            elif default_options['format'] == "long":
+            elif default_options['format'] == "long": #USE IT WHEN THE INPUT TABLE IS IN LONG FORMAT
                 if not default_options.get('group'):
                     #self.reshape(samples, variables, x, values)
-                    self.reshape_to_long(samples, variables, x, z, values, var_idx="Factor", 
+                    self.reshape_to_long(samples, variables, x, z, values, var_idx="Factor", smp_idx="Sample",
                         attr_smp_idxs=list(x.keys()), attr_var_idxs=[])
                     series = 'Factor'
                 elif len(default_options.get('group')) == 3:
@@ -1375,16 +1376,16 @@ class Py_report_html:
                     series = default_options['group']
                     group = None
 
+            # COLOR LOGIC WHEN NOT SPECIFIED (otherwise, user config takes precedence)
             if config.get("colorBy") == None: config["colorBy"] = series 
-            if config.get("groupingFactors") == None: # if config is defined, we assume that the user set this property to the value that he/she desires
+            # GROUPING LOGIC WHEN NOT SPECIFIED (otherwise, user config takes precedence)     
+            if config.get("groupingFactors") == None: 
                 if group == None: config["groupingFactors"] = [series]
-                else: config["groupingFactors"] = [series, group]
-            if group != None and config.get("segregateSamplesBy") == None: 
-                if segregate: config["segregateSamplesBy"] = [segregate]
-                elif group: config["segregateSamplesBy"] = [group] 
-            if options.get('extracode') == None and default_options.get('group') == None:
-                options['extracode'] = f"C{object_id}.groupSamples([\"Factor\"]);"
-                #config["groupingFactors"] = ["Factor"] Both options are valid, altough not the same behaviour is achieved with segregateSamplesBy...
+                else: config["groupingFactors"] = [group, series]
+            # SEGREGATION LOGIC WHEN NOT SPECIFIED (otherwise, user config takes precedence)
+            if segregate != None and config.get("segregateSamplesBy") == None: 
+                config["segregateSamplesBy"] = [segregate] 
+
 
             if options.get('add_violin') == True:
                 config.update({ "showBoxplotIfViolin":True,
