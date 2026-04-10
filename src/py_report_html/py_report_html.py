@@ -608,7 +608,7 @@ class Py_report_html:
             'fields': [],
             'smp_attr': [],
             'var_attr': [],
-            'segregate': [],
+            'segregate': {},
             'show_factors': [],
             'responsive': True,
             'height': '600px',
@@ -640,6 +640,7 @@ class Py_report_html:
         }
         if  options.get('tree') != None : self.set_tree(options, config)
 
+        config.update(self.segregate_data(options['segregate']))
         config.update(options['config'])
         # Data manipulation
         #------------------------------------------
@@ -673,7 +674,6 @@ class Py_report_html:
         afterRender = options['after_render']        
         
         extracode = self.initialize_extracode(options)
-        if len(options['segregate']) > 0: extracode += self.segregate_data(f"C{object_id}", options['segregate']) + "\n"
         if options.get('group_samples') != None: extracode += f"C{object_id}.groupSamples({options['group_samples']})\n"
   
         # add javascript for CanvasXpress object
@@ -821,15 +821,12 @@ class Py_report_html:
             attr_name = attrs.pop(0)
             hash_attr[attr_name] = attrs
 
-    def segregate_data(self, obj_id, segregate):
-        string =""
-        for data_type, names in  segregate.items():
-            names_string = ",".join([f"'{name}'" for name in names])
-            if data_type == 'var':
-                string += f"{obj_id}.segregateVariables([{names_string}]);\n"
-            elif data_type == 'smp':
-                string += f"{obj_id}.segregateSamples([{names_string}]);\n"
-        return string
+    def segregate_data(self, segregate):
+        segg_config = {}
+        val2conf_dict = {"var": "segregateVariablesBy", "smp": "segregateSamplesBy"}
+        for data_type, names in segregate.items():
+            segg_config[val2conf_dict[data_type]] = names
+        return segg_config
 
     def reshape_to_wide(self, samples, variables, x, z, values, var_idx="Factor", 
         attr_smp_idxs=[], attr_var_idxs=[]):
