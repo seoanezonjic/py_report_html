@@ -201,6 +201,11 @@ class Py_report_html:
             self.js_libraries.append("graphology-library.min.js")
             self.js_libraries.append("sigma.min.js")
 
+        if self.features['sigma4']:
+            self.js_libraries.append("graphology.min.js")
+            self.js_libraries.append("graphology-library.min.js")
+            self.js_libraries.append("sigma4.min.js")
+
         self.merge_custom_files()
         for css in self.load_css(self.css_files):
             self.all_report += (f"<style type=\"text/css\">\n{css}\n</style>\n\n")
@@ -1558,6 +1563,9 @@ class Py_report_html:
         elif options['method'] == 'sigma2':
             temp_file = 'sigma2.txt'
             model = self.sigma2_network(options, graph, layers, reference_nodes, group_nodes)
+        elif options['method'] == 'sigma4':
+            temp_file = 'sigma4.txt'
+            model = self.sigma4_network(options, graph, layers, reference_nodes, group_nodes)
         elif options['method'] == 'pyvis':
             temp_file = 'pyvis.txt'
             model, node_names = self.pyvis_network(options, graph, layers, reference_nodes, group_nodes)
@@ -1646,6 +1654,36 @@ class Py_report_html:
             edge_attributes = {'size': 0.05}
         for i, e in enumerate(graph.edges): 
             model['edges'].append({'source': e[0], 'target': e[1], 'attributes': edge_attributes})
+        return model
+
+    def sigma4_network(self, options, graph, layers, reference_nodes, group_nodes):
+        model = {'nodes': [], 'edges': []} 
+        groups_index, get_colors = self.get_nodes_colors(options, graph, layers, reference_nodes, group_nodes)
+        for nodeID in graph.nodes:
+            if nodeID in reference_nodes:
+                color_ind = 1
+                size = 80
+                zindex= 3
+            else:
+                color_ind = groups_index[nodeID]
+                if color_ind == 0: # is a non group node
+                    size = None
+                    color_ind = None
+                    zindex= None
+                else: # is a group node
+                    size = 40
+                    zindex= 2
+            if isinstance(color_ind, int):
+                hex_color = get_colors(color_ind)
+            else: # For some reason, the color is set in hex (string) so there is no need to find the color code
+                hex_color = color_ind
+            attr = { 'label': nodeID}
+            if hex_color != None: attr['color'] = hex_color
+            if size != None: attr['size'] = size
+            if zindex != None: attr['zIndex'] = zindex
+            model['nodes'].append({'key': nodeID, 'attributes': attr})
+        for i, e in enumerate(graph.edges): 
+            model['edges'].append({'source': e[0], 'target': e[1]})
         return model
 
     def pyvis_network(self, options, graph, layers, reference_nodes, group_nodes):
