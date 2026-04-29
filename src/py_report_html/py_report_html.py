@@ -29,8 +29,8 @@ class Py_report_html:
         self.compress = compress
         self.type_index = type_index
         self.features = { 
-            'mermaid': False, 'dt_tables': False, 'pdfHtml5': False, 'canvasXpress': False, 'pako': False,
-            'cytoscape': False, 'pyvis': False, 'elgrapho': False, 'sigma': False, 'sigma2': False, 'plotly': False
+            'mermaid': False, 'dt_tables': False, 'pdfHtml5': False, 'canvasXpress': False, 'pako': False, 'plotly': False,
+            'cytoscape': False, 'pyvis': False, 'elgrapho': False, 'sigma': False, 'sigma2': False, 'sigma4': False 
         }
         self.js_libraries = []
         self.css_files = []
