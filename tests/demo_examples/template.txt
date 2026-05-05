@@ -333,7 +333,8 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
                 </td>
                 <td>
                         ${ plotter.boxplot(id = 'boxplot_grid.txt', header = True, row_names = False, default =  False, format='long',
-                        smp_attr = [0,1], group = ["genes", "samples"], height = 700, width= 800, config={"graphOrientation":"vertical"}) }
+                        smp_attr = [0,1], group = ["genes", "samples"], height = 700, width= 800, 
+                        config={"graphOrientation":"vertical", "groupingFactorsLabelsHide": ["genes"]} )}
                 </td>
         </tr>
         <tr>
