@@ -39,7 +39,8 @@ file_data/density_one_serie.txt,
 file_data/heatmap_dendrogram.txt,
 file_data/heatmap_colors.txt,
 file_data/heatmap_sizes.txt,
-file_data/polar.txt
+file_data/polar.txt,
+file_data/heatmap_long.txt
 " | tr -d [:space:]` 
 
 report_html -t template.txt -d $paths -c file_data/custom_css -j file_data/custom_js -u -s ./subtemplates #-m menu

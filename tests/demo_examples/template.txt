@@ -395,6 +395,14 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
 	</tr>
         <tr>
                 <td>
+                        ${ plotter.heatmap(id = 'heatmap_long.txt', header = True, row_names = True,
+                                          format="long",
+                                          var_idx="disease",
+                                          attr_smp_idxs= ["smp_attr"],
+                                          attr_var_idxs= ["var_attr"],
+                                          var_attr= [], smp_attr= [1,2,3]
+                        )}
+
                         ${ plotter.heatmap(id = 'heatmap_dendrogram.txt', tree="./file_data/dendrogram.dnd", 
                                                 header = True, row_names = True, 
                                                 transpose=False, smp_attr=[17], treeBy="v",

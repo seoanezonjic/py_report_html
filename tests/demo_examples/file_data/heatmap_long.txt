@@ -1,0 +1,8 @@
+Phenotype	disease	var_attr	smp_attr	val 
+Phenotype4	disease1	A	a	0.16
+Phenotype4	disease3	B	a	0.77
+Phenotype4	disease4	C	a	0
+Phenotype4	disease5	D	a	0.990
+Phenotype1	disease3	B	b	0.7
+Phenotype2	disease4	C	c	0.4
+Phenotype3	disease5	D	d	0.5
