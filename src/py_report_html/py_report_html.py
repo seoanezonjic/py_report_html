@@ -583,7 +583,11 @@ class Py_report_html:
 
 
     def set_tree(self, options, config):
-        tree = self.tree_from_file(options["tree"])
+        if os.path.exists(options["tree"]):
+            tree = self.tree_from_file(options["tree"])
+        else:
+            tree = options["tree"]
+            
         if options["treeBy"] in ['s', 'samples']:
             config['smpDendrogramNewick'] = tree
             #config['samplesClustered'] = True #It seems it is not needed with custom dendrograms, just when you want to use CanvasXpress default dendrogram 
