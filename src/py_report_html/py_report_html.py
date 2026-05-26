@@ -1481,7 +1481,7 @@ class Py_report_html:
         default_options.update(user_options)
         def config_chart(options, config, data_structure, object_id):
             samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
-            config.update({'graphType': 'Circular', "circularType": "radar", "ringGraphType": ["scatter"], "transpose": True,
+            config.update({'graphType': 'Circular', "circularType": "radar", "circularTrackGraphType": ["scatter"], "transpose": True,
                             "rAxisShow": True, "setMinR": 0, "setMaxR": 6.283185307179586,
                             'showLegend': True, "showSampleNames": False, "rAxisPercentShow": False,
                             "setMinY": 0, #"setMaxY": 5
