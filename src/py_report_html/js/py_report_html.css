@@ -15,15 +15,6 @@
   background-color: #ccc; 
 }
 
-div[id^='mynetwork_'] {
-  width: 1000px;
-  height: 1000px;
-  background-color: #ffffff;
-  border: 1px solid lightgray;
-  position: relative;
-  float: left; 
-}
-
 .resizable_img {  
   width: 50vw; 
   height: 50vh; 
