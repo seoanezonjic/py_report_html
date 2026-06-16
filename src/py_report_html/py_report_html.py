@@ -703,8 +703,8 @@ class Py_report_html:
 
         # generate HTML for CanvasXpress object
         responsive = ''
-        if options['responsive']: responsive = "responsive='true'" 
-        html = f"<canvas  id=\"{object_id}\" width=\"{options['width']}\" height=\"{options['height']}\" aspectRatio='1:1' {responsive}></canvas>"
+        if options['responsive']: responsive = "data-responsive='true'" 
+        html = f"<canvas  id=\"{object_id}\" width=\"{options['width']}\" height=\"{options['height']}\" data-aspectRatio='1:1' {responsive}></canvas>"
         return html
     
     def static_plot_main(self, **user_options):
