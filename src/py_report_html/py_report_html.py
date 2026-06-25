@@ -18,11 +18,12 @@ class Py_report_html:
     #JS_FOLDER = os.path.join(os.path.dirname(__file__), 'js')
     #TEMPLATES = os.path.join(os.path.dirname(__file__), 'templates')
 
-    def __init__(self, hash_vars, title = "report", data_from_files = False, compress = True, type_index = "contents_list"):
+    def __init__(self, hash_vars, title = "report", data_from_files = False, compress = True, type_index = "contents_list", fig_prefix=""):
         self.all_report = ""
         self.title = title
         self.hash_vars = hash_vars
         self.data_from_files = data_from_files
+        self.fig_prefix = fig_prefix
         self.count_objects = 0
         self.figures = {}
         self.tables = {}
@@ -240,6 +241,9 @@ class Py_report_html:
 
     def write(self, file):
         with open(file, 'w') as f: f.write(self.get_report())
+
+    def return_report(self):
+        return self.get_report()        
 
     def compress_data(self, data):
         json_data = json.dumps(data)
@@ -656,7 +660,7 @@ class Py_report_html:
 
         values, smp_attr, var_attr, samples, variables = self.get_data_for_plot(options)
         if values == None: return f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO DATA<p></div>"
-        object_id = f"obj_{self.count_objects}_"
+        object_id = f"{self.fig_prefix}obj_{self.count_objects}_"
 
         x = {}
         z = {}
