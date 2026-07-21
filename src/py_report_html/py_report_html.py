@@ -453,7 +453,7 @@ class Py_report_html:
         array_data, _, _ = self.get_data(options)
         if options.get('func') != None: options['func'](array_data)
         rowspan, colspan = self.get_col_n_row_span(array_data)
-        table_id = 'table_' + str(self.count_objects)
+        table_id = f'{self.fig_prefix}table_{self.count_objects}'
         if options.get('styled') == 'dt': 
             if not options["header"]: raise Exception("Tables styled as datatables need to have a header to be properly displayed")    
 
