@@ -572,3 +572,44 @@ ${ plotter.renderize_child_template(plotter.get_internal_template('mermaid_icons
 
 <h3> Mermaid with icons example 2 </h3>
 ${ plotter.renderize_child_template(plotter.get_internal_template('mermaid_icons2.txt'))}
+
+
+<h3> Sankey </h3>
+
+<%
+data = [
+        [ "Id", "Weight", "Source", "Target", "Weight"],
+        [ "smp1", 5, "Brazil", "Portugal", 1],
+        [ "smp2", 1, "Brazil", "France", 1],
+        [ "smp3", 1, "Brazil", "Spain", 1],
+        [ "smp4", 1, "Brazil", "England", 1],
+        [ "smp5", 1, "Canada", "Portugal", 2],
+        [ "smp6", 5, "Canada", "France", 2],
+        [ "smp7", 1, "Canada", "England", 2],
+        [ "smp8", 1, "Mexico", "Portugal", 3],
+        [ "smp9", 1, "Mexico", "France", 3],
+        [ "smp10", 5, "Mexico", "Spain", 3],
+        [ "smp11", 1, "Mexico", "England", 3],
+        [ "smp12", 1, "USA", "Portugal", 4],
+        [ "smp13", 1, "USA", "France", 4],
+        [ "smp14", 1, "USA", "Spain", 4],
+        [ "smp15", 5, "USA", "England", 4],
+        [ "smp16", 2, "Portugal", "Angola", 13],
+        [ "smp17", 1, "Portugal", "Senegal", 13],
+        [ "smp18", 1, "Portugal", "Morocco", 13],
+        [ "smp19", 3, "Portugal", "SouthAfrica", 13],
+        [ "smp20", 1, "France", "Angola", 5],
+        [ "smp21", 3, "France", "Senegal", 5],
+        [ "smp22", 3, "France", "Mali", 5],
+        [ "smp23", 3, "France", "Morocco", 5],
+        [ "smp24", 1, "France", "SouthAfrica", 5],
+        [ "smp25", 1, "Spain", "Senegal", 6],
+        [ "smp26", 3, "Spain", "Morocco", 6],
+        [ "smp27", 1, "Spain", "SouthAfrica", 6],
+        [ "smp28", 1, "England", "Angola", 7],
+]
+plotter.hash_vars['sankey_graph'] = data
+%>
+
+${ plotter.sankey(id = 'sankey_graph') }
+
