@@ -623,7 +623,7 @@ class Py_report_html:
             'var_attr': [],
             'segregate': {},
             'show_factors': [],
-            'responsive': True,
+            'responsive': False,
             'height': '600px',
             'width': '600px',
             'header': False,
