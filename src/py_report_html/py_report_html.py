@@ -1058,7 +1058,7 @@ class Py_report_html:
             config['sankeyTarget'] = 'Target'
             config['xAxis'] = ["Weight"]
 
-        default_options = { 'row_names': True, 'config_chart' : config_chart, 'text': True, 'transpose': True, 'header': True, 'smp_attr': [2,3,4] }
+        default_options = { 'row_names': True, 'config_chart' : config_chart, 'text': True, 'transpose': True, 'header': True, 'smp_attr': [2,3] }
         default_options.update(user_options)
         html_string = self.canvasXpress_main(default_options)
         return html_string
