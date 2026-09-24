@@ -1052,13 +1052,14 @@ class Py_report_html:
         def config_chart(options, config, data_structure, object_id):
             samples, variables, values, x, z = self.get_data_structure_vars(data_structure)
             config['graphType'] = 'Sankey'
-            config['colorBy'] = 'Weight'
             config['graphOrientation'] = 'vertical'
             config['sankeySource'] = 'Source'
             config['sankeyTarget'] = 'Target'
             config['xAxis'] = ["Weight"]
-
-        default_options = { 'row_names': True, 'config_chart' : config_chart, 'text': True, 'transpose': True, 'header': True, 'smp_attr': [2,3] }
+        smp_attr = [2,3]
+        if user_options.get('config') != None:
+            if user_options['config'].get('colorBy') != None: smp_attr = [2,3,4]
+        default_options = { 'row_names': True, 'config_chart' : config_chart, 'text': True, 'transpose': True, 'header': True, 'smp_attr': smp_attr }
         default_options.update(user_options)
         html_string = self.canvasXpress_main(default_options)
         return html_string
