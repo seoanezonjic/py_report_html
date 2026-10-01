@@ -68,18 +68,18 @@ class Py_report_html:
         self.js_libraries.extend(self.custom_css_js['js']['file'])
         self.css_files.extend(self.custom_css_js['css']['file'])
 
-    def get_css_cdn(self):
+    def get_css_cdn(self, css_cdn):
         string = []
-        for cc in self.css_cdn:
+        for cc in css_cdn:
             if re.search("^http", cc): # CAnonical form of css CDN loading
                 string.append(f"<link rel=\"stylesheet\" type=\"text/css\" href=\"{cc}\"/>")
             else: # Other sintaxis, inject line as is
                 string.append(cc)
         return  "\n".join(string)+"\n"
 
-    def get_js_cdn(self):
+    def get_js_cdn(self, js_cdn):
         string = []
-        for jc in self.js_cdn:
+        for jc in js_cdn:
             if re.search("^http", jc): # CAnonical form of js CDN loading
                 string.append(f"<script type=\"text/javascript\" src=\"{jc}\"></script>")
             else: # Other sintaxis, inject line as is
@@ -94,8 +94,8 @@ class Py_report_html:
         self.build_body(renderered_template)
         self.all_report += "\n</HTML>"
 
-    def add_dynamic_js(self):
-        string_chunks = "\n".join(self.dynamic_js)
+    def add_dynamic_js(self, dynamic_js):
+        string_chunks = "\n".join(dynamic_js)
         return f"<script>\n{string_chunks}\n</script>\n"
 
     def load_js_libraries(self, js_libraries):
@@ -121,8 +121,34 @@ class Py_report_html:
         return loaded_css
 
     def make_head(self):
-        self.all_report += (
-            f"\t<title>{self.title}</title>\n"
+        self.all_report += self.get_head_meta(self.title)
+
+        # CDN LOAD
+        css_cdn, js_cdn = self.get_3rd_party_cdn(self.features)
+        self.css_cdn.extend(css_cdn)
+        self.js_cdn.extend(js_cdn)
+        self.merge_custom_cdn()
+        self.all_report += self.get_css_cdn(self.css_cdn)
+        self.all_report += self.get_js_cdn(self.js_cdn)
+
+        # JS AND CSS FILE LOAD
+        css_files, js_libraries = self.get_local_jsNcss_files(self.features)
+        self.css_files.extend(css_files)
+        self.js_libraries.extend(js_libraries)
+        self.merge_custom_files()
+
+        for css in self.load_css(self.css_files):
+            self.all_report += (f"<style type=\"text/css\">\n{css}\n</style>\n\n")
+
+        for lib in self.load_js_libraries(self.js_libraries):
+            self.all_report += f"<script src=\"data:application/javascript;base64,{lib}\" type=\"application/javascript\"></script>\n\n"
+        
+        self.all_report += self.add_dynamic_js(self.dynamic_js)
+        self.all_report +=  "</head>\n"
+
+    def get_head_meta(self, title):
+        meta = (
+            f"\t<title>{title}</title>\n"
             "<head>\n"
             "<meta charset=\"utf-8\">\n"
             "<meta http-equiv=\"CACHE-CONTROL\" CONTENT=\"NO-CACHE\">\n"
@@ -130,35 +156,36 @@ class Py_report_html:
             "<meta http-equiv=\"Content-Language\" content=\"en-us\" />\n"
             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\">\n\n"
         )
-        # ADD JS LIBRARIES AND CSS
-        # -----------------------------------------------
-
-        # CDN LOAD
+        return meta
+        
+    def get_3rd_party_cdn(self, features):
+        css_cdn = []
+        js_cdn = []
         #UPDATED: Now bootstrap is loaded by default
-        self.css_cdn.append('https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css')
+        css_cdn.append('https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css')
         #self.css_cdn.append('https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css')
-        self.js_cdn.extend(["https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js",
+        js_cdn.extend(["https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js",
                             "https://code.jquery.com/jquery-3.7.1.js"])
 
-        if self.features['dt_tables']: # CDN load, this library is difficult to embed in html file
-            self.css_cdn.extend([
+        if features.get('dt_tables'): # CDN load, this library is difficult to embed in html file
+            css_cdn.extend([
                 'https://cdn.datatables.net/2.0.5/css/dataTables.dataTables.min.css',
                 'https://cdn.datatables.net/buttons/3.0.2/css/buttons.dataTables.min.css'
             ])
-            self.js_cdn.extend([
+            js_cdn.extend([
                 'https://cdn.datatables.net/2.0.5/js/dataTables.min.js',
                 'https://cdn.datatables.net/buttons/3.0.2/js/dataTables.buttons.min.js',
                 #'https://cdn.datatables.net/buttons/3.0.2/js/buttons.dataTables.js',
                 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
                 'https://cdn.datatables.net/buttons/3.0.2/js/buttons.html5.min.js',
             ])
-            if self.features['pdfHtml5']:
-                self.js_cdn.extend([
+            if features.get('pdfHtml5'):
+                js_cdn.extend([
                     'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.20/pdfmake.js',
                     'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.20/vfs_fonts.js'
                 ])
 
-        if self.features['mermaid']: #https://icones.js.org/ for more icons.
+        if features.get('mermaid'): #https://icones.js.org/ for more icons.
             icons_packs = [['med', 'https://unpkg.com/@iconify-json/medical-icon@1.2.0/icons.json'],
                            ['cov', 'https://cdn.jsdelivr.net/npm/@iconify-json/covid/icons.json'],
                            ['hea', 'https://cdn.jsdelivr.net/npm/@iconify-json/healthicons/icons.json'],
@@ -167,55 +194,68 @@ class Py_report_html:
                            ['luc', 'https://cdn.jsdelivr.net/npm/@iconify-json/lucide/icons.json']]
             
             load_string = "mermaid.registerIconPacks([" + ",".join([f"{{ name: '{name}', loader: () => fetch('{file}').then((res) => res.json())}}" for name, file in icons_packs]) + "]);"
-            self.js_cdn.append(f"<script type=\"module\"> import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs'; {load_string};</script>")
+            js_cdn.append(f"<script type=\"module\"> import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs'; {load_string};</script>")
 
-        if self.features['sigma']: # sigma CDN load is HUGE so we read it from file
+        if features.get('sigma'): # sigma CDN load is HUGE so we read it from file
             with open(self.get_internal_template('sigma_cdn.txt'), 'r') as f:
-                self.js_cdn.extend(f.readlines())
+                js_cdn.extend(f.readlines())
         
-        if self.features['pyvis']: 
-            self.js_cdn.append("https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js")
-            self.css_cdn.append("https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css")
+        if features.get('pyvis'): 
+            js_cdn.append("https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js")
+            css_cdn.append("https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css")
 
-        if self.features['plotly']: self.js_cdn.append("https://cdn.plot.ly/plotly-3.0.1.min.js")
+        if features.get('plotly'): js_cdn.append("https://cdn.plot.ly/plotly-3.0.1.min.js")
 
-        self.merge_custom_cdn()
-        self.all_report += self.get_css_cdn()
-        self.all_report += self.get_js_cdn()
+        return css_cdn, js_cdn
 
+    def get_local_jsNcss_files(self, features):
+        css_files = []
+        js_libraries = []
+        js_libraries.append('py_report_html.js') # CUSTOM JAVASCRIPT CREATED BY py_report_html AUTHORS!!!!
+        css_files.append('py_report_html.css') # CUSTOM CSS CREATED BY py_report_html AUTHORS!!!!
 
-        # FILE LOAD
-        self.js_libraries.append('py_report_html.js') # CUSTOM JAVASCRIPT CREATED BY py_report_html AUTHORS!!!!
-        self.css_files.append('py_report_html.css') # CUSTOM CSS CREATED BY py_report_html AUTHORS!!!!
+        if features.get('pako'): js_libraries.append('pako.min.js')
+        if features.get('cytoscape'): js_libraries.append('cytoscape.min.js')
+        if features.get('elgrapho'): js_libraries.append('ElGrapho.min.js')
+        if features.get('pyvis'): js_libraries.append('PyvisUtils.js')
 
-        if self.features['pako']: self.js_libraries.append('pako.min.js')
-        if self.features['cytoscape']: self.js_libraries.append('cytoscape.min.js')
-        if self.features['elgrapho']: self.js_libraries.append('ElGrapho.min.js')
-        if self.features['pyvis']: self.js_libraries.append('PyvisUtils.js')
+        if features.get('canvasXpress'):
+            js_libraries.append('canvasXpress.min.js')
+            css_files.append('canvasXpress.css')
 
-        if self.features['canvasXpress']:
-            self.js_libraries.append('canvasXpress.min.js')
-            self.css_files.append('canvasXpress.css')
+        if features.get('sigma2'):
+            js_libraries.append("graphology.min.js")
+            js_libraries.append("graphology-library.min.js")
+            js_libraries.append("sigma.min.js")
 
-        if self.features['sigma2']:
-            self.js_libraries.append("graphology.min.js")
-            self.js_libraries.append("graphology-library.min.js")
-            self.js_libraries.append("sigma.min.js")
+        if features.get('sigma4'):
+            js_libraries.append("graphology.min.js")
+            js_libraries.append("graphology-library.min.js")
+            js_libraries.append("sigma4.min.js")
 
-        if self.features['sigma4']:
-            self.js_libraries.append("graphology.min.js")
-            self.js_libraries.append("graphology-library.min.js")
-            self.js_libraries.append("sigma4.min.js")
+        return css_files, js_libraries
 
-        self.merge_custom_files()
-        for css in self.load_css(self.css_files):
-            self.all_report += (f"<style type=\"text/css\">\n{css}\n</style>\n\n")
+    def get_local_report(self, string, features = {}, title= 'report', dynamic_js = []):
+        features['pako'] = True # add de JS compresion library by default
+        local_report = "<HTML>\n"
+        local_report += self.get_head_meta(title)
+        css_cdn, js_cdn = self.get_3rd_party_cdn(features)
+        local_report += self.get_css_cdn(css_cdn)
+        local_report += self.get_js_cdn(js_cdn)
 
-        for lib in self.load_js_libraries(self.js_libraries):
-            self.all_report += f"<script src=\"data:application/javascript;base64,{lib}\" type=\"application/javascript\"></script>\n\n"
+        css_files, js_libraries = self.get_local_jsNcss_files(features)
+        for css in self.load_css(css_files):
+            local_report += (f"<style type=\"text/css\">\n{css}\n</style>\n\n")
+
+        for lib in self.load_js_libraries(js_libraries):
+            local_report += f"<script src=\"data:application/javascript;base64,{lib}\" type=\"application/javascript\"></script>\n\n"
         
-        self.all_report += self.add_dynamic_js()
-        self.all_report +=  "</head>\n"
+        local_report += self.add_dynamic_js(dynamic_js)
+        local_report +=  "</head>\n"        
+        local_report += f"<body>\n{string}\n</body>\n"
+        local_report += "\n</HTML>"
+        return local_report
+
 
     def build_body(self, template):
         self.all_report += f"<body>\n{self.create_header_index()}\n{template}\n</body>\n"
@@ -454,13 +494,16 @@ class Py_report_html:
         if options.get('func') != None: options['func'](array_data)
         rowspan, colspan = self.get_col_n_row_span(array_data)
         table_id = f'{self.fig_prefix}table_{self.count_objects}'
+
+        features = {}
+        dynamic_js = []
         if options.get('styled') == 'dt': 
             if not options["header"]: raise Exception("Tables styled as datatables need to have a header to be properly displayed")    
 
             embedded_buttons = ','.join([f"'{button}'" for button in options['custom_buttons']])
-            if 'pdfHtml5' in options['custom_buttons']: self.features['pdfHtml5'] = True
+            if 'pdfHtml5' in options['custom_buttons']: features['pdfHtml5'] = True
 
-            self.features['dt_tables'] = True
+            features['dt_tables'] = True
             numeric_filtering = ""
             if len(options['filt_cols']) > 0:
                 numeric_filtering = f"            const table_{table_id} = new DataTable('#{table_id}');\n"
@@ -493,17 +536,29 @@ class Py_report_html:
                   )
                   numeric_filtering = numeric_filtering + num_filt
 
-            self.dynamic_js.append(
-                "".join([f"        $(document).ready(function () {{\n",
+            dynamic_js_string = "".join(
+                [f"        $(document).ready(function () {{\n",
                 f"            $('#{table_id}').DataTable({{ dom:'Bfrtip', buttons: [{embedded_buttons}], order: [] }});\n",
                 numeric_filtering,
-                f"        }});\n"])
+                f"        }});\n"]
             )
 
-        self.count_objects += 1
-        return self.renderize_child_template(self.get_internal_template('table.txt'), 
-            options=options, array_data=array_data, table_id= table_id, table_attr=table_attr, rowspan = rowspan, colspan=colspan)
+            dynamic_js.append(dynamic_js_string) 
+    
 
+        html_string = self.renderize_child_template(self.get_internal_template('table.txt'), 
+            options=options, array_data=array_data, table_id= table_id, table_attr=table_attr, rowspan = rowspan, colspan=colspan)
+        if options.get('lazy_load') == True:
+            local_report = self.get_local_report(html_string, features=features, dynamic_js = dynamic_js)
+            width = options.get('width')
+            heigth = options.get('heigth')
+            html_string = self.embed_html(local_report, string = True, html_attribs= 'loading="lazy"', width=width, height=heigth )
+        else:
+            self.dynamic_js.extend(dynamic_js)
+            self.features.update(features)
+        self.count_objects += 1
+        return html_string
+    
     def prepare_table_attribs(self, attribs):
         attribs_string = ''
         if len(attribs) > 0:
@@ -655,6 +710,10 @@ class Py_report_html:
 
         config.update(self.segregate_data(options['segregate']))
         config.update(options['config'])
+
+
+        dynamic_js = []
+        features = {}
         # Data manipulation
         #------------------------------------------
 
@@ -690,7 +749,7 @@ class Py_report_html:
         if options.get('group_samples') != None: extracode += f"C{object_id}.groupSamples({options['group_samples']})\n"
   
         # add javascript for CanvasXpress object
-        self.features['canvasXpress'] = True
+        features['canvasXpress'] = True
         plot_data = ( 
             f"var data = {self.decompress_code(self.compress_data(data_structure))};"
             f"var conf = {json.dumps(config)};"
@@ -699,16 +758,24 @@ class Py_report_html:
             f"var afterRender = {json.dumps(afterRender)};"
             f"var C{object_id} = new CanvasXpress(\"{object_id}\", data, conf, events, info, afterRender);\n{extracode}\n")
 
-        self.dynamic_js.append(
-            (f"        $(document).ready(function () {{\n"
+        dynamic_js.append((f"        $(document).ready(function () {{\n"
             f"            {plot_data}"
-            f"        }});\n")
-        )        
+            f"        }});\n"))
 
         # generate HTML for CanvasXpress object
         responsive = ''
         if options['responsive']: responsive = "data-responsive='true'" 
         html = f"<canvas  id=\"{object_id}\" width=\"{options['width']}\" height=\"{options['height']}\" data-aspectRatio='1:1' {responsive}></canvas>"
+
+        if options.get('lazy_load') == True:
+            local_report = self.get_local_report(html, features=features, dynamic_js = dynamic_js)
+            width = re.sub('px', '', options['width'])
+            heigth = re.sub('px', '', options['height'])
+            html = self.embed_html(local_report, string = True, html_attribs= 'loading="lazy"', width=width, height=heigth )
+        else:
+            self.dynamic_js.extend(dynamic_js)
+            self.features.update(features)
+
         return html
     
     def static_plot_main(self, **user_options):
@@ -1574,7 +1641,8 @@ class Py_report_html:
             group_nodes = net_data['group_nodes']
 
         node_names = []
-        self.features[options['method']] = True
+        features = {}
+        features[options['method']] = True
         if options['method'] == 'cytoscape':
             temp_file = 'cytoscape.txt'
             model = self.cytoscape_network(options, graph, layers, reference_nodes, group_nodes)
@@ -1598,6 +1666,15 @@ class Py_report_html:
         string = self.renderize_child_template(self.get_internal_template(temp_file), 
             options=options, network=network, count_objects=self.count_objects, node_names=node_names)
         self.count_objects += 1
+
+        if options.get('lazy_load') == True:
+            local_report = self.get_local_report(string, features=features)
+            width = re.sub('px', '', options['width'])
+            heigth = re.sub('px', '', options['height'])
+            string = self.embed_html(local_report, string = True, html_attribs= 'loading="lazy"', width=width, height=heigth )
+        else:
+            self.features.update(features)
+
         return string
 
     #TODO: test this method
@@ -1798,13 +1875,18 @@ class Py_report_html:
         pdf_string = f"<embed {pdf_attribs} src=\"data:application/pdf;base64,{pdf_base64}\" type=\"application/pdf\"></embed>"
         return pdf_string
 
-    def embed_html(self, html_file, width=600, height=600, border=True, html_attribs = ""):
+    def embed_html(self, html_file, width=600, height=600, border=True, html_attribs = "", string = False):
+        if width == None: width = 600 # Some methods could pass to this method this parameter as None, check to avoid this
+        if height == None: height = 600
         if not border and "style" in html_attribs: 
             html_attribs = html_attribs.replace("style=\"", "style=\"border:none;")
         elif not border: 
             html_attribs += " style=\"border:none;\""
-
-        html_content = open(html_file, 'r').read().replace("\"", "'") # Replace double quotes with single quotes to avoid problems with HTML attributes
+        if string:
+            html_string = html_file
+        else:
+            html_string = open(html_file, 'r').read()
+        html_content = html_string.replace("\"", "'") # Replace double quotes with single quotes to avoid problems with HTML attributes
         iframed_html = f"<iframe width={width} height={height} {html_attribs} srcdoc=\"{html_content}\"></iframe>"
         return iframed_html
 

@@ -138,6 +138,10 @@ ${ plotter.table(id='table1.txt')}
 <p>Data table (Header true, text false, style DT):</p>
 ${ plotter.table(id='table1_header.txt', header=True, styled='dt', attrib =  {'class' : 'table'}, func=mod_data, custom_buttons = ['copyHtml5', 'excelHtml5', 'csvHtml5', 'pdfHtml5'])}
 
+<p>Data table - Lazy loading (iframe) (Header true, text false, style DT, lazy_load):</p>
+${ plotter.table(id='table1_header.txt', header=True, lazy_load=True, width=800, styled='dt', attrib =  {'class' : 'table'}, func=mod_data, custom_buttons = ['copyHtml5', 'excelHtml5', 'csvHtml5', 'pdfHtml5'])}
+
+
 <p>Data table (Header true, text false, style DT, filtering numbered cols):</p>
 ${ plotter.table(id='table1_header.txt', header=True, styled='dt', attrib =  {'class' : 'table'}, func=mod_data, custom_buttons = ['copyHtml5', 'excelHtml5', 'csvHtml5', 'pdfHtml5'], filt_cols = [0,1], filt_col_names = ['Log_FC', 'Patients'])}
 
@@ -487,16 +491,29 @@ ${ plotter.table(id="ref_data", get_table_meth=generate_table ) }
 %>
         ${ plotter.mermaid_chart(graph)}
 </div>
+<h3> Network cytoscape </h3>
 
 ${ plotter.network(id = 'network.txt', method = 'cytoscape', reference_nodes = ["a", "e"], group_nodes= {"g1": ["i", "j"], "g2": ["b", "c"]}) }
+
+<h3> Network cytoscape lazy_load (iframe) </h3>
+${ plotter.network(id = 'network.txt', lazy_load = True, method = 'cytoscape', reference_nodes = ["a", "e"], group_nodes= {"g1": ["i", "j"], "g2": ["b", "c"]}) }
+
+<h3> Network elgrapho </h3>
+
 ${ plotter.network(id = 'network.txt', method = 'elgrapho', group = 'layer', layout = 'forcedir', reference_nodes = ["a", "e"]) }
 
+<h3> Network sigma </h3>
 <div style="overflow: hidden">
 	${ plotter.network(id = 'network.txt', method = 'sigma', reference_nodes = ["a", "e"]) }
         ${ plotter.embed_img('file_data/example.png', img_attribs='width=400 height=400')}
         ${ plotter.embed_img('file_data/example.png', img_attribs='class="fitting_img"')}
 	${ plotter.embed_img('file_data/example.png', rezisable=True, img_attribs='height="600px" width="600px"')}
 </div>
+
+
+<h3> Network sigma lazy_load (iframe) </h3>
+${ plotter.network(id = 'network.txt', lazy_load = True, method = 'sigma', reference_nodes = ["a", "e"]) }
+
 
 ${ plotter.prettify_div("<h3> Showing the use of prettify_div method</h3>")}
 <%
@@ -613,3 +630,5 @@ plotter.hash_vars['sankey_graph'] = data
 
 ${ plotter.sankey(id = 'sankey_graph', config={"colorBy": "Group"}) }
 
+<h3> Sankey lazy_load </h3>
+${ plotter.sankey(id = 'sankey_graph', lazy_load = True, config={"colorBy": "Group"}) }
