@@ -47,4 +47,6 @@ Key features and functionalities include:
 
 * Extensibility: Highly extensible, allowing users to include additional JavaScript libraries, CSS stylesheets, and nested templates to further customize their reports.
 
+See https://github.com/seoanezonjic/py_report_html
+
 For an equivalent R library, please visit htmlreportR on GitHub (https://github.com/AEstebanMar/htmlreportR).
