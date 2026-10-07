@@ -64,8 +64,8 @@ def bg_col(color):
 
 def icon_node(idd, name, color, url_basename, size="med"):
     sizecls = "med" if size == "med" else "sma"
-    if idd : text = f"{idd}((\"<div class='iconifyNode {sizecls}' style='{bg_col(color)}; {bg_img(url_basename)};'>{name}</div>\"))"
-    else: text = f"<div class='iconifyNode {sizecls}' style='{bg_col(color)}; {bg_img(url_basename)};'>{name}</div>"
+    if idd : text = f"{idd}((\"<div class='iconifyNode {sizecls}' style='{bg_col(color)}; {bg_img(url_basename)}'>{name}</div>\"))"
+    else: text = f"<div class='iconifyNode {sizecls}' style='{bg_col(color)}; {bg_img(url_basename)}'>{name}</div>"
     return text
 
 blue = "rgb(51, 89, 204)"
@@ -80,21 +80,21 @@ olive = "rgb(134, 179, 0)"
 grey = "rgb(140, 140, 140)"
 
 omims1 = f"""
-            {icon_node("O1", "ID1", red, "fa6-solid:tag.svg")}
-            {icon_node("O2", "ID2", green, "fa6-solid:tag.svg")}
-            {icon_node("O3", "ID3", blue, "fa6-solid:tag.svg")}
+            {icon_node("O1", "ID1", red, "fa6-solid/tag.svg")}
+            {icon_node("O2", "ID2", green, "fa6-solid/tag.svg")}
+            {icon_node("O3", "ID3", blue, "fa6-solid/tag.svg")}
             {style_files(['O1','O2',"O3"])}
 """
 pmids1 = f"""
-            {icon_node("P1", "T44", red, "academicons:pubmed.svg")}
-            {icon_node("P2", "T23", green, "academicons:pubmed.svg")}
-            {icon_node("P3", "T53", blue, "academicons:pubmed.svg")}
+            {icon_node("P1", "T44", red, "academicons/pubmed.svg")}
+            {icon_node("P2", "T23", green, "academicons/pubmed.svg")}
+            {icon_node("P3", "T53", blue, "academicons/pubmed.svg")}
             {style_files(['P1','P2',"P3"])}
 """
 diseases=f"""
-            {icon_node("N1", "DN1", red, "covid:symptoms-nausea.svg")}
-            {icon_node("N2", "DN2", green, "healthicons:tb.svg")}
-            {icon_node("N3", "DN3", blue, "healthicons:deaf-outline.svg")}
+            {icon_node("N1", "DN1", red, "covid/symptoms-nausea.svg")}
+            {icon_node("N2", "DN2", green, "healthicons/tb.svg")}
+            {icon_node("N3", "DN3", blue, "healthicons/deaf-outline.svg")}
             {style_files(['N1','N2',"N3"])}
 """
 
@@ -106,20 +106,20 @@ omims_pmids_diseases = omims1 + pmids1 + diseases + f"""
 """
 
 table_omims_vectors = make_table(nrow=3, ncol=2, items = [
-    icon_node("", "ID1", red, "fa6-solid:tag.svg", size="sma"),icon_node("", "V1", grey, "humbleicons:arrow-right-up.svg", size="sma"),
-    icon_node("", "ID2", green, "fa6-solid:tag.svg", size="sma"),icon_node("", "V2", grey, "humbleicons:arrow-left-down.svg", size="sma"),
-    icon_node("", "ID3", blue, "fa6-solid:tag.svg", size="sma"), icon_node("", "V3", grey, "humbleicons:arrow-left-up.svg", size="sma")
+    icon_node("", "ID1", red, "fa6-solid/tag.svg", size="sma"),icon_node("", "V1", grey, "humbleicons/arrow-right-up.svg", size="sma"),
+    icon_node("", "ID2", green, "fa6-solid/tag.svg", size="sma"),icon_node("", "V2", grey, "humbleicons/arrow-left-down.svg", size="sma"),
+    icon_node("", "ID3", blue, "fa6-solid/tag.svg", size="sma"), icon_node("", "V3", grey, "humbleicons/arrow-left-up.svg", size="sma")
 ])
 table_pmids_vectors = make_table(nrow=3, ncol=2, items = [
-    icon_node("", "T49", brown, "academicons:pubmed.svg", size="sma"),icon_node("", "V4", grey, "humbleicons:arrow-up.svg", size="sma"),
-    icon_node("", "T44", red, "academicons:pubmed.svg", size="sma"),icon_node("", "V5", grey, "humbleicons:arrow-right-up.svg", size="sma"),
-    icon_node("", "T53", blue, "academicons:pubmed.svg", size="sma"),icon_node("", "V6", grey, "humbleicons:arrow-down.svg", size="sma")
+    icon_node("", "T49", brown, "academicons/pubmed.svg", size="sma"),icon_node("", "V4", grey, "humbleicons/arrow-up.svg", size="sma"),
+    icon_node("", "T44", red, "academicons/pubmed.svg", size="sma"),icon_node("", "V5", grey, "humbleicons/arrow-right-up.svg", size="sma"),
+    icon_node("", "T53", blue, "academicons/pubmed.svg", size="sma"),icon_node("", "V6", grey, "humbleicons/arrow-down.svg", size="sma")
 ])
 
 table1 = make_table(nrow=3,ncol=3, items = [ 
-    icon_node(None, "0.89", grey, "fa6-solid:1.svg"), icon_node(None, "ID3", blue, "fa6-solid:tag.svg"), icon_node(None, "T44", red, "academicons:pubmed.svg"),
-    icon_node(None, "0.77", grey, "fa6-solid:2.svg"), icon_node(None, "ID3", blue, "fa6-solid:tag.svg"), icon_node(None, "T53", blue, "academicons:pubmed.svg"),
-    icon_node(None, "0.72", grey, "fa6-solid:3.svg"), icon_node(None, "ID3", blue, "fa6-solid:tag.svg"), icon_node(None, "T49", brown, "academicons:pubmed.svg")])
+    icon_node(None, "0.89", grey, "fa6-solid/1.svg"), icon_node(None, "ID3", blue, "fa6-solid/tag.svg"), icon_node(None, "T44", red, "academicons/pubmed.svg"),
+    icon_node(None, "0.77", grey, "fa6-solid/2.svg"), icon_node(None, "ID3", blue, "fa6-solid/tag.svg"), icon_node(None, "T53", blue, "academicons/pubmed.svg"),
+    icon_node(None, "0.72", grey, "fa6-solid/3.svg"), icon_node(None, "ID3", blue, "fa6-solid/tag.svg"), icon_node(None, "T49", brown, "academicons/pubmed.svg")])
 
 
 ddp=f"""

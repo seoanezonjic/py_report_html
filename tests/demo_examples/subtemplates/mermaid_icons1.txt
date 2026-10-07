@@ -67,8 +67,7 @@ title: Direct Disease Prediction (DDP)
 config:
     theme: base
     themeVariables:
-    primaryColor: "#00ff00"
-    securityLevel: 'loose'
+        primaryColor: "#00ff00"
 ---
 flowchart LR
     subgraph Gold Standard
