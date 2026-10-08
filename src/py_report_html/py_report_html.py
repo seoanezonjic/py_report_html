@@ -1694,6 +1694,9 @@ class Py_report_html:
                     for gr_node in gr: groups_nodes_index[gr_node] = i + add
         return groups_nodes_index, lambda color: matplotlib.colors.rgb2hex(colors(color))        
 
+    #There is currently a deprecation warning when setting style for each node at the moment of defining them.
+    #If at some point this functionallity breaks, here is how to fix it:
+    #https://stackoverflow.com/questions/59583516/setting-a-style-bypass-at-element-creation-is-deprecated-when-specifying-sty
     def cytoscape_network(self, options, graph, layers, reference_nodes, group_nodes):
         model = {'nodes': [], 'edges': []}
         groups_index, get_colors = self.get_nodes_colors(options, graph, layers, reference_nodes, group_nodes)
