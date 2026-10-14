@@ -585,8 +585,7 @@ ${ plotter.embed_html('html_to_embed.html', border=False, html_attribs='style="w
 
 <h1> Mermaid with icons and renderize_child_template examples </h1>
 <h3> Mermaid with icons example 1 </h3>
-This Mermaid flowchart is failing to render despite it is working in the online editor. Toggle off temporary until it is fixed
- plotter.renderize_child_template(plotter.get_internal_template('mermaid_icons1.txt'))
+${ plotter.renderize_child_template(plotter.get_internal_template('mermaid_icons1.txt'))}
 
 <h3> Mermaid with icons example 2 </h3>
 ${ plotter.renderize_child_template(plotter.get_internal_template('mermaid_icons2.txt'))}
