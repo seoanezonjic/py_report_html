@@ -201,8 +201,8 @@ class Py_report_html:
                 js_cdn.extend(f.readlines())
         
         if features.get('pyvis'): 
-            js_cdn.append("https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js")
-            css_cdn.append("https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css")
+            js_cdn.append("https://cdnjs.cloudflare.com/ajax/libs/vis-network/10.1.2/dist/vis-network.min.js")
+            css_cdn.append("https://cdnjs.cloudflare.com/ajax/libs/vis-network/10.1.2/dist/dist/vis-network.min.css")
 
         if features.get('plotly'): js_cdn.append("https://cdn.plot.ly/plotly-3.0.1.min.js")
 
