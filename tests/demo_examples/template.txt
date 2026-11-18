@@ -120,6 +120,10 @@ ${ plotter.create_collapsable_container('clickme_id', example_div) }
 
 ${ plotter.table(id='table1.txt')}
 
+Dropping the second row using keyword args and a custom function (plotter.table(id='table1.txt', func=lambda data, row_to_drop: data.pop(row_to_drop), func_kwargs={"row_to_drop":1}))
+${ plotter.table(id='table1.txt', func=lambda data, row_to_drop: data.pop(row_to_drop), func_kwargs={"row_to_drop":1})}
+
+
 <%
         from functools import partial
 	def mod_data(data):

@@ -463,6 +463,9 @@ class Py_report_html:
                 parsed_attr.append(attrib)
         return parsed_attr
 
+    def apply_data_processing_func_if_defined(self, options, data_array):
+        if options.get('func') != None: options['func'](data_array, *options['func_args'], **options['func_kwargs'])
+
     #---------------------------------------------------------------------------------------------
     # TABLE METHODS
     #-------------------------------------------------------------------------------------
@@ -480,6 +483,8 @@ class Py_report_html:
             'cell_align': [],
             'attrib': {},
             'func': None,
+            'func_args': [],
+            'func_kwargs': {},              
             'renamed_samples': [],
             'renamed_variables': [],
             'custom_buttons': ['copyHtml5', 'excelHtml5', 'csvHtml5'],
@@ -491,7 +496,7 @@ class Py_report_html:
         
         table_attr = self.prepare_table_attribs(options['attrib'])
         array_data, _, _ = self.get_data(options)
-        if options.get('func') != None: options['func'](array_data)
+        self.apply_data_processing_func_if_defined(options, array_data)
         rowspan, colspan = self.get_col_n_row_span(array_data)
         table_id = f'{self.fig_prefix}table_{self.count_objects}'
 
@@ -615,7 +620,7 @@ class Py_report_html:
 
         data_array, smp_attr, var_attr = self.get_data(options)
         if len(data_array) > 0:  
-            if options.get('func') != None: options['func'](data_array)
+            self.apply_data_processing_func_if_defined(options, data_array)
             if data_array == None: raise Exception(f"ID {options['id']} has no data") 
             samples = data_array.pop(0)
             samples.pop(0) # We obtain sample names with first pop, the second remove vars title
@@ -672,6 +677,8 @@ class Py_report_html:
             'sanity_check': False,
             'id': None,
             'func': None,
+            'func_args': [],
+            'func_kwargs': {},
             'config_chart': None,
             'fields': [],
             'smp_attr': [],
@@ -789,7 +796,11 @@ class Py_report_html:
         options = {
             'id': None,
             'func': None,
+            'func_args': [],
+            'func_kwargs': {},            
             'plotting_function': None,
+            'plotting_args': [],
+            'plotting_kwargs': {},
             'config_chart': None,
             'fields': [],
             'smp_attr': [],
@@ -822,6 +833,9 @@ class Py_report_html:
             'kwargs': {},
         }
         options.update(user_options)
+
+        deprecated_opt_args = {'args': 'plotting_args', 'kwargs': 'plotting_kwargs'}
+        self.replace_deprecated_args(options, deprecated_opt_args)
 
         if options['dynamic_units_calc']:
             matplot_height, matplot_width, inches_to_pixels_factor = self.get_matplotlib_units(options['units'], options["height"], options["width"], options["dpi"])
@@ -864,9 +878,9 @@ class Py_report_html:
             if options['plotting_function'] != None:               
                 if options["whole"] == True:
                     values = dataframe if options["raw"] == True else pd.DataFrame(values, columns = samples, index = variables)
-                    ax = options['plotting_function'](values, plotters, *options['args'], **options['kwargs'])
+                    ax = options['plotting_function'](values, plotters, *options['plotting_args'], **options['plotting_kwargs'])
                 else:
-                    ax = options['plotting_function'](dataframe, plotters, *options['args'], **options['kwargs'])
+                    ax = options['plotting_function'](dataframe, plotters, *options['plotting_args'], **options['plotting_kwargs'])
             else:
                 return f"<div width=\"{options['width']}\" height=\"{options['height']}\" > <p>NO PLOTTING FUNCTION<p></div>"
             
@@ -2089,3 +2103,11 @@ class Py_report_html:
         list_types = list_types if list_types else [default_type] * len(list_content)
         final_list = list(zip(list_content, list_levels, list_types))
         return final_list
+
+    #------------------------------------------------------------------------
+
+    def replace_deprecated_args(self, options, replace_dict):
+        for old_opt, new_opt in replace_dict.items():
+            if options.get(old_opt) and not options.get(new_opt):
+                options[new_opt] = options[old_opt]
+                warnings.warn(f"'{old_opt}' is deprecated, use '{new_opt}' from now on", DeprecationWarning, stacklevel=2)
