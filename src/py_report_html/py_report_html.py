@@ -1692,7 +1692,10 @@ class Py_report_html:
             if len(group_nodes) > 0: 
                 for i, gr in enumerate(group_nodes.values()):
                     for gr_node in gr: groups_nodes_index[gr_node] = i + add
-        return groups_nodes_index, lambda color: matplotlib.colors.rgb2hex(colors(color))        
+        return groups_nodes_index, lambda color: matplotlib.colors.rgb2hex(colors(color))
+
+    def clean_node_names(self, nodeID, regex):
+        return re.sub(regex, '', nodeID)        
 
     #There is currently a deprecation warning when setting style for each node at the moment of defining them.
     #If at some point this functionallity breaks, here is how to fix it:
@@ -1798,7 +1801,9 @@ class Py_report_html:
 
         for nodeID, attr in graph.nodes(data=True):
             color_group = 1 if nodeID in reference_nodes else groups_index[nodeID]
-            node = {'id': nodeID, 'label': nodeID, 'group': color_group, 'color': get_colors(color_group), 'size': 10}
+            label = nodeID
+            if options.get('clean_node_names') != None: label = self.clean_node_names(nodeID, options['clean_node_names'])
+            node = {'id': nodeID, 'label': label, 'group': color_group, 'color': get_colors(color_group), 'size': 10}
             if options.get('shape') != None:
                 if options.get('shape') == 'layer':
                     node['shape'] = shapes[layers.index(attr['layer'])]
