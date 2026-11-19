@@ -123,7 +123,6 @@ ${ plotter.table(id='table1.txt')}
 Dropping the second row using keyword args and a custom function (plotter.table(id='table1.txt', func=lambda data, row_to_drop: data.pop(row_to_drop), func_kwargs={"row_to_drop":1}))
 ${ plotter.table(id='table1.txt', func=lambda data, row_to_drop: data.pop(row_to_drop), func_kwargs={"row_to_drop":1})}
 
-
 <%
         from functools import partial
 	def mod_data(data):
@@ -382,16 +381,37 @@ ${ plotter.corplot(id = 'correlation1.tsv', header = True, row_names = True, cor
                 <td>
                         ${ plotter.radar(id='barplot3.txt', header = True, row_names = True, smp_attr = [1,2], var_attr = [1,2], subtype=["area"], show_factors=["type", "-", "type2"])}
                 </td>
+<%
+def mult_by_n(table, **kwargs):
+        for row_idx in range(len(table)):
+                for col_idx in range(len(table[0])):
+                        value = table[row_idx][col_idx]
+                        table[row_idx][col_idx] = table[row_idx][col_idx] * kwargs["n"] if type(value) != str else value
+
+from functools import partial
+mult_by_100 = partial(mult_by_n, n=100)
+
+%>
                 <td>
                         ${ plotter.heatmap(id = 'hap_sample', header = True, row_names = True ) }
                         ${ plotter.heatmap(id = 'heatmap_colors.txt', header = False, row_names = False, x_label = "-log P value",
-                                        extra_data={'id': 'heatmap_sizes.txt', 'header': False, 'row_names':  False},
+                                        extra_data={'id': 'heatmap_sizes.txt', 'header': False, 'row_names':  False, 'func': mult_by_100},
                                         inject_smp_attr = {"gen": ["A", "B", "A", "B", "C"], "type":["mRNA","mRNA", "miRNA", "tRNA", "miRNA"]},
                                         inject_var_attr = {"sample": ["brain", "brain", "liver", "liver", "kidney"], "neural": ["yes", "yes", "no", "no", "no"]},
                                         config = {'sizeLegendTitle': 'Log2 fold change',
                                                 'sizes': [3,11,15,40],
                                                 "smpOverlays" : ["gen","type"],
-                                                "varOverlays" : ["sample", "-", "neural"]} ) }                        
+                                                "varOverlays" : ["sample", "-", "neural"]} ) }
+
+                        ${ plotter.heatmap(id = 'heatmap_colors.txt', header = False, row_names = False, x_label = "-log P value",
+                                        extra_data={'id': 'heatmap_sizes.txt', 'header': False, 'row_names':  False, 'func': mult_by_n, 'func_kwargs': {"n": 10}},
+                                        inject_smp_attr = {"gen": ["A", "B", "A", "B", "C"], "type":["mRNA","mRNA", "miRNA", "tRNA", "miRNA"]},
+                                        inject_var_attr = {"sample": ["brain", "brain", "liver", "liver", "kidney"], "neural": ["yes", "yes", "no", "no", "no"]},
+                                        config = {'sizeLegendTitle': 'Log2 fold change',
+                                                'sizes': [3,11,15,40],
+                                                "smpOverlays" : ["gen","type"],
+                                                "varOverlays" : ["sample", "-", "neural"]} ) }  
+
                 </td>
 		<td>
                         ${ plotter.scatterbubble2D(id = 'haplotipe_array', header = True, row_names = False, upper_limit = 70, lower_limit = 4, ranges = 80,

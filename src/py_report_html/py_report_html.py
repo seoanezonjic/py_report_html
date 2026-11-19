@@ -1427,6 +1427,8 @@ class Py_report_html:
                 extra_opts = {
                     'id': None,
                     'func': None,
+                    'func_args': [],
+                    'func_kwargs': {},
                     'fields': [],
                     'smp_attr': [],
                     'var_attr': [],
